@@ -1,12 +1,12 @@
 ---
 title: Vite plugin
-description: Run your frontend and the helipod backend with one vite command, on one origin.
+description: Run your frontend and the concile backend with one vite command, on one origin.
 ---
 
 {/* diataxis: how-to */}
 
-Normally a Vite app and a helipod backend are two terminals: `vite` in one, `helipod dev` in the
-other, plus a hand-written proxy so the browser can reach both. `@helipod/vite` collapses that to
+Normally a Vite app and a concile backend are two terminals: `vite` in one, `concile dev` in the
+other, plus a hand-written proxy so the browser can reach both. `@concile/vite` collapses that to
 one command. You run `vite`, and the plugin brings the backend up with it, on the same browser
 origin.
 
@@ -14,9 +14,9 @@ One origin matters more than one terminal. The client connects to `${location.ho
 when the engine answers on the same host and port as your frontend, there is no proxy config to
 write and no CORS to think about. It just works.
 
-The plugin has two modes behind the same `helipod()` call:
+The plugin has two modes behind the same `concile()` call:
 
-- **Proxy mode** (the default) spawns `helipod dev` as a child process and wires Vite's proxy to
+- **Proxy mode** (the default) spawns `concile dev` as a child process and wires Vite's proxy to
   it. The backend behaves exactly as if you had started it yourself.
 - **Embed mode** boots the engine inside Vite's own process. No child process, no proxy hop: the
   engine answers as Vite middleware, and the reactive WebSocket shares Vite's HTTP server.
@@ -29,22 +29,22 @@ The plugin has two modes behind the same `helipod()` call:
 
 ### Install the plugin
 
-`@helipod/vite` goes next to your existing dev dependencies. It needs `vite` 5 or newer, and it
-drives `@helipod/cli` (already a dev dependency if you followed the
+`@concile/vite` goes next to your existing dev dependencies. It needs `vite` 5 or newer, and it
+drives `@concile/cli` (already a dev dependency if you followed the
 [quickstart](/docs/get-started/quickstart)):
 
 <Tabs items={['npm', 'pnpm', 'bun']}>
 
 ```bash tab="npm"
-npm install -D @helipod/vite
+npm install -D @concile/vite
 ```
 
 ```bash tab="pnpm"
-pnpm add -D @helipod/vite
+pnpm add -D @concile/vite
 ```
 
 ```bash tab="bun"
-bun add -d @helipod/vite
+bun add -d @concile/vite
 ```
 
 </Tabs>
@@ -57,10 +57,10 @@ bun add -d @helipod/vite
 
 ```ts title="vite.config.ts"
 import { defineConfig } from "vite";
-import { helipod } from "@helipod/vite";
+import { concile } from "@concile/vite";
 
 export default defineConfig({
-  plugins: [helipod()],
+  plugins: [concile()],
 });
 ```
 
@@ -77,7 +77,7 @@ npx vite
 ```
 
 The backend starts with the dev server. Its log lines appear in the same terminal, prefixed
-`[helipod]`. Open your app at the Vite URL, and the engine's surfaces are there too, on the same
+`[concile]`. Open your app at the Vite URL, and the engine's surfaces are there too, on the same
 origin:
 
 - `/api/*` is the engine's HTTP API, and `/api/sync` is the reactive WebSocket.
@@ -96,26 +96,26 @@ Everything else is your Vite app, untouched.
 
 <Tab value="Proxy (default)">
 
-Proxy mode spawns `helipod dev` as a child process on a free port and injects three entries into
+Proxy mode spawns `concile dev` as a child process on a free port and injects three entries into
 Vite's dev-server proxy: `/api` (WebSocket-aware, so `/api/sync` upgrades pass through), `/_dashboard`,
 and `/_admin`. Vite merges these with any `server.proxy` entries of your own, so your unrelated proxy
 rules are preserved.
 
-Because the child is the real `helipod dev`, everything on the
+Because the child is the real `concile dev`, everything on the
 [local development](/docs/deploy/local-dev) page holds verbatim: codegen runs on start, the child
-watches `helipod/` and hot-reloads your functions on every save, and the ephemeral admin key is
+watches `concile/` and hot-reloads your functions on every save, and the ephemeral admin key is
 printed in its (piped) output.
 
 Some mechanics worth knowing:
 
-- **CLI resolution.** The plugin runs your app's local `node_modules/.bin/helipod` if it exists,
-  and falls back to `npx helipod`. Override with the `command` option.
+- **CLI resolution.** The plugin runs your app's local `node_modules/.bin/concile` if it exists,
+  and falls back to `npx concile`. Override with the `command` option.
 - **Readiness.** Vite waits for the backend to accept TCP connections before serving (polled every
   200ms, 30 second timeout). If the child exits early or never comes up, `vite` fails with a clear
   error instead of serving a dead proxy.
 - **Cleanup.** The child is killed when the Vite server closes and on `SIGINT`/`SIGTERM`/process
   exit, so a stopped `vite` never leaves an orphaned backend behind.
-- **Extra flags.** Anything `helipod dev` accepts can be forwarded through `args`, for example
+- **Extra flags.** Anything `concile dev` accepts can be forwarded through `args`, for example
   `args: ["--database-url", "postgres://..."]`.
 
 </Tab>
@@ -126,35 +126,35 @@ Embed mode is opt-in:
 
 ```ts title="vite.config.ts"
 export default defineConfig({
-  plugins: [helipod({ mode: "embed" })],
+  plugins: [concile({ mode: "embed" })],
 });
 ```
 
 Instead of spawning a child, the plugin boots the engine inside Vite's process, using
-`@helipod/cli`'s shared boot core (reached via a dynamic import; if `@helipod/cli` isn't
+`@concile/cli`'s shared boot core (reached via a dynamic import; if `@concile/cli` isn't
 installed, embed mode fails at startup with a clear message). The engine paths are served as
 connect middleware, and `/api/sync` gets its own WebSocket upgrade listener that coexists with
 Vite's HMR socket on the same server. There is no second process and no proxy hop.
 
-Startup writes `helipod/_generated/` and logs the admin key:
+Startup writes `concile/_generated/` and logs the admin key:
 
 ```
-[helipod] embed → engine in-process on Vite's origin (admin key: ...)
+[concile] embed → engine in-process on Vite's origin (admin key: ...)
 ```
 
-The database is SQLite at `<project root>/.helipod/dev.db` by default. Point `dataPath` somewhere
+The database is SQLite at `<project root>/.concile/dev.db` by default. Point `dataPath` somewhere
 else, or set `databaseUrl` to a `postgres://` connection string to use
 [Postgres](/docs/deploy/postgres) instead. The admin key is a fresh ephemeral key per run unless you
 pass `adminKey`.
 
-The component set (your `helipod.config.ts` composition) is fixed at boot, exactly as
-`helipod dev` and `helipod serve` behave. Adding or removing a component means restarting
+The component set (your `concile.config.ts` composition) is fixed at boot, exactly as
+`concile dev` and `concile serve` behave. Adding or removing a component means restarting
 `vite`.
 
-<Callout type="info" title="A different database file than helipod dev">
+<Callout type="info" title="A different database file than concile dev">
 
-Embed mode's default SQLite path is `.helipod/dev.db`, while `helipod dev` (and so proxy mode)
-defaults to `.helipod/data.db`. Switch modes and you're looking at a different, initially empty
+Embed mode's default SQLite path is `.concile/dev.db`, while `concile dev` (and so proxy mode)
+defaults to `.concile/data.db`. Switch modes and you're looking at a different, initially empty
 database. If you want the same data in both, point `dataPath` (embed) and `--data` (proxy, via
 `args`) at the same file, but never run both modes against it at once: the engine is
 single-writer.
@@ -176,11 +176,11 @@ and are ignored by the other.
       type: '"proxy" | "embed"',
       default: '"proxy"',
       description:
-        'How the backend runs alongside Vite. "proxy" spawns helipod dev as a child and proxies to it; "embed" boots the engine inside Vite\'s own process.',
+        'How the backend runs alongside Vite. "proxy" spawns concile dev as a child and proxies to it; "embed" boots the engine inside Vite\'s own process.',
     },
     functionsDir: {
       type: "string",
-      default: '"helipod"',
+      default: '"concile"',
       description:
         "Where your schema and functions live, relative to the Vite root. Passed to the backend as --dir. Shared by both modes.",
     },
@@ -188,23 +188,23 @@ and are ignored by the other.
       type: "number",
       default: "an OS-assigned free port",
       description:
-        "Proxy mode only: the port the spawned helipod dev listens on (the browser never sees it; everything goes through Vite's port).",
+        "Proxy mode only: the port the spawned concile dev listens on (the browser never sees it; everything goes through Vite's port).",
     },
     command: {
       type: "string",
-      default: 'local node_modules/.bin/helipod, else "npx helipod"',
+      default: 'local node_modules/.bin/concile, else "npx concile"',
       description:
-        "Proxy mode only: how to invoke the CLI. A whitespace-split command string, e.g. \"bun helipod\".",
+        "Proxy mode only: how to invoke the CLI. A whitespace-split command string, e.g. \"bun concile\".",
     },
     args: {
       type: "string[]",
       default: "[]",
       description:
-        'Proxy mode only: extra flags appended to helipod dev, e.g. ["--database-url", "postgres://..."].',
+        'Proxy mode only: extra flags appended to concile dev, e.g. ["--database-url", "postgres://..."].',
     },
     dataPath: {
       type: "string",
-      default: "<root>/.helipod/dev.db",
+      default: "<root>/.concile/dev.db",
       description:
         "Embed mode only: the SQLite database file for the in-process engine, resolved against the Vite root.",
     },
@@ -229,8 +229,8 @@ Two independent reload loops run side by side, and neither steps on the other:
 
 - **Frontend HMR is Vite's, unchanged.** Editing a component hot-swaps it in the browser exactly as
   in any Vite app.
-- **Backend hot reload is helipod's.** Saving a file under `helipod/` reloads your schema and
-  functions and regenerates `helipod/_generated/`, without dropping live subscriptions. A client
+- **Backend hot reload is concile's.** Saving a file under `concile/` reloads your schema and
+  functions and regenerates `concile/_generated/`, without dropping live subscriptions. A client
   watching a query stays connected and re-runs against the new code on the next invalidation. A
   broken save logs `✗ reload failed` and keeps the previous working functions running.
 
@@ -254,7 +254,7 @@ Vite's normal HMR.
 - **Embed mode needs Vite's own HTTP server.** Under `server.middlewareMode` (how some SSR
   frameworks host Vite) there is no server to attach to, so the `/api/sync` WebSocket never wires up
   and engine cleanup doesn't run. The plugin warns loudly; use proxy mode there.
-- **Proxy mode is two processes.** That's by design (zero divergence from the real `helipod dev`),
+- **Proxy mode is two processes.** That's by design (zero divergence from the real `concile dev`),
   but it means backend state lives in the child. If you need to poke the engine from Vite's process,
   that's what embed mode is for.
 
@@ -262,4 +262,4 @@ Vite's normal HMR.
 
 - [Local development](/docs/deploy/local-dev): everything the backend does under the plugin, flags,
   hot reload, and the dashboard.
-- [Quickstart](/docs/get-started/quickstart): install helipod and see the whole loop end to end.
+- [Quickstart](/docs/get-started/quickstart): install concile and see the whole loop end to end.

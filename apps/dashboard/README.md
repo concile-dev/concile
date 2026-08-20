@@ -1,17 +1,17 @@
-# @helipod/dashboard
+# @concile/dashboard
 
-The Helipod dashboard: a single-page web app for inspecting and operating a Helipod deployment, served automatically by `helipod dev` and `helipod serve`.
+The Concile dashboard: a single-page web app for inspecting and operating a Concile deployment, served automatically by `concile dev` and `concile serve`.
 
-This package is not for direct installation. It exists so the CLI can embed the built SPA (`@helipod/cli` depends on it and serves the `dist/` output); end users get it by running the CLI — there is nothing to add to an app's dependencies.
+This package is not for direct installation. It exists so the CLI can embed the built SPA (`@concile/cli` depends on it and serves the `dist/` output); end users get it by running the CLI — there is nothing to add to an app's dependencies.
 
 ## Usage
 
 ```sh
-bunx helipod dev
+bunx concile dev
 # open the printed URL and visit /_dashboard
 ```
 
-In development the dashboard is served with the local admin key baked in. In production (`helipod serve`) it is served key-less — the admin key is never embedded in the HTML — and the SPA prompts for `HELIPOD_ADMIN_KEY` on first load.
+In development the dashboard is served with the local admin key baked in. In production (`concile serve`) it is served key-less — the admin key is never embedded in the HTML — and the SPA prompts for `CONCILE_ADMIN_KEY` on first load.
 
 ## Features
 
@@ -25,10 +25,10 @@ In development the dashboard is served with the local admin key baked in. In pro
 Within the monorepo:
 
 ```sh
-bun run --filter @helipod/dashboard dev     # Vite dev server
-bun run --filter @helipod/dashboard build   # build dist/ consumed by the CLI
+bun run --filter @concile/dashboard dev     # Vite dev server
+bun run --filter @concile/dashboard build   # build dist/ consumed by the CLI
 ```
 
-Part of [Helipod](https://github.com/helipod-sh/helipod) — docs at https://helipod-six.vercel.app/docs
+Part of [Concile](https://github.com/concile-dev/concile) — docs at https://concile-six.vercel.app/docs
 
 License: FSL-1.1-Apache-2.0

@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/docstore-d1",
+  "name": "@concile/docstore-d1",
   "version": "0.1.5",
   "type": "module",
   "license": "FSL-1.1-Apache-2.0",
@@ -23,7 +23,7 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@helipod/values": "workspace:*"
+    "@concile/values": "workspace:*"
   },
   "devDependencies": {
     "better-sqlite3": "^11.8.0",
@@ -39,8 +39,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "packages/docstore-d1"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

@@ -6,7 +6,7 @@
  * console-provider smoke — all already passing 3/3). This sibling file exercises the SAME two
  * reactive scenarios at the embedded-runtime level, in this demo's own existing idiom
  * (`flow.test.ts`'s hand-built `composeComponents` + `createEmbeddedRuntime` + loopback
- * `HelipodClient`, no real dev server) — proving `helipod.config.ts`'s newly-composed
+ * `ConcileClient`, no real dev server) — proving `concile.config.ts`'s newly-composed
  * `defineAuth({ email: {...} })` block (this demo now uses `consoleEmail()`; here we swap in an
  * in-memory capture provider so the test can read the code/token back out, the same substitution
  * `auth-email-e2e.test.ts` makes):
@@ -19,14 +19,14 @@
  *      deleted (the credential boundary) → A's subscription reactively flips to null.
  */
 import { describe, it, expect } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { createEmbeddedRuntime, type EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { HelipodClient, loopbackTransport, anyApi } from "@helipod/client";
-import { query } from "@helipod/executor";
-import { defineSchema } from "@helipod/values";
-import { composeComponents } from "@helipod/component";
-import { defineAuth, type EmailMessage, type EmailProvider, type MintResult } from "@helipod/auth";
-import { systemModules } from "@helipod/admin";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { createEmbeddedRuntime, type EmbeddedRuntime } from "@concile/runtime-embedded";
+import { ConcileClient, loopbackTransport, anyApi } from "@concile/client";
+import { query } from "@concile/executor";
+import { defineSchema } from "@concile/values";
+import { composeComponents } from "@concile/component";
+import { defineAuth, type EmailMessage, type EmailProvider, type MintResult } from "@concile/auth";
+import { systemModules } from "@concile/admin";
 
 // ---------------------------------------------------------------------------
 // Typed API references
@@ -103,7 +103,7 @@ describe("auth-demo — email flows (magic-link + reset), embedded-runtime idiom
   it("magic-link round trip: request → redeem → whoami.get reactively sees the new userId", async () => {
     const capture = captureProvider();
     const runtime = await makeRuntime(capture.provider);
-    const c = new HelipodClient(loopbackTransport(runtime.connect("magic-c")));
+    const c = new ConcileClient(loopbackTransport(runtime.connect("magic-c")));
 
     // Live subscription opened BEFORE sign-in — starts unauthenticated.
     const seen: Array<string | null> = [];
@@ -128,8 +128,8 @@ describe("auth-demo — email flows (magic-link + reset), embedded-runtime idiom
   it("reset revocation fans out: connection A's live whoami subscription flips to null", async () => {
     const capture = captureProvider();
     const runtime = await makeRuntime(capture.provider);
-    const a = new HelipodClient(loopbackTransport(runtime.connect("reset-a")));
-    const b = new HelipodClient(loopbackTransport(runtime.connect("reset-b")));
+    const a = new ConcileClient(loopbackTransport(runtime.connect("reset-a")));
+    const b = new ConcileClient(loopbackTransport(runtime.connect("reset-b")));
 
     const email = "reset@demo.test";
     const s = (await a.mutation(api.auth.signUp, { email, password: "hunter2!" })) as unknown as MintResult;

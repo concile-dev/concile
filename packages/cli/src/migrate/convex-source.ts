@@ -16,11 +16,11 @@ function walk(dir: string): string[] {
   return out;
 }
 
-/** Which @helipod/* package a rewritten specifier introduces (for the package.json edit). */
+/** Which @concile/* package a rewritten specifier introduces (for the package.json edit). */
 const INTRODUCED_PKG: Record<string, string> = {
-  "@helipod/values": "@helipod/values",
-  "@helipod/client/react": "@helipod/client",
-  "@helipod/client": "@helipod/client",
+  "@concile/values": "@concile/values",
+  "@concile/client/react": "@concile/client",
+  "@concile/client": "@concile/client",
 };
 
 export const convexSource: MigrationSource = {
@@ -55,7 +55,7 @@ export const convexSource: MigrationSource = {
       if (file.endsWith("crons.ts") || /\bcronJobs\s*\(/.test(src)) hasCrons = true;
     }
 
-    // package.json edit: drop convex deps, add the introduced @helipod/* packages.
+    // package.json edit: drop convex deps, add the introduced @concile/* packages.
     const pkgPath = join(projectRoot, "package.json");
     if (existsSync(pkgPath)) {
       const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -71,12 +71,12 @@ export const convexSource: MigrationSource = {
     // Scaffold a scheduler config only when crons were detected.
     if (hasCrons) {
       scaffold.push({
-        path: join(projectRoot, "helipod.config.ts"),
+        path: join(projectRoot, "concile.config.ts"),
         content:
-          `import { defineConfig } from "@helipod/component";\n` +
-          `import { defineScheduler } from "@helipod/scheduler";\n\n` +
-          `// Convex crons map to Helipod's scheduler component. Move your cron definitions into\n` +
-          `// a helipod/crons.ts using cronJobs() from "@helipod/scheduler".\n` +
+          `import { defineConfig } from "@concile/component";\n` +
+          `import { defineScheduler } from "@concile/scheduler";\n\n` +
+          `// Convex crons map to Concile's scheduler component. Move your cron definitions into\n` +
+          `// a concile/crons.ts using cronJobs() from "@concile/scheduler".\n` +
           `export default defineConfig({ components: [defineScheduler()] });\n`,
       });
     }

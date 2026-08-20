@@ -26,7 +26,7 @@ jobs:
   release:
     name: version-or-publish
     runs-on: ubuntu-latest
-    if: github.repository == 'helipod-sh/helipod'
+    if: github.repository == 'concile-dev/concile'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -64,5 +64,5 @@ jobs:
           # fallback var and uses the token ONLY to bootstrap a brand-new package
           # that has no trusted publisher yet. (NPM_CONFIG_TOKEN — the old value —
           # is not an auth var npm actually reads, so it was inert.)
-          HELIPOD_NPM_FALLBACK_TOKEN: ${{ secrets.NPM_TOKEN }}
+          CONCILE_NPM_FALLBACK_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"

@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/docstore-sqlite",
+  "name": "@concile/docstore-sqlite",
   "version": "0.1.5",
   "type": "module",
   "license": "FSL-1.1-Apache-2.0",
@@ -24,12 +24,12 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@helipod/docstore": "workspace:*",
-    "@helipod/id-codec": "workspace:*",
-    "@helipod/values": "workspace:*"
+    "@concile/docstore": "workspace:*",
+    "@concile/id-codec": "workspace:*",
+    "@concile/values": "workspace:*"
   },
   "devDependencies": {
-    "@helipod/index-key-codec": "workspace:*",
+    "@concile/index-key-codec": "workspace:*",
     "@types/node": "catalog:",
     "tsup": "catalog:",
     "typescript": "catalog:",
@@ -40,8 +40,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "packages/docstore-sqlite"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

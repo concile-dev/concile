@@ -2,12 +2,12 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { createEmbeddedRuntime, type EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { loadProject, push, type LoadedProject } from "@helipod/cli";
-import schema from "../helipod/schema";
-import * as polls from "../helipod/polls";
-import * as options from "../helipod/options";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { createEmbeddedRuntime, type EmbeddedRuntime } from "@concile/runtime-embedded";
+import { loadProject, push, type LoadedProject } from "@concile/cli";
+import schema from "../concile/schema";
+import * as polls from "../concile/polls";
+import * as options from "../concile/options";
 
 const loaded: LoadedProject = { schema, modules: { polls, options } };
 
@@ -73,9 +73,9 @@ describe("pulse — voting", () => {
 });
 
 describe("codegen — the committed _generated matches the schema", () => {
-  it("helipod/_generated is up to date (no drift)", () => {
+  it("concile/_generated is up to date (no drift)", () => {
     const { generated } = push(loaded);
-    const dir = join(dirname(fileURLToPath(import.meta.url)), "../helipod/_generated");
+    const dir = join(dirname(fileURLToPath(import.meta.url)), "../concile/_generated");
     for (const file of generated.files) {
       expect(readFileSync(join(dir, file.path), "utf8"), `${file.path} is stale — run \`bun run scripts/codegen.ts\``).toBe(
         file.content,

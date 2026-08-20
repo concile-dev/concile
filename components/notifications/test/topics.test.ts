@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { defineComponent, type ComponentDefinition } from "@helipod/component";
-import { mutation, action, type RegisteredFunction } from "@helipod/executor";
+import { defineComponent, type ComponentDefinition } from "@concile/component";
+import { mutation, action, type RegisteredFunction } from "@concile/executor";
 import { notificationsSchema } from "../src/schema";
 import { resolveNotificationsConfig } from "../src/config";
 import { makeSendModules } from "../src/modules";

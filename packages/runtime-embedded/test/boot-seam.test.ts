@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { composeComponents, defineComponent } from "@helipod/component";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { composeComponents, defineComponent } from "@concile/component";
 import { EmbeddedRuntime } from "../src/index";
-import { defineSchema, defineTable, v, type SchemaDefinition } from "@helipod/values";
-import { query } from "@helipod/executor";
+import { defineSchema, defineTable, v, type SchemaDefinition } from "@concile/values";
+import { query } from "@concile/executor";
 
 const bootc = defineComponent({
   name: "bootc",

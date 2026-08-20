@@ -10,17 +10,17 @@
  * is out of scope here and this file makes no claim about it.
  */
 import { describe, it, expect, vi } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { MonotonicTimestampOracle } from "@helipod/docstore";
-import type { DocStore } from "@helipod/docstore";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { MonotonicTimestampOracle } from "@concile/docstore";
+import type { DocStore } from "@concile/docstore";
 import {
   newDocumentId,
   encodeStorageTableId,
   internalIdToHex,
   DEFAULT_SHARD,
   type ShardId,
-} from "@helipod/id-codec";
-import { tableKeyspaceId, type KeyRange } from "@helipod/index-key-codec";
+} from "@concile/id-codec";
+import { tableKeyspaceId, type KeyRange } from "@concile/index-key-codec";
 import {
   ShardedTransactor,
   SingleWriterTransactor,

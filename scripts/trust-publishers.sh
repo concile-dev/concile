@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Bulk-configure npm trusted publishing (OIDC) for every helipod package.
+# Bulk-configure npm trusted publishing (OIDC) for every concile package.
 #
 # WHY: each package needs a "trusted publisher" on npm pointing at our release
 # workflow, so CI can publish WITHOUT a long-lived token. Doing that by hand in
@@ -28,7 +28,7 @@
 # npm's `command npm trust --help` before firing 44 real mutations.
 set -euo pipefail
 
-REPO="helipod-sh/helipod"
+REPO="concile-dev/concile"
 WORKFLOW="release.yml"   # filename under .github/workflows/, as npm expects
 APPLY=0
 [[ "${1:-}" == "--apply" ]] && APPLY=1

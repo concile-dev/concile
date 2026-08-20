@@ -39,11 +39,11 @@ export function publishablePackages() {
     if (!existsSync(pj)) continue;
     const p = JSON.parse(readFileSync(pj, "utf8"));
     if (p.private) continue;
-    if (p.name !== "helipod" && !p.name?.startsWith("@helipod/")) continue;
+    if (p.name !== "concile" && !p.name?.startsWith("@concile/")) continue;
     const deps = new Set();
     for (const k of ["dependencies", "devDependencies", "peerDependencies"]) {
       for (const d of Object.keys(p[k] ?? {})) {
-        if (d === "helipod" || d.startsWith("@helipod/")) deps.add(d);
+        if (d === "concile" || d.startsWith("@concile/")) deps.add(d);
       }
     }
     pkgs.push({ name: p.name, dir, version: p.version, deps });

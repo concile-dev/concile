@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { FsObjectStore } from "@helipod/objectstore-fs";
-import { S3ObjectStore } from "@helipod/objectstore-s3";
+import { FsObjectStore } from "@concile/objectstore-fs";
+import { S3ObjectStore } from "@concile/objectstore-s3";
 import {
   resolveObjectStore,
   parseS3ObjectStoreUrl,
@@ -28,7 +28,7 @@ describe("resolveObjectStore", () => {
     expect(r!.kind).toBe("fs");
     expect(r!.objectStore).toBeInstanceOf(FsObjectStore);
 
-    const r2 = resolveObjectStore("/var/lib/helipod/objects");
+    const r2 = resolveObjectStore("/var/lib/concile/objects");
     expect(r2!.kind).toBe("fs");
     expect(r2!.objectStore).toBeInstanceOf(FsObjectStore);
   });

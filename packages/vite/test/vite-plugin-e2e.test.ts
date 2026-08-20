@@ -3,22 +3,22 @@ import { createServer as createViteServer, type ViteDevServer } from "vite";
 import { WebSocket } from "ws";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { helipod, freePort } from "../src/index";
+import { concile, freePort } from "../src/index";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtureRoot = join(here, "fixture");
 // Spawn the built CLI directly (deterministic in-repo) rather than relying on a resolved bin.
 const cliBin = join(here, "..", "..", "cli", "dist", "bin.js");
-// Run the child through `bun`, not `process.execPath` — under `bun run --filter @helipod/vite
+// Run the child through `bun`, not `process.execPath` — under `bun run --filter @concile/vite
 // test:e2e`, vitest itself runs under plain Node (see "Tests run under Node" project convention),
-// but `helipod dev`'s codegen emits extensionless relative imports (`./_generated/server`,
+// but `concile dev`'s codegen emits extensionless relative imports (`./_generated/server`,
 // matching Convex's own convention) that only Bun's/bundler-style module resolution can follow;
 // plain Node's ESM resolver has no automatic extension search for relative specifiers and 404s.
-// Bun is this project's documented primary runtime for `helipod dev` (see CLAUDE.md), so this
+// Bun is this project's documented primary runtime for `concile dev` (see CLAUDE.md), so this
 // spawns the CLI the way a real Bun+Vite project actually would.
 const cliRunner = "bun";
 
-describe("@helipod/vite — single-origin dev (real Vite + real helipod dev)", () => {
+describe("@concile/vite — single-origin dev (real Vite + real concile dev)", () => {
   let vite: ViteDevServer | undefined;
   let vite2: ViteDevServer | undefined;
   afterAll(async () => {
@@ -37,7 +37,7 @@ describe("@helipod/vite — single-origin dev (real Vite + real helipod dev)", (
       // Explicit IPv4 host: Vite's default `localhost` binding can resolve to the IPv6 loopback
       // (`::1`) only, which would refuse the IPv4 `127.0.0.1` connections below.
       server: { port: vitePort, strictPort: true, host: "127.0.0.1" },
-      plugins: [helipod({ functionsDir: "helipod", command: `${cliRunner} ${cliBin}` })],
+      plugins: [concile({ functionsDir: "concile", command: `${cliRunner} ${cliBin}` })],
     });
     await vite.listen();
     const address = vite.httpServer!.address();
@@ -57,11 +57,11 @@ describe("@helipod/vite — single-origin dev (real Vite + real helipod dev)", (
   }, 60_000);
 
   // Regression coverage for the omitted-option default: unlike the test above (which passes
-  // `functionsDir: "helipod"` explicitly), this one leaves the option unset entirely. The
-  // fixture's functions directory is itself named "helipod" — the same name as
+  // `functionsDir: "concile"` explicitly), this one leaves the option unset entirely. The
+  // fixture's functions directory is itself named "concile" — the same name as
   // `DEFAULT_FUNCTIONS_DIR` — so the plugin can only find it and boot successfully if its
-  // `options.functionsDir ?? DEFAULT_FUNCTIONS_DIR` fallback actually resolves to "helipod" on
-  // disk. A regression to the old "convex" default (or any other value) would make `helipod dev`
+  // `options.functionsDir ?? DEFAULT_FUNCTIONS_DIR` fallback actually resolves to "concile" on
+  // disk. A regression to the old "convex" default (or any other value) would make `concile dev`
   // fail to find a functions directory and this boot would fail.
   it("boots with functionsDir omitted, resolving the DEFAULT_FUNCTIONS_DIR fallback on disk", async () => {
     const vitePort = await freePort();
@@ -69,7 +69,7 @@ describe("@helipod/vite — single-origin dev (real Vite + real helipod dev)", (
       root: fixtureRoot,
       logLevel: "warn",
       server: { port: vitePort, strictPort: true, host: "127.0.0.1" },
-      plugins: [helipod({ command: `${cliRunner} ${cliBin}` })],
+      plugins: [concile({ command: `${cliRunner} ${cliBin}` })],
     });
     await vite2.listen();
 

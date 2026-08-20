@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/test",
+  "name": "@concile/test",
   "version": "0.1.5",
   "type": "module",
   "license": "FSL-1.1-Apache-2.0",
@@ -23,18 +23,18 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@helipod/blobstore-fs": "workspace:*",
-    "@helipod/client": "workspace:*",
-    "@helipod/component": "workspace:*",
-    "@helipod/docstore": "workspace:*",
-    "@helipod/docstore-sqlite": "workspace:*",
-    "@helipod/executor": "workspace:*",
-    "@helipod/id-codec": "workspace:*",
-    "@helipod/runtime-embedded": "workspace:*",
-    "@helipod/scheduler": "workspace:*",
-    "@helipod/storage": "workspace:*",
-    "@helipod/sync": "workspace:*",
-    "@helipod/values": "workspace:*"
+    "@concile/blobstore-fs": "workspace:*",
+    "@concile/client": "workspace:*",
+    "@concile/component": "workspace:*",
+    "@concile/docstore": "workspace:*",
+    "@concile/docstore-sqlite": "workspace:*",
+    "@concile/executor": "workspace:*",
+    "@concile/id-codec": "workspace:*",
+    "@concile/runtime-embedded": "workspace:*",
+    "@concile/scheduler": "workspace:*",
+    "@concile/storage": "workspace:*",
+    "@concile/sync": "workspace:*",
+    "@concile/values": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",
@@ -47,8 +47,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "packages/test"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

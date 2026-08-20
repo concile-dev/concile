@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/notifications",
+  "name": "@concile/notifications",
   "version": "0.1.5",
   "license": "FSL-1.1-Apache-2.0",
   "type": "module",
@@ -17,14 +17,14 @@
     "test": "vitest run --testTimeout=60000 --hookTimeout=60000"
   },
   "dependencies": {
-    "@helipod/component": "workspace:*",
-    "@helipod/executor": "workspace:*",
-    "@helipod/values": "workspace:*",
+    "@concile/component": "workspace:*",
+    "@concile/executor": "workspace:*",
+    "@concile/values": "workspace:*",
     "jose": "6.2.3"
   },
   "devDependencies": {
-    "@helipod/docstore-sqlite": "workspace:*",
-    "@helipod/runtime-embedded": "workspace:*",
+    "@concile/docstore-sqlite": "workspace:*",
+    "@concile/runtime-embedded": "workspace:*",
     "@types/node": "catalog:",
     "tsup": "catalog:",
     "typescript": "catalog:",
@@ -38,8 +38,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "components/notifications"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

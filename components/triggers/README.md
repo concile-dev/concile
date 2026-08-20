@@ -1,11 +1,11 @@
-# @helipod/triggers
+# @concile/triggers
 
 React to committed data changes server-side: `defineTriggers` runs a function of yours with batches of changes whenever documents in a watched table are inserted, updated, or deleted — implemented as a durable cursor over the database's own change log, so a missed change is impossible by construction.
 
 ## Install
 
 ```sh
-bun add @helipod/triggers
+bun add @concile/triggers
 ```
 
 ## Enable
@@ -13,9 +13,9 @@ bun add @helipod/triggers
 Components are opt-in per project. Each key in `defineTriggers(opts)` is a watched table name from your `schema.ts`; its `handler` is an internal (`_`-prefixed) mutation or action path:
 
 ```ts
-// helipod.config.ts
-import { defineConfig } from "@helipod/component";
-import { defineTriggers } from "@helipod/triggers";
+// concile.config.ts
+import { defineConfig } from "@concile/component";
+import { defineTriggers } from "@concile/triggers";
 
 export default defineConfig({
   components: [
@@ -34,9 +34,9 @@ Per-trigger options: `handler` (required), `batchSize` (default 64), `fromStart`
 The handler is an ordinary internal function receiving `{ changes: LogChange[] }` — for example, a durable audit log (from `examples/chat`):
 
 ```ts
-// helipod/audit.ts
+// concile/audit.ts
 import { mutation } from "./_generated/server";
-import type { LogChange } from "@helipod/component";
+import type { LogChange } from "@concile/component";
 
 export const _onChange = mutation<{ changes: LogChange[] }, null>({
   handler: async (ctx, { changes }) => {
@@ -63,8 +63,8 @@ export const _onChange = mutation<{ changes: LogChange[] }, null>({
 - Boot-time validation: an unknown handler path, a non-internal function, or the wrong function kind fails fast at startup, not at first delivery.
 - Purely declarative — no `ctx.triggers` facade; the watched-table config above is the whole surface.
 
-Depends on `@helipod/scheduler` as a library (it reuses its backoff utilities), but does not require the scheduler component to be composed in your config.
+Depends on `@concile/scheduler` as a library (it reuses its backoff utilities), but does not require the scheduler component to be composed in your config.
 
-Part of [Helipod](https://github.com/helipod-sh/helipod) — docs at https://helipod-six.vercel.app/docs
+Part of [Concile](https://github.com/concile-dev/concile) — docs at https://concile-six.vercel.app/docs
 
 License: FSL-1.1-Apache-2.0

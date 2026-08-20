@@ -1,6 +1,6 @@
-# Helipod Individual Contributor License Agreement
+# Concile Individual Contributor License Agreement
 
-Thank you for your interest in contributing to Helipod ("the Project").
+Thank you for your interest in contributing to Concile ("the Project").
 
 By signing this Contributor License Agreement (CLA) — by commenting "I have read
 the CLA Document and I hereby sign the CLA" on your pull request — you accept

@@ -9,9 +9,9 @@
 // by default (with a `{ compensate: false }` opt-out), and fan-out steps compensate in reverse
 // `stepNumber` order regardless of forward completion order.
 import { describe, it, expect } from "vitest";
-import { mutation } from "@helipod/executor";
-import { jsonToConvex } from "@helipod/values";
-import { workflow } from "@helipod/workflow";
+import { mutation } from "@concile/executor";
+import { jsonToConvex } from "@concile/values";
+import { workflow } from "@concile/workflow";
 import { _compensate } from "../src/modules";
 import { makeRuntimeWithWorkflow, readTable } from "./helpers";
 

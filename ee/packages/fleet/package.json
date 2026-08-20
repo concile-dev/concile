@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/fleet",
+  "name": "@concile/fleet",
   "version": "0.1.5",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE",
@@ -26,21 +26,21 @@
   },
   "dependencies": {
     "pg": "^8.13.1",
-    "@helipod/errors": "workspace:*",
-    "@helipod/docstore-postgres": "workspace:*",
-    "@helipod/docstore": "workspace:*",
-    "@helipod/docstore-sqlite": "workspace:*",
-    "@helipod/runtime-embedded": "workspace:*",
-    "@helipod/index-key-codec": "workspace:*",
-    "@helipod/id-codec": "workspace:*",
-    "@helipod/values": "workspace:*"
+    "@concile/errors": "workspace:*",
+    "@concile/docstore-postgres": "workspace:*",
+    "@concile/docstore": "workspace:*",
+    "@concile/docstore-sqlite": "workspace:*",
+    "@concile/runtime-embedded": "workspace:*",
+    "@concile/index-key-codec": "workspace:*",
+    "@concile/id-codec": "workspace:*",
+    "@concile/values": "workspace:*"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.2.17",
-    "@helipod/executor": "workspace:*",
-    "@helipod/test": "workspace:*",
-    "@helipod/scheduler": "workspace:*",
-    "@helipod/transactor": "workspace:*",
+    "@concile/executor": "workspace:*",
+    "@concile/test": "workspace:*",
+    "@concile/scheduler": "workspace:*",
+    "@concile/transactor": "workspace:*",
     "@types/pg": "^8.11.10",
     "@types/node": "catalog:",
     "@types/ws": "^8.5.13",
@@ -54,7 +54,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "ee/packages/fleet"
   }
 }

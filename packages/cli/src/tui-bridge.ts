@@ -1,9 +1,9 @@
 /**
  * Host-side bridge for the interactive terminal dashboard. This module is only
  * ever loaded via dynamic `import()` from `devCommand` (Bun + TTY, opt-out with
- * `--no-ui` / `HELIPOD_TUI=0`), and it in turn dynamic-imports `@helipod/tui` —
- * so `@helipod/cli` keeps zero static dependency on the TUI stack, mirroring the
- * `@helipod/fleet` seam. Every failure surfaces as a throw the caller treats as
+ * `--no-ui` / `CONCILE_TUI=0`), and it in turn dynamic-imports `@concile/tui` —
+ * so `@concile/cli` keeps zero static dependency on the TUI stack, mirroring the
+ * `@concile/fleet` seam. Every failure surfaces as a throw the caller treats as
  * "no TUI — stay on plain styled output".
  */
 import { spawn } from "node:child_process";
@@ -19,7 +19,7 @@ export interface AttachOptions {
   adminKeyPreview: string;
   functionsDir: string;
   storage: string;
-  /** helipod's own version — never the host app's `npm_package_version`. */
+  /** concile's own version — never the host app's `npm_package_version`. */
   version: string;
   counts: () => { functions: number; tables: number; components: number };
   /** The live admin API — the same surface the web dashboard consumes. */
@@ -37,10 +37,10 @@ export interface AttachOptions {
 }
 
 export async function attachTui(opts: AttachOptions): Promise<(e: AnyTuiEvent) => void> {
-  // The specifier is computed so bundlers (helipod build's static-import entrypoint)
-  // don't force @helipod/tui into every compiled binary.
-  const specifier = "@helipod/tui";
-  const tui = (await import(specifier)) as typeof import("@helipod/tui");
+  // The specifier is computed so bundlers (concile build's static-import entrypoint)
+  // don't force @concile/tui into every compiled binary.
+  const specifier = "@concile/tui";
+  const tui = (await import(specifier)) as typeof import("@concile/tui");
 
   const listeners = new Set<(e: AnyTuiEvent) => void>();
   const openUrl = (url: string) => {

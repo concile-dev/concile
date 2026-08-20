@@ -5,11 +5,11 @@
  * rides `executor.run` → `OplogDelta.origin` → the fan-out payload → the drain → `notifyWrites`.
  */
 import { describe, it, expect } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { encodeStorageIndexId } from "@helipod/id-codec";
-import { SimpleIndexCatalog, query, mutation, type RegisteredFunction } from "@helipod/executor";
-import type { IndexSpec } from "@helipod/query-engine";
-import type { ServerMessage } from "@helipod/sync";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { encodeStorageIndexId } from "@concile/id-codec";
+import { SimpleIndexCatalog, query, mutation, type RegisteredFunction } from "@concile/executor";
+import type { IndexSpec } from "@concile/query-engine";
+import type { ServerMessage } from "@concile/sync";
 import { createEmbeddedRuntime } from "../src/index";
 
 const MESSAGES = 10001;

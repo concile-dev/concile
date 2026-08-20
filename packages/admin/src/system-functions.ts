@@ -1,5 +1,5 @@
-import { mutation, type RegisteredFunction } from "@helipod/executor";
-import { DocumentNotFoundError } from "@helipod/errors";
+import { mutation, type RegisteredFunction } from "@concile/executor";
+import { DocumentNotFoundError } from "@concile/errors";
 
 /** Built-in privileged mutations the admin API invokes by id. Registered under `_system:*`. */
 export function systemModules(): Record<string, RegisteredFunction> {

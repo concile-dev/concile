@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/dashboard",
+  "name": "@concile/dashboard",
   "version": "0.1.5",
   "type": "module",
   "exports": {
@@ -43,8 +43,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "apps/dashboard"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

@@ -1,13 +1,13 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * Thrown when `ObjectStoreDocStore`'s manifest CAS loses the race — this writer's cached etag no
  * longer matches the shard's `s{shard}/manifest` object, meaning some other committer's write
  * already advanced it. The manifest CAS IS the fence for this substrate (design record §4/§7):
- * unlike `@helipod/fleet`'s Postgres-epoch fence (`FencedError` on a zero-row epoch-predicated
+ * unlike `@concile/fleet`'s Postgres-epoch fence (`FencedError` on a zero-row epoch-predicated
  * UPDATE, see `ee/packages/fleet/src/fenced-error.ts`), here the fence is the object store's own
  * conditional-write primitive (`CasConflict` on `casPut`) rather than a database row.
  *
- * This package deliberately does NOT import `@helipod/fleet`'s `FencedError` — the object-storage
+ * This package deliberately does NOT import `@concile/fleet`'s `FencedError` — the object-storage
  * substrate is an ALTERNATIVE single-shard store to fleet's Postgres store, not a consumer of it, and
  * the whole-arc plan keeps this package leaf-dependency-free of `ee/packages/fleet`. A later
  * multi-shard/failover slice over this substrate is expected to unify the two error types (or at

@@ -1,4 +1,4 @@
-import { mutation, query, commitThenThrow, type MutationCtx, type QueryCtx, type RegisteredFunction } from "@helipod/executor";
+import { mutation, query, commitThenThrow, type MutationCtx, type QueryCtx, type RegisteredFunction } from "@concile/executor";
 import type { AuthConfig } from "../config";
 import { sha256base64url } from "../crypto";
 import { generateTotpSecret, verifyTotp, buildOtpauthUri } from "./totp";

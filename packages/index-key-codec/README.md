@@ -1,6 +1,6 @@
-# @helipod/index-key-codec
+# @concile/index-key-codec
 
-Order-preserving index key encoding for range scans over Helipod documents.
+Order-preserving index key encoding for range scans over Concile documents.
 
 This package encodes tuples of indexable values into byte strings whose lexicographic
 order matches the logical sort order of the values, which is what lets any storage
@@ -14,9 +14,9 @@ Every other engine package imports these types from here rather than redeclaring
 them, keeping the read side, write side, and sync tier in exact agreement about key
 order.
 
-> This is an internal package of the Helipod engine. Most applications should install
-> [`helipod`](https://www.npmjs.com/package/helipod) instead.
+> This is an internal package of the Concile engine. Most applications should install
+> [`concile`](https://www.npmjs.com/package/concile) instead.
 
-Part of [Helipod](https://github.com/helipod-sh/helipod) — docs at https://helipod-six.vercel.app/docs
+Part of [Concile](https://github.com/concile-dev/concile) — docs at https://concile-six.vercel.app/docs
 
 License: FSL-1.1-Apache-2.0

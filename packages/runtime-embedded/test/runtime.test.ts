@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { encodeStorageIndexId, encodeStorageTableId } from "@helipod/id-codec";
-import { SimpleIndexCatalog, query, mutation, type RegisteredFunction } from "@helipod/executor";
-import type { IndexSpec } from "@helipod/query-engine";
-import { createClientState, applyServerMessage, type SyncClientState } from "@helipod/sync";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { encodeStorageIndexId, encodeStorageTableId } from "@concile/id-codec";
+import { SimpleIndexCatalog, query, mutation, type RegisteredFunction } from "@concile/executor";
+import type { IndexSpec } from "@concile/query-engine";
+import { createClientState, applyServerMessage, type SyncClientState } from "@concile/sync";
 import { createEmbeddedRuntime, InMemoryWriteFanoutAdapter } from "../src/index";
 
 const MESSAGES = 10001;
@@ -31,7 +31,7 @@ async function makeRuntime(fanoutAdapter?: InMemoryWriteFanoutAdapter) {
   return createEmbeddedRuntime({ store, catalog, modules, fanoutAdapter });
 }
 
-function client(conn: { onMessage(l: (m: import("@helipod/sync").ServerMessage) => void): () => void }): SyncClientState {
+function client(conn: { onMessage(l: (m: import("@concile/sync").ServerMessage) => void): () => void }): SyncClientState {
   const state = createClientState();
   conn.onMessage((m) => applyServerMessage(state, m));
   return state;

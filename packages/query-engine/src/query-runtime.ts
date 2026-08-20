@@ -15,9 +15,9 @@ import {
   serializeKeyRange,
   type KeyRange,
   type SerializedKeyRange,
-} from "@helipod/index-key-codec";
-import { encodeStorageTableId } from "@helipod/id-codec";
-import type { DocStore, DocumentValue, IndexOverlayEntry } from "@helipod/docstore";
+} from "@concile/index-key-codec";
+import { encodeStorageTableId } from "@concile/id-codec";
+import type { DocStore, DocumentValue, IndexOverlayEntry } from "@concile/docstore";
 import { buildIndexInterval, type IndexInterval, type RangeExpression, type ScanOrder } from "./plan";
 import { evaluateFilter, type FilterExpr } from "./filter";
 import type { IndexSpec } from "./index-manager";

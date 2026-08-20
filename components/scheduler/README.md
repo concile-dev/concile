@@ -1,28 +1,28 @@
-# @helipod/scheduler
+# @concile/scheduler
 
-Durable scheduled functions for helipod: run a mutation or action later, at an exact time, or on a recurring cron cadence — stored as rows in your database, dispatched by a background driver that survives restarts.
+Durable scheduled functions for concile: run a mutation or action later, at an exact time, or on a recurring cron cadence — stored as rows in your database, dispatched by a background driver that survives restarts.
 
 ## Install
 
 ```sh
-bun add @helipod/scheduler
+bun add @concile/scheduler
 ```
 
 ## Enable
 
-Components are opt-in per project. Compose the scheduler in `helipod.config.ts`:
+Components are opt-in per project. Compose the scheduler in `concile.config.ts`:
 
 ```ts
-// helipod.config.ts
-import { defineConfig } from "@helipod/component";
-import { defineScheduler } from "@helipod/scheduler";
+// concile.config.ts
+import { defineConfig } from "@concile/component";
+import { defineScheduler } from "@concile/scheduler";
 
 export default defineConfig({
   components: [defineScheduler()],
 });
 ```
 
-To add recurring jobs, declare them with `cronJobs()` (typically in `helipod/crons.ts`) and pass the registry via `defineScheduler({ crons })`:
+To add recurring jobs, declare them with `cronJobs()` (typically in `concile/crons.ts`) and pass the registry via `defineScheduler({ crons })`:
 
 ```ts
 const crons = cronJobs();
@@ -55,8 +55,8 @@ export const notifyLater = mutation({
 - A reactive driver: dispatch wakes on every commit plus a wall-clock timer armed to the earliest pending job. No polling loops, no lost work across restarts.
 - Jobs are ordinary rows (`scheduler/jobs`, `scheduler/crons`) — browsable in the dashboard like any other table.
 
-No dependencies on other components; it is the base layer `@helipod/workflow`, `@helipod/triggers`, and `@helipod/notifications` build on.
+No dependencies on other components; it is the base layer `@concile/workflow`, `@concile/triggers`, and `@concile/notifications` build on.
 
-Part of [Helipod](https://github.com/helipod-sh/helipod) — docs at https://helipod-six.vercel.app/docs
+Part of [Concile](https://github.com/concile-dev/concile) — docs at https://concile-six.vercel.app/docs
 
 License: FSL-1.1-Apache-2.0

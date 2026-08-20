@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { generateInternalId } from "@helipod/id-codec";
-import type { DocumentLogEntry, IndexWrite } from "@helipod/docstore";
-import { MemoryObjectStore } from "@helipod/objectstore/test-support/memory-objectstore";
+import { generateInternalId } from "@concile/id-codec";
+import type { DocumentLogEntry, IndexWrite } from "@concile/docstore";
+import { MemoryObjectStore } from "@concile/objectstore/test-support/memory-objectstore";
 import { decodeSnapshot, encodeSnapshot, readSnapshot, snapshotKey, writeSnapshot, type SnapshotPayload } from "../src/snapshot";
 
 function docId(tableNumber: number) {

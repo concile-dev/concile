@@ -1,6 +1,6 @@
 /**
- * The contract between a helipod host process (`helipod dev` today; the standalone
- * `helipod dashboard` command in a later phase) and the terminal dashboard.
+ * The contract between a concile host process (`concile dev` today; the standalone
+ * `concile dashboard` command in a later phase) and the terminal dashboard.
  *
  * The TUI never reaches into engine internals: the host hands it a snapshot plus an
  * event stream, exactly the way the web dashboard consumes the admin surface. Events
@@ -59,7 +59,7 @@ export interface TuiLogEntry {
   error?: string;
 }
 
-/** Optional data surface — present when the host has an admin API (i.e. `helipod dev`). */
+/** Optional data surface — present when the host has an admin API (i.e. `concile dev`). */
 export interface TuiData {
   listTables: () => Promise<TuiTable[]>;
   getTableData: (

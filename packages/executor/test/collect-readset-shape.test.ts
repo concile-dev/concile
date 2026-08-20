@@ -5,7 +5,7 @@
  * `index:<...>` range only, or that index range PLUS a per-row `table:<...>` primary point for
  * each fetched document?
  *
- * OBSERVED (from a real run — `bun run --filter @helipod/executor test collect-readset-shape` —
+ * OBSERVED (from a real run — `bun run --filter @concile/executor test collect-readset-shape` —
  * see the `console.log`s below for the raw JSON): a single-index `collect()`, filtered or
  * unfiltered, records EXACTLY ONE `index:<tableNumber>:<indexName>` range and NOTHING ELSE. No
  * per-row `table:<...>` primary-key points are recorded. Note the keyspace is keyed by the
@@ -29,11 +29,11 @@
  * non-overlay `collect()`. There is no companion primary-key point read to also account for.
  */
 import { describe, it, expect } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { MonotonicTimestampOracle } from "@helipod/docstore";
-import { SingleWriterTransactor } from "@helipod/transactor";
-import { QueryRuntime, type IndexSpec } from "@helipod/query-engine";
-import { encodeStorageIndexId } from "@helipod/id-codec";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { MonotonicTimestampOracle } from "@concile/docstore";
+import { SingleWriterTransactor } from "@concile/transactor";
+import { QueryRuntime, type IndexSpec } from "@concile/query-engine";
+import { encodeStorageIndexId } from "@concile/id-codec";
 import { InlineUdfExecutor, SimpleIndexCatalog, mutation, query } from "../src/index";
 
 const ITEMS = 9001;

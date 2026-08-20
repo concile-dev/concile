@@ -5,7 +5,7 @@ Guidance for AI coding agents and new contributors working in this repository.
 
 ## What this is
 
-**helipod** — an open-source, self-hostable Backend-as-a-Service. You write
+**concile** — an open-source, self-hostable Backend-as-a-Service. You write
 TypeScript query/mutation functions; they run server-side, transactionally, and
 **reactively**: when underlying data changes, subscribed clients are pushed fresh
 results over a WebSocket. The pillars: great TypeScript DX, easy self-hosting
@@ -14,9 +14,9 @@ results over a WebSocket. The pillars: great TypeScript DX, easy self-hosting
 The engine is real and proven end-to-end: MVCC document store (SQLite, Postgres,
 Cloudflare D1/DO adapters) · single-writer OCC transactor · reactive sync tier ·
 actions and `httpAction` HTTP routes · file storage (FS/S3 backends) · components
-(`@helipod/auth`, `scheduler`, `workflow` with saga compensation, `triggers`,
+(`@concile/auth`, `scheduler`, `workflow` with saga compensation, `triggers`,
 `notifications`, `authz`) · optimistic updates and a durable offline outbox in the
-client · dashboard · `helipod dev`/`serve`/`deploy`/`build` CLI · multi-node
+client · dashboard · `concile dev`/`serve`/`deploy`/`build` CLI · multi-node
 fleet and object-storage substrate under `ee/`.
 
 ## Commands
@@ -28,13 +28,13 @@ bun run typecheck         # tsc across the workspace
 bun run test              # FAST lane: parallel unit/integration suite
 bun run test:e2e          # SERIAL lane: heavy real-process E2Es (~5 min)
 bun run test:all          # CI: fast lane, then serial lane
-bun run --filter <pkg> test   # one package (e.g. --filter @helipod/auth)
+bun run --filter <pkg> test   # one package (e.g. --filter @concile/auth)
 
 # end-user CLI (what the DX is judged on):
-helipod dev               # local: watch functions, serve sync + dashboard
-helipod serve             # production: admin key required, no codegen at boot
-helipod build             # compile an app into a single self-contained binary
-docker compose up         # self-host: generic image + bind-mounted helipod/
+concile dev               # local: watch functions, serve sync + dashboard
+concile serve             # production: admin key required, no codegen at boot
+concile build             # compile an app into a single self-contained binary
+docker compose up         # self-host: generic image + bind-mounted concile/
 ```
 
 ## The one concept to get right: reactivity
@@ -63,11 +63,11 @@ Before designing engine changes, read the architecture docs at
   - `sync` — WebSocket subscriptions, invalidation, reconnect resume
   - `client` — framework-agnostic SDK: `useQuery`/`useMutation`, optimistic
     updates, durable offline outbox
-  - `cli` — `helipod` command; also hosts the cross-package E2E tests
+  - `cli` — `concile` command; also hosts the cross-package E2E tests
   - `codegen` — generated typed `api`/`Doc`/`Id`; the typed DX is load-bearing
   - `storage`, `blobstore-*` — file storage seam and backends
 - `components/` — opt-in server components (auth, scheduler, workflow, triggers,
-  notifications, authz), composed per project via `helipod.config.ts`
+  notifications, authz), composed per project via `concile.config.ts`
 - `apps/dashboard` — live data browser, logs, function runner
 - `examples/` — runnable apps (`chat`, `auth-demo`, `offline-demo`,
   `optimistic-demo`) that double as integration references
@@ -85,8 +85,8 @@ Before designing engine changes, read the architecture docs at
   supported**. Engine logic stays runtime-neutral behind seams.
 - **Deployment baseline is Docker self-host**; single-node self-host and data
   portability are free forever. Paid features live only under `ee/`.
-- **Functions directory is `helipod/`** by default (`--dir` flag >
-  `functionsDir` in `helipod.config.ts` > default). `helipod migrate` converts
+- **Functions directory is `concile/`** by default (`--dir` flag >
+  `functionsDir` in `concile.config.ts` > default). `concile migrate` converts
   apps from other BaaS platforms; nothing is adopted silently.
 
 ## How changes ship — non-negotiable workflow
@@ -135,12 +135,12 @@ yet. It's handled by two things — see `docs/dev/publishing.md` for the full fl
   After editing a dependency, rebuild it (`bun run build`) or the change is
   invisible to dependents' tests.
 - **Prove features through the shipped entrypoint.** A cross-package feature
-  needs an E2E through the real `helipod dev`/`serve` server (see
+  needs an E2E through the real `concile dev`/`serve` server (see
   `packages/cli/test/*-e2e.test.ts`), not only unit tests.
 - **Spec before code for substantial slices.** Design docs live with the
   contributing docs; get the design agreed before implementing.
 - **DX is the product.** Error messages, type-inference quality, and
-  `helipod dev` startup speed are features, not polish. Weigh every change
+  `concile dev` startup speed are features, not polish. Weigh every change
   against them.
 - **Two documentation audiences, kept separate.** `website/content/docs/` is
   end-user product documentation; engineering/contributor material lives under

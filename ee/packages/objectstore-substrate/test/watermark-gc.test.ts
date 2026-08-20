@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * Task 5.2 — watermark-aware GC (design record §6c, Tier 3 Slice 5): `gc()` floors deletion at the
  * slowest published `consumers/{id}` watermark, never stranding a lagging replica, and degrades
@@ -8,10 +8,10 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { newDocumentId, encodeStorageTableId, type InternalDocumentId } from "@helipod/id-codec";
-import type { DocumentLogEntry } from "@helipod/docstore";
-import { BunSqliteAdapter, NodeSqliteAdapter, SqliteDocStore } from "@helipod/docstore-sqlite";
-import { FsObjectStore } from "@helipod/objectstore-fs";
+import { newDocumentId, encodeStorageTableId, type InternalDocumentId } from "@concile/id-codec";
+import type { DocumentLogEntry } from "@concile/docstore";
+import { BunSqliteAdapter, NodeSqliteAdapter, SqliteDocStore } from "@concile/docstore-sqlite";
+import { FsObjectStore } from "@concile/objectstore-fs";
 import { ObjectStoreDocStore } from "../src/object-doc-store";
 import { publishConsumerWatermark, readConsumerWatermarks, removeConsumer } from "../src/consumers";
 

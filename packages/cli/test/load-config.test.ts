@@ -14,8 +14,8 @@ function makeTmpDir(): string {
   const dir = mkdtempSync(join(tmpdir(), "sbcfg-"));
   const nm = join(dir, "node_modules");
   mkdirSync(nm);
-  // Symlink each required @helipod scoped dir entry from cli's local node_modules
-  symlinkSync(join(cliNodeModules(), "@helipod"), join(nm, "@helipod"));
+  // Symlink each required @concile scoped dir entry from cli's local node_modules
+  symlinkSync(join(cliNodeModules(), "@concile"), join(nm, "@concile"));
   return dir;
 }
 
@@ -24,12 +24,12 @@ describe("loadConfig", () => {
     const dir = mkdtempSync(join(tmpdir(), "sbcfg-"));
     expect((await loadConfig(dir)).components).toEqual([]);
   });
-  it("loads components from helipod.config.ts", async () => {
+  it("loads components from concile.config.ts", async () => {
     const dir = makeTmpDir();
     // a self-contained config that defines an inline component (avoids needing a built dep)
-    writeFileSync(join(dir, "helipod.config.ts"), `
-      import { defineConfig, defineComponent } from "@helipod/component";
-      import { defineSchema } from "@helipod/values";
+    writeFileSync(join(dir, "concile.config.ts"), `
+      import { defineConfig, defineComponent } from "@concile/component";
+      import { defineSchema } from "@concile/values";
       export default defineConfig({ components: [defineComponent({ name: "demo", schema: defineSchema({}), modules: {} })] });
     `);
     const cfg = await loadConfig(dir);

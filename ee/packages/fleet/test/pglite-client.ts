@@ -1,7 +1,7 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 import { PGlite } from "@electric-sql/pglite";
-import type { PgClient, PgQuerier, PgRow, PgValue } from "@helipod/docstore-postgres";
-import { ADVISORY_LOCK_KEY } from "@helipod/docstore-postgres";
+import type { PgClient, PgQuerier, PgRow, PgValue } from "@concile/docstore-postgres";
+import { ADVISORY_LOCK_KEY } from "@concile/docstore-postgres";
 
 /**
  * Test-only `PgClient` over PGlite (real Postgres in WASM, in-process, single connection) —

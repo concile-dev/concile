@@ -2,18 +2,18 @@
  * Multi-shard replica boot (multi-shard-replicas Task 1): a `--shards 3` writer over a channelId-
  * sharded fixture; a replica derives 3 lanes from the bucket's globals, materializes + reads every
  * lane through the composite, publishes a per-lane consumer watermark, and rejects writes. The full
- * E2E through two real `helipod serve` processes (fs + MinIO, cross-node reactive fan-out over a
+ * E2E through two real `concile serve` processes (fs + MinIO, cross-node reactive fan-out over a
  * non-default lane) is Task 2's job — deliberately not duplicated here.
  */
 import { describe, it, expect, afterEach } from "vitest";
 import { rmSync } from "node:fs";
-import { FsObjectStore } from "@helipod/objectstore-fs";
-import { shardIdForKeyValue } from "@helipod/id-codec";
+import { FsObjectStore } from "@concile/objectstore-fs";
+import { shardIdForKeyValue } from "@concile/id-codec";
 import { loadFunctionsDir } from "../src/load-modules";
 import { bootLoaded } from "../src/boot";
 
 const ROOT = "./.tmp-objectstore-replica-ms-boot";
-const FIXTURE = "test/fixtures/shard-dev/helipod";
+const FIXTURE = "test/fixtures/shard-dev/concile";
 afterEach(() => rmSync(ROOT, { recursive: true, force: true }));
 
 describe("bootLoaded — multi-shard object-store replica", () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { defineSchema, defineTable, v } from "@helipod/values";
-import { defineComponent } from "@helipod/component";
+import { defineSchema, defineTable, v } from "@concile/values";
+import { defineComponent } from "@concile/component";
 import { loadProject } from "../src/project";
 
 describe("loadProject with components", () => {

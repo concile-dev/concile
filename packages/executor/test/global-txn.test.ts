@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 import Database from "better-sqlite3";
-import { defineSchema, defineTable, v } from "@helipod/values";
-import { D1DocStore } from "@helipod/docstore-d1";
-import type { D1Client, D1PreparedStatement, D1Session } from "@helipod/docstore-d1";
+import { defineSchema, defineTable, v } from "@concile/values";
+import { D1DocStore } from "@concile/docstore-d1";
+import type { D1Client, D1PreparedStatement, D1Session } from "@concile/docstore-d1";
 import { GlobalTxn } from "../src/global-txn";
 
-// `@helipod/docstore-d1` only exports its package root (no `test/support/...` subpath across
+// `@concile/docstore-d1` only exports its package root (no `test/support/...` subpath across
 // package boundaries), so this is an inlined copy of that package's own better-sqlite3-backed
 // D1Client test substrate — test-only, kept behaviorally identical to the original.
 function sqliteD1Client(): D1Client {

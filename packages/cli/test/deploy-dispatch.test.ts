@@ -3,16 +3,16 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { deployCommand } from "../src/deploy";
-import type { Spawner } from "@helipod/deploy";
+import type { Spawner } from "@concile/deploy";
 
-/** A project dir with a minimal helipod/ and a helipod.config.js selecting the cloudflare target. */
+/** A project dir with a minimal concile/ and a concile.config.js selecting the cloudflare target. */
 function makeProject(): string {
   const dir = mkdtempSync(join(tmpdir(), "sb-dispatch-"));
-  mkdirSync(join(dir, "helipod"), { recursive: true });
-  writeFileSync(join(dir, "helipod", "schema.ts"), `import { defineSchema } from "@helipod/values";\nexport default defineSchema({});\n`);
+  mkdirSync(join(dir, "concile"), { recursive: true });
+  writeFileSync(join(dir, "concile", "schema.ts"), `import { defineSchema } from "@concile/values";\nexport default defineSchema({});\n`);
   writeFileSync(join(dir, "wrangler.jsonc"), `{ "name": "app", "main": "w.ts" }`);
   writeFileSync(
-    join(dir, "helipod.config.js"),
+    join(dir, "concile.config.js"),
     `export default { components: [], deploy: { defaultTarget: "cloudflare", targets: { cloudflare: { provider: "cloudflare" } } } };`,
   );
   return dir;
@@ -65,7 +65,7 @@ describe("deployCommand dispatch", () => {
 
   it("--check on a project with up-to-date _generated exits 0 and never deploys (the footgun test)", async () => {
     const dir = makeProject(); cleanup.push(dir);
-    // Prime helipod/_generated so there is no drift: a --dry-run runs the target's package() step,
+    // Prime concile/_generated so there is no drift: a --dry-run runs the target's package() step,
     // whose ctx.codegen() writes _generated as a side effect (and --dry-run never pushes).
     await deployCommand(["--dry-run"], { spawn: new RecordingSpawner(), cwd: dir, interactive: true });
     // Now --check finds no drift. It MUST return 0 WITHOUT proceeding to a real wrangler deploy.

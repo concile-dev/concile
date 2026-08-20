@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { PostgresDocStore } from "../src/postgres-docstore";
 import { ReadOnlyStoreError } from "../src/index";
 import { PgliteClient } from "./pglite-client";
-import { newDocumentId } from "@helipod/id-codec";
-import type { DocumentLogEntry, InternalDocumentId } from "@helipod/docstore";
+import { newDocumentId } from "@concile/id-codec";
+import type { DocumentLogEntry, InternalDocumentId } from "@concile/docstore";
 
 const TABLE = 10001;
 function rev(id: InternalDocumentId, ts: bigint, prevTs: bigint | null, body: string | null): DocumentLogEntry {

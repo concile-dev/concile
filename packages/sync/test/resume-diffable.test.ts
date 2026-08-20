@@ -17,8 +17,8 @@ import {
   indexKeyRangeStart,
   indexKeyRangeEnd,
   type SerializedKeyRange,
-} from "@helipod/index-key-codec";
-import type { Value } from "@helipod/values";
+} from "@concile/index-key-codec";
+import type { Value } from "@concile/values";
 import type { RangeRead } from "../src/classify";
 import { orderKeyFor } from "../src/commit-differ";
 import {

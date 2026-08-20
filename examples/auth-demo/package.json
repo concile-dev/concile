@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/example-auth-demo",
+  "name": "@concile/example-auth-demo",
   "version": "0.0.3",
   "private": true,
   "type": "module",
@@ -11,20 +11,20 @@
     "dev": "bun ../../packages/cli/dist/bin.js dev --web web --port 3211"
   },
   "dependencies": {
-    "@helipod/auth": "workspace:*",
-    "@helipod/component": "workspace:*",
-    "@helipod/executor": "workspace:*",
-    "@helipod/scheduler": "workspace:*",
-    "@helipod/values": "workspace:*",
-    "@helipod/workflow": "workspace:*"
+    "@concile/auth": "workspace:*",
+    "@concile/component": "workspace:*",
+    "@concile/executor": "workspace:*",
+    "@concile/scheduler": "workspace:*",
+    "@concile/values": "workspace:*",
+    "@concile/workflow": "workspace:*"
   },
   "devDependencies": {
-    "@helipod/admin": "workspace:*",
-    "@helipod/cli": "workspace:*",
-    "@helipod/client": "workspace:*",
-    "@helipod/docstore-sqlite": "workspace:*",
-    "@helipod/id-codec": "workspace:*",
-    "@helipod/runtime-embedded": "workspace:*",
+    "@concile/admin": "workspace:*",
+    "@concile/cli": "workspace:*",
+    "@concile/client": "workspace:*",
+    "@concile/docstore-sqlite": "workspace:*",
+    "@concile/id-codec": "workspace:*",
+    "@concile/runtime-embedded": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",

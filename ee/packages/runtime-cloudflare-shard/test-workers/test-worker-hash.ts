@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 
 /**
  * The mode-"hash" fixture Worker (M2d) — a SIBLING of `test-worker.ts` (mode "key"), run through its
@@ -21,10 +21,10 @@
  *     others still succeed, exercising `worker.ts`'s failures-as-data `partial.failedShards` path
  *     end-to-end rather than only via the Node-level scripted-namespace unit test.
  */
-import { query, mutation } from "@helipod/executor";
-import { v, defineSchema, defineTable } from "@helipod/values";
-import type { LoadedProject } from "@helipod/cli/project";
-import { HelipodDurableObject, createShardWorkerHandler, type DurableObjectAppConfig } from "@helipod/runtime-cloudflare-shard";
+import { query, mutation } from "@concile/executor";
+import { v, defineSchema, defineTable } from "@concile/values";
+import type { LoadedProject } from "@concile/cli/project";
+import { ConcileDurableObject, createShardWorkerHandler, type DurableObjectAppConfig } from "@concile/runtime-cloudflare-shard";
 
 const schema = defineSchema({
   messages: defineTable({ roomId: v.string(), body: v.string() })
@@ -58,7 +58,7 @@ const messages = {
 
 const loaded: LoadedProject = { schema, modules: { messages } };
 
-export class FixtureHelipodDOHash extends HelipodDurableObject {
+export class FixtureConcileDOHash extends ConcileDurableObject {
   protected appConfig(): DurableObjectAppConfig {
     return { loaded, adminKey: "workerd-test-admin-key-hash" };
   }
@@ -67,4 +67,4 @@ export class FixtureHelipodDOHash extends HelipodDurableObject {
 // The Worker's default export is the multi-shard router, fixed at numShards: 4 (mode "hash") — the
 // enumerable shard set fanOut requires. `SELF.fetch(...)` in fanout.worker.test.ts drives this real
 // routing, exactly as multishard.worker.test.ts drives the mode-"key" router in its own project.
-export default createShardWorkerHandler("HELIPOD_DO", { mode: "hash", numShards: 4, loaded });
+export default createShardWorkerHandler("CONCILE_DO", { mode: "hash", numShards: 4, loaded });

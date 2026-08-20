@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * Shards B2b, Task 2: `WriteForwarder`'s per-shard forwarding + the single-hop guard.
  *
@@ -14,8 +14,8 @@
  * RYOW wait itself and stays untouched.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import type { PgClient, PgQuerier, PgRow, PgValue } from "@helipod/docstore-postgres";
-import { NOT_SHARD_OWNER_CODE } from "@helipod/errors";
+import type { PgClient, PgQuerier, PgRow, PgValue } from "@concile/docstore-postgres";
+import { NOT_SHARD_OWNER_CODE } from "@concile/errors";
 import { LeaseManager } from "../src/lease";
 import { WriteForwarder } from "../src/forwarder";
 

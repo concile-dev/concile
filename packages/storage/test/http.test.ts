@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { createHash } from "node:crypto";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { composeComponents } from "@helipod/component";
-import { EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { defineSchema } from "@helipod/values";
-import { mutation, type RegisteredFunction } from "@helipod/executor";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { composeComponents } from "@concile/component";
+import { EmbeddedRuntime } from "@concile/runtime-embedded";
+import { defineSchema } from "@concile/values";
+import { mutation, type RegisteredFunction } from "@concile/executor";
 import type {
   BlobStore,
   UploadTarget,
@@ -12,7 +12,7 @@ import type {
   ByteRange,
   CreateUploadTargetOpts,
   SignUrlOpts,
-} from "@helipod/blobstore";
+} from "@concile/blobstore";
 import { STORAGE_TABLE, STORAGE_TABLE_NUMBER, storageTableDefinition } from "../src/system-table";
 import { storageModules } from "../src/modules";
 import { storageContextProvider } from "../src/context";
@@ -23,7 +23,7 @@ const SIGNING_KEY = "test-signing-key";
 
 /**
  * A minimal in-file `BlobStore` fake, mirroring `test/context.test.ts`'s `FakeBlobStore` (the real
- * `MemoryBlobStore` in `@helipod/blobstore`'s test-support isn't a published export). `blobs` is
+ * `MemoryBlobStore` in `@concile/blobstore`'s test-support isn't a published export). `blobs` is
  * exposed directly so tests can assert on stored bytes / simulate a "direct" upload landing
  * out-of-band (the confirm-endpoint scenario).
  */

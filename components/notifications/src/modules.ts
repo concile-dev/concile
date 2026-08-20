@@ -1,5 +1,5 @@
-import { mutation, query, type MutationCtx, type QueryCtx, type RegisteredFunction, type GuestDatabaseWriter } from "@helipod/executor";
-import type { Value } from "@helipod/values";
+import { mutation, query, type MutationCtx, type QueryCtx, type RegisteredFunction, type GuestDatabaseWriter } from "@concile/executor";
+import type { Value } from "@concile/values";
 import type { NotificationsConfig, SendArgs, Channel, PushProviderKind } from "./config";
 import { digestWindowMs } from "./config";
 import type { EmailContent, SmsPayload, SendResult, PushContent } from "./provider";

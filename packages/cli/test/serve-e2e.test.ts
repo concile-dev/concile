@@ -1,5 +1,5 @@
 /**
- * End-to-end test: `helipod serve` (the production server) through the REAL `startServe` entry
+ * End-to-end test: `concile serve` (the production server) through the REAL `startServe` entry
  * point — mirrors `http-action-e2e.test.ts`'s "test through the shipped entrypoint" pattern, but
  * loads a real on-disk `convex/` dir (via `bootProject` -> `loadFunctionsDir`, the same path
  * `serveCommand` uses) instead of an in-memory `loadProject` call, and adds the load-bearing
@@ -40,12 +40,12 @@ function makeFixtureFunctionsDir(): string {
   const dir = mkdtempSync(join(tmpdir(), "sbserve-e2e-"));
   const nm = join(dir, "node_modules");
   mkdirSync(nm);
-  symlinkSync(join(cliNodeModules(), "@helipod"), join(nm, "@helipod"));
+  symlinkSync(join(cliNodeModules(), "@concile"), join(nm, "@concile"));
 
   writeFileSync(
     join(dir, "schema.ts"),
     `
-    import { v, defineSchema, defineTable } from "@helipod/values";
+    import { v, defineSchema, defineTable } from "@concile/values";
     export default defineSchema({ pings: defineTable({ msg: v.string() }) });
     `,
   );
@@ -53,7 +53,7 @@ function makeFixtureFunctionsDir(): string {
   writeFileSync(
     join(dir, "pings.ts"),
     `
-    import { query, mutation } from "@helipod/executor";
+    import { query, mutation } from "@concile/executor";
     export const add = mutation({
       handler: (ctx, { msg }) => ctx.db.insert("pings", { msg }),
     });
@@ -66,7 +66,7 @@ function makeFixtureFunctionsDir(): string {
   writeFileSync(
     join(dir, "http.ts"),
     `
-    import { httpAction, httpRouter } from "@helipod/executor";
+    import { httpAction, httpRouter } from "@concile/executor";
     export const hook = httpAction(async (ctx, request) => {
       const body = await request.json();
       await ctx.runMutation("pings:add", { msg: body.msg });
@@ -157,7 +157,7 @@ async function subscribeToList(wsUrl: string): Promise<{ ws: WebSocket; messages
 /* Test                                                                        */
 /* -------------------------------------------------------------------------- */
 
-describe("helipod serve — end-to-end through the real production server", () => {
+describe("concile serve — end-to-end through the real production server", () => {
   it("webhook -> ctx.runMutation -> reactive fan-out; data survives a full server restart", async () => {
     const functionsDir = makeFixtureFunctionsDir();
     const tmpDbPath = join(mkdtempSync(join(tmpdir(), "sbserve-e2e-db-")), "db.sqlite");

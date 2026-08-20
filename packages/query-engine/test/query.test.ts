@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
 import {
   newDocumentId,
   encodeInternalDocumentId,
   encodeStorageIndexId,
   encodeStorageTableId,
   type InternalDocumentId,
-} from "@helipod/id-codec";
-import { RangeSet, indexKeyspaceId, deserializeKeyRange, keyInRange } from "@helipod/index-key-codec";
-import type { DocumentValue, IndexWrite } from "@helipod/docstore";
+} from "@concile/id-codec";
+import { RangeSet, indexKeyspaceId, deserializeKeyRange, keyInRange } from "@concile/index-key-codec";
+import type { DocumentValue, IndexWrite } from "@concile/docstore";
 import { QueryRuntime, computeIndexUpdates, extractIndexKey, type IndexSpec, type Query } from "../src/index";
 
 const TABLE = 10001;

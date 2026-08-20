@@ -1,66 +1,66 @@
 /**
- * `helipod fleet reshard` (B5 Part 1, Task 9.2): arg parsing/gate (9.2a, no PG needed) + the
+ * `concile fleet reshard` (B5 Part 1, Task 9.2): arg parsing/gate (9.2a, no PG needed) + the
  * happy path through the real CLI command against embedded PostgreSQL (9.2b), per the 3-tier
  * substrate rule for lease semantics.
  */
 import { describe, it, expect, afterEach, beforeAll, afterAll, beforeEach } from "vitest";
 import { fleetCommand, parseReshardArgs, FLEET_ERR_NO_PACKAGE } from "../src/fleet";
-import { NodePgClient, PostgresDocStore } from "@helipod/docstore-postgres";
-import { startEmbeddedPg, embeddedPgAvailable, type EmbeddedPg } from "@helipod/docstore-postgres/test-support/embedded-pg";
-import { shardIdList } from "@helipod/id-codec";
-import { LeaseManager, NUM_SHARDS_GLOBAL_KEY } from "@helipod/fleet";
+import { NodePgClient, PostgresDocStore } from "@concile/docstore-postgres";
+import { startEmbeddedPg, embeddedPgAvailable, type EmbeddedPg } from "@concile/docstore-postgres/test-support/embedded-pg";
+import { shardIdList } from "@concile/id-codec";
+import { LeaseManager, NUM_SHARDS_GLOBAL_KEY } from "@concile/fleet";
 
 describe("parseReshardArgs — 9.2a arg parsing", () => {
-  const saved = process.env.HELIPOD_DATABASE_URL;
+  const saved = process.env.CONCILE_DATABASE_URL;
   afterEach(() => {
-    if (saved === undefined) delete process.env.HELIPOD_DATABASE_URL;
-    else process.env.HELIPOD_DATABASE_URL = saved;
+    if (saved === undefined) delete process.env.CONCILE_DATABASE_URL;
+    else process.env.CONCILE_DATABASE_URL = saved;
   });
 
   it("rejects missing --shards", () => {
-    delete process.env.HELIPOD_DATABASE_URL;
+    delete process.env.CONCILE_DATABASE_URL;
     const r = parseReshardArgs(["--database-url", "postgres://x/db"]);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/--shards/);
   });
 
   it("rejects --shards 0", () => {
-    delete process.env.HELIPOD_DATABASE_URL;
+    delete process.env.CONCILE_DATABASE_URL;
     const r = parseReshardArgs(["--shards", "0", "--database-url", "postgres://x/db"]);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/>= 1/);
   });
 
   it("rejects a non-integer --shards", () => {
-    delete process.env.HELIPOD_DATABASE_URL;
+    delete process.env.CONCILE_DATABASE_URL;
     const r = parseReshardArgs(["--shards", "abc", "--database-url", "postgres://x/db"]);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/>= 1/);
   });
 
   it("rejects missing --database-url (and no env fallback)", () => {
-    delete process.env.HELIPOD_DATABASE_URL;
+    delete process.env.CONCILE_DATABASE_URL;
     const r = parseReshardArgs(["--shards", "4"]);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/--database-url/);
   });
 
   it("rejects a non-Postgres --database-url", () => {
-    delete process.env.HELIPOD_DATABASE_URL;
+    delete process.env.CONCILE_DATABASE_URL;
     const r = parseReshardArgs(["--shards", "4", "--database-url", "./data/db.sqlite"]);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/postgres/);
   });
 
-  it("falls back to HELIPOD_DATABASE_URL when --database-url is absent", () => {
-    process.env.HELIPOD_DATABASE_URL = "postgres://env/db";
+  it("falls back to CONCILE_DATABASE_URL when --database-url is absent", () => {
+    process.env.CONCILE_DATABASE_URL = "postgres://env/db";
     const r = parseReshardArgs(["--shards", "4"]);
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.args.databaseUrl).toBe("postgres://env/db");
   });
 
   it("accepts valid flags, flag wins over env", () => {
-    process.env.HELIPOD_DATABASE_URL = "postgres://env/db";
+    process.env.CONCILE_DATABASE_URL = "postgres://env/db";
     const r = parseReshardArgs(["--shards", "4", "--database-url", "postgres://flag/db"]);
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.args).toEqual({ targetShards: 4, databaseUrl: "postgres://flag/db" });
@@ -68,10 +68,10 @@ describe("parseReshardArgs — 9.2a arg parsing", () => {
 });
 
 describe("fleetCommand — 9.2a dispatch/gate (no PG needed)", () => {
-  const saved = process.env.HELIPOD_DATABASE_URL;
+  const saved = process.env.CONCILE_DATABASE_URL;
   afterEach(() => {
-    if (saved === undefined) delete process.env.HELIPOD_DATABASE_URL;
-    else process.env.HELIPOD_DATABASE_URL = saved;
+    if (saved === undefined) delete process.env.CONCILE_DATABASE_URL;
+    else process.env.CONCILE_DATABASE_URL = saved;
   });
 
   it("unknown subcommand → usage error + exit 1", async () => {
@@ -85,24 +85,24 @@ describe("fleetCommand — 9.2a dispatch/gate (no PG needed)", () => {
   });
 
   it("reshard without --shards → exit 1, never reaches the fleet-package gate", async () => {
-    delete process.env.HELIPOD_DATABASE_URL;
+    delete process.env.CONCILE_DATABASE_URL;
     const code = await fleetCommand(["reshard", "--database-url", "postgres://x/db"]);
     expect(code).toBe(1);
   });
 
   it("reshard without --database-url → exit 1", async () => {
-    delete process.env.HELIPOD_DATABASE_URL;
+    delete process.env.CONCILE_DATABASE_URL;
     const code = await fleetCommand(["reshard", "--shards", "4"]);
     expect(code).toBe(1);
   });
 
-  // The `@helipod/fleet`-missing gate itself (FLEET_ERR_NO_PACKAGE) mirrors `serve --fleet`'s own
-  // dynamic-import gate — covered by that command's `fleet-flags.test.ts` pattern. `@helipod/fleet`
+  // The `@concile/fleet`-missing gate itself (FLEET_ERR_NO_PACKAGE) mirrors `serve --fleet`'s own
+  // dynamic-import gate — covered by that command's `fleet-flags.test.ts` pattern. `@concile/fleet`
   // is a real devDependency here (needed for the 9.2b embedded-PG test below), so the "package
   // missing" branch can't be exercised in-process without uninstalling it; the constant is asserted
   // directly so the message text stays pinned.
   it("FLEET_ERR_NO_PACKAGE message is the expected actionable text", () => {
-    expect(FLEET_ERR_NO_PACKAGE).toMatch(/@helipod\/fleet/);
+    expect(FLEET_ERR_NO_PACKAGE).toMatch(/@concile\/fleet/);
   });
 });
 

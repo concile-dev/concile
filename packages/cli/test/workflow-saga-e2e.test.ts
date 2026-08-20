@@ -4,7 +4,7 @@
  * `components/workflow/test/saga.test.ts` proves the mechanism (reverse-stepNumber unwind, halt on
  * failed compensation, cancel-compensates, crash-resume) against a hand-composed `EmbeddedRuntime`
  * driven by a synchronous `tick()` test seam. This test proves the SAME mechanism works through the
- * shipped `helipod dev` server (real `startDevServer` + `loadProject`, real WebSocket, real HTTP
+ * shipped `concile dev` server (real `startDevServer` + `loadProject`, real WebSocket, real HTTP
  * admin browse) — the way "test through the shipped entrypoint" has caught wiring gaps before in
  * this project (see `./workflow-e2e.test.ts`'s doc comment for the pattern and its track record).
  * `_compensate`/`_compensateDone` are already registered in `defineWorkflow`'s modules map
@@ -22,13 +22,13 @@
  */
 import { describe, it, expect } from "vitest";
 import WebSocket from "ws";
-import { v, defineSchema, defineTable } from "@helipod/values";
-import { mutation, InMemoryLogSink } from "@helipod/executor";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { createEmbeddedRuntime } from "@helipod/runtime-embedded";
-import { AdminApi, browseTableModule, verifyAdminKey } from "@helipod/admin";
-import { defineScheduler } from "@helipod/scheduler";
-import { defineWorkflow, workflow } from "@helipod/workflow";
+import { v, defineSchema, defineTable } from "@concile/values";
+import { mutation, InMemoryLogSink } from "@concile/executor";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { createEmbeddedRuntime } from "@concile/runtime-embedded";
+import { AdminApi, browseTableModule, verifyAdminKey } from "@concile/admin";
+import { defineScheduler } from "@concile/scheduler";
+import { defineWorkflow, workflow } from "@concile/workflow";
 import { loadProject, startDevServer } from "../src/index";
 
 /* -------------------------------------------------------------------------- */
@@ -148,9 +148,9 @@ describe("workflow saga — reverse-order compensation end-to-end through the re
   it(
     "a failing saga passes through compensating and reaches failed, with the refund's effect visible via admin browse",
     async () => {
-      // Compose the app + scheduler + workflow components exactly as a real `helipod.config.ts`
+      // Compose the app + scheduler + workflow components exactly as a real `concile.config.ts`
       // listing `defineScheduler()`/`defineWorkflow()` would (see
-      // `examples/auth-demo/helipod.config.ts`, and `./workflow-e2e.test.ts`'s identical setup).
+      // `examples/auth-demo/concile.config.ts`, and `./workflow-e2e.test.ts`'s identical setup).
       const project = loadProject({ schema, modules: { app: appModule } }, [
         defineScheduler(),
         defineWorkflow({ workflows: { "app:orderFlow": orderFlow } }),

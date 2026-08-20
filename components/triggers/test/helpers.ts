@@ -1,12 +1,12 @@
 // components/triggers/test/helpers.ts
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { composeComponents } from "@helipod/component";
-import { EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { defineSchema, defineTable, v } from "@helipod/values";
-import { query, type RegisteredFunction } from "@helipod/executor";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { composeComponents } from "@concile/component";
+import { EmbeddedRuntime } from "@concile/runtime-embedded";
+import { defineSchema, defineTable, v } from "@concile/values";
+import { query, type RegisteredFunction } from "@concile/executor";
 import { defineTriggers, type TriggersOpts, type TriggersDriver } from "../src/index";
 
-/** Privileged raw-table scan — reads a fully-qualified table name (e.g. "triggers/cursors") bypassing the namespace boundary, mirroring `@helipod/scheduler`'s test helper. */
+/** Privileged raw-table scan — reads a fully-qualified table name (e.g. "triggers/cursors") bypassing the namespace boundary, mirroring `@concile/scheduler`'s test helper. */
 function systemModules(): Record<string, RegisteredFunction> {
   return {
     "_system:scan": query(async (ctx, args: { table: string }) => await ctx.db.query(args.table, "by_creation").collect()),
@@ -23,11 +23,11 @@ export function testAppSchema() {
 }
 
 /**
- * Composes an `EmbeddedRuntime` with `@helipod/triggers` enabled. `opts.now` injects a
+ * Composes an `EmbeddedRuntime` with `@concile/triggers` enabled. `opts.now` injects a
  * controllable virtual clock; `tick(name?)`/`wake(name?)` are the triggers driver's `__tick`/
  * `__wake` test seams (per-trigger or all-triggers) — see `../src/driver.ts`.
  *
- * Rejects (same as a real `helipod dev`/`serve` boot) if `triggersOpts` fails boot-time handler
+ * Rejects (same as a real `concile dev`/`serve` boot) if `triggersOpts` fails boot-time handler
  * validation — callers testing that path should `await expect(makeRuntimeWithTriggers(...))
  * .rejects.toThrow(...)` directly rather than destructuring the result.
  */

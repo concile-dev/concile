@@ -1,4 +1,4 @@
-# @helipod/dashboard
+# @concile/dashboard
 
 ## 0.1.5
 

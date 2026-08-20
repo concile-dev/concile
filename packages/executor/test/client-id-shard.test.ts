@@ -11,16 +11,16 @@
  * for that table — every write of it lands on the one ring, so a genuine race loses at OCC there.
  *
  * Harness modeled on `shard-guards.test.ts`: the real `InlineUdfExecutor` + `ShardedTransactor`
- * over SQLite, numShards = 8 — the every-tier proof (laptop, `helipod dev` virtual shards, fleet
+ * over SQLite, numShards = 8 — the every-tier proof (laptop, `concile dev` virtual shards, fleet
  * all share this code path).
  */
 import { describe, it, expect, beforeEach } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { ShardedTransactor } from "@helipod/transactor";
-import { QueryRuntime } from "@helipod/query-engine";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { ShardedTransactor } from "@concile/transactor";
+import { QueryRuntime } from "@concile/query-engine";
 import { InlineUdfExecutor, SimpleIndexCatalog, mutation, query, type RegisteredFunction } from "../src/index";
-import { mintEncodedDocumentId } from "@helipod/id-codec";
-import type { DocumentValue } from "@helipod/docstore";
+import { mintEncodedDocumentId } from "@concile/id-codec";
+import type { DocumentValue } from "@concile/docstore";
 
 const CONVOS = 10001; // unsharded
 const MESSAGES = 10002; // sharded by channelId

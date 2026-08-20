@@ -1,4 +1,4 @@
-# @helipod/errors
+# @concile/errors
 
 ## 0.1.5
 

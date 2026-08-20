@@ -1,4 +1,4 @@
-import type { ComponentContext } from "@helipod/executor";
+import type { ComponentContext } from "@concile/executor";
 import { resolveSession } from "./functions";
 
 export interface AuthContext {

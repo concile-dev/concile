@@ -1,5 +1,5 @@
 /**
- * `@helipod/errors` — the structured error hierarchy for the Helipod engine.
+ * `@concile/errors` — the structured error hierarchy for the Concile engine.
  *
  * Every error carries a stable `code`, an HTTP `httpStatus`, and a `retryable` flag,
  * and serializes losslessly via `toJSON()` so it can cross the syscall and wire
@@ -11,7 +11,7 @@
  *  - {@link ConflictError}  — optimistic-concurrency / write conflict (409, retryable).
  */
 
-export interface HelipodErrorJSON {
+export interface ConcileErrorJSON {
   name: string;
   code: string;
   message: string;
@@ -20,7 +20,7 @@ export interface HelipodErrorJSON {
   data?: unknown;
 }
 
-export interface HelipodErrorOptions {
+export interface ConcileErrorOptions {
   /** The underlying cause (sets `Error.cause`). */
   cause?: unknown;
   /** Structured, serializable payload surfaced to clients / logs. */
@@ -28,7 +28,7 @@ export interface HelipodErrorOptions {
 }
 
 /** Base class for every error the engine raises deliberately. */
-export abstract class HelipodError extends Error {
+export abstract class ConcileError extends Error {
   /** Stable, machine-readable identifier (e.g. `"OCC_CONFLICT"`). */
   abstract readonly code: string;
   /** The HTTP status this error maps to at the edge. */
@@ -38,14 +38,14 @@ export abstract class HelipodError extends Error {
   /** Optional structured payload. */
   readonly data?: unknown;
 
-  constructor(message: string, options?: HelipodErrorOptions) {
+  constructor(message: string, options?: ConcileErrorOptions) {
     super(message, options?.cause !== undefined ? { cause: options.cause } : undefined);
     // `new.target.name` gives the concrete subclass name even after minification-safe builds.
     this.name = new.target.name;
     if (options?.data !== undefined) this.data = options.data;
   }
 
-  toJSON(): HelipodErrorJSON {
+  toJSON(): ConcileErrorJSON {
     return {
       name: this.name,
       code: this.code,
@@ -61,7 +61,7 @@ export abstract class HelipodError extends Error {
 /* User errors — 4xx, not retryable                                           */
 /* -------------------------------------------------------------------------- */
 
-export abstract class UserError extends HelipodError {
+export abstract class UserError extends ConcileError {
   override readonly httpStatus: number = 400;
   override readonly retryable = false;
 }
@@ -116,7 +116,7 @@ export class IdAlreadyInUseError extends UserError {
 /* Conflict errors — 409, retryable (the OCC family)                          */
 /* -------------------------------------------------------------------------- */
 
-export class ConflictError extends HelipodError {
+export class ConflictError extends ConcileError {
   override readonly code: string = "CONFLICT";
   override readonly httpStatus: number = 409;
   override readonly retryable: boolean = true;
@@ -168,7 +168,7 @@ export class CommitGuardRejection extends ConflictError {
     readonly unitIndex: number,
     readonly rejectionCode: string,
     readonly detail: string,
-    options?: HelipodErrorOptions,
+    options?: ConcileErrorOptions,
   ) {
     super(`commit guard rejected unit ${unitIndex}: ${rejectionCode} (${detail})`, {
       ...options,
@@ -185,7 +185,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 /* System errors — 5xx, not retryable                                         */
 /* -------------------------------------------------------------------------- */
 
-export abstract class SystemError extends HelipodError {
+export abstract class SystemError extends ConcileError {
   override readonly httpStatus: number = 500;
   override readonly retryable = false;
 }
@@ -205,7 +205,7 @@ export class UdfExecutionError extends SystemError {
 export class ModuleLoadError extends SystemError {
   override readonly code = "MODULE_LOAD_ERROR";
 }
-/** Catch-all used by {@link toHelipodError} to normalize unknown throwables. */
+/** Catch-all used by {@link toConcileError} to normalize unknown throwables. */
 export class InternalError extends SystemError {
   override readonly code = "INTERNAL";
 }
@@ -214,7 +214,7 @@ export class InternalError extends SystemError {
 /* Transient errors — retryable                                               */
 /* -------------------------------------------------------------------------- */
 
-export abstract class TransientError extends HelipodError {
+export abstract class TransientError extends ConcileError {
   override readonly httpStatus: number = 503;
   override readonly retryable = true;
 }
@@ -236,18 +236,18 @@ export class ServiceUnavailableError extends TransientError {
 /* -------------------------------------------------------------------------- */
 
 /**
- * A {@link HelipodError} reconstructed from a serialized {@link HelipodErrorJSON} that crossed a
+ * A {@link ConcileError} reconstructed from a serialized {@link ConcileErrorJSON} that crossed a
  * process boundary (e.g. a fleet SYNC node rehydrating the error a forwarded mutation raised on the
  * WRITER). Carries the ORIGINAL `code`/`httpStatus`/`retryable`/`name`/`data` verbatim, so edge
  * status mapping ({@link getHttpStatus}) and client retry semantics ({@link isRetryableError})
  * survive the hop — without needing a code→class registry. Its `name` is the original error's
- * concrete class name, so `instanceof HelipodError` holds and log/message shape is preserved.
+ * concrete class name, so `instanceof ConcileError` holds and log/message shape is preserved.
  */
-export class RemoteError extends HelipodError {
+export class RemoteError extends ConcileError {
   override readonly code: string;
   override readonly httpStatus: number;
   override readonly retryable: boolean;
-  constructor(json: HelipodErrorJSON) {
+  constructor(json: ConcileErrorJSON) {
     super(json.message, json.data !== undefined ? { data: json.data } : undefined);
     this.code = json.code;
     this.httpStatus = json.httpStatus;
@@ -256,10 +256,10 @@ export class RemoteError extends HelipodError {
   }
 }
 
-/** Rehydrate a {@link HelipodError} from its serialized form (the inverse of `toJSON()`). Used at
+/** Rehydrate a {@link ConcileError} from its serialized form (the inverse of `toJSON()`). Used at
  *  wire boundaries so a typed error's status/code/retryable identity is not flattened to a generic
- *  500 by {@link toHelipodError}. */
-export function helipodErrorFromJSON(json: HelipodErrorJSON): HelipodError {
+ *  500 by {@link toConcileError}. */
+export function concileErrorFromJSON(json: ConcileErrorJSON): ConcileError {
   return new RemoteError(json);
 }
 
@@ -267,23 +267,23 @@ export function helipodErrorFromJSON(json: HelipodErrorJSON): HelipodError {
 /* Helpers                                                                    */
 /* -------------------------------------------------------------------------- */
 
-export function isHelipodError(error: unknown): error is HelipodError {
-  return error instanceof HelipodError;
+export function isConcileError(error: unknown): error is ConcileError {
+  return error instanceof ConcileError;
 }
 
-/** True when retrying the operation could plausibly succeed. Non-Helipod errors → false. */
+/** True when retrying the operation could plausibly succeed. Non-Concile errors → false. */
 export function isRetryableError(error: unknown): boolean {
-  return isHelipodError(error) ? error.retryable : false;
+  return isConcileError(error) ? error.retryable : false;
 }
 
-/** Map any thrown value to an HTTP status. Non-Helipod errors → 500. */
+/** Map any thrown value to an HTTP status. Non-Concile errors → 500. */
 export function getHttpStatus(error: unknown): number {
-  return isHelipodError(error) ? error.httpStatus : 500;
+  return isConcileError(error) ? error.httpStatus : 500;
 }
 
-/** Normalize ANY thrown value into a {@link HelipodError} (preserving the cause). */
-export function toHelipodError(error: unknown): HelipodError {
-  if (isHelipodError(error)) return error;
+/** Normalize ANY thrown value into a {@link ConcileError} (preserving the cause). */
+export function toConcileError(error: unknown): ConcileError {
+  if (isConcileError(error)) return error;
   if (error instanceof Error) return new InternalError(error.message, { cause: error });
   return new InternalError(typeof error === "string" ? error : "Unknown error", { data: error });
 }

@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/id-codec",
+  "name": "@concile/id-codec",
   "version": "0.1.5",
   "type": "module",
   "license": "FSL-1.1-Apache-2.0",
@@ -17,7 +17,7 @@
     "dist"
   ],
   "dependencies": {
-    "@helipod/index-key-codec": "workspace:*"
+    "@concile/index-key-codec": "workspace:*"
   },
   "scripts": {
     "build": "tsup",
@@ -35,8 +35,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "packages/id-codec"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

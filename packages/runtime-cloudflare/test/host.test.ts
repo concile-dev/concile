@@ -1,15 +1,15 @@
 /**
- * The DO host, end-to-end through `HelipodDurableObject` over the DO-SQLite stand-in (API-shape
+ * The DO host, end-to-end through `ConcileDurableObject` over the DO-SQLite stand-in (API-shape
  * fidelity — see `do-harness.ts`). Proves the whole orchestration the real-Cloudflare E2E will later
  * confirm on workerd: boot, health, a committing `/api/run` mutation + read-back, the reactive
  * subscribe→commit→push fan-out across two sockets, hibernation-rehydrate from the attachment, the
  * per-socket subscription cap, and the wake alarm firing due driver timers.
  */
 import { describe, it, expect } from "vitest";
-import { v, defineSchema, defineTable } from "@helipod/values";
-import { query, mutation } from "@helipod/executor";
-import type { LoadedProject } from "@helipod/cli/project";
-import { HelipodDurableObject, type DurableObjectAppConfig, MAX_SUBSCRIPTIONS_PER_SOCKET } from "../src/index";
+import { v, defineSchema, defineTable } from "@concile/values";
+import { query, mutation } from "@concile/executor";
+import type { LoadedProject } from "@concile/cli/project";
+import { ConcileDurableObject, type DurableObjectAppConfig, MAX_SUBSCRIPTIONS_PER_SOCKET } from "../src/index";
 import { FakeDoState, FakeDoStorage, FakeDoWebSocket, waitFor } from "./do-harness";
 
 // workerd exposes `WebSocketRequestResponsePair` as a global (for `setWebSocketAutoResponse`); Node
@@ -40,7 +40,7 @@ const loaded: LoadedProject = { schema, modules: { messages: messagesModule } };
 const ADMIN_KEY = "test-admin-key";
 
 /** A concrete DO the fixture app statically injects (what the Worker-entry codegen would emit). */
-class TestDO extends HelipodDurableObject {
+class TestDO extends ConcileDurableObject {
   protected appConfig(): DurableObjectAppConfig {
     return { loaded, adminKey: ADMIN_KEY };
   }
@@ -63,7 +63,7 @@ function makeSocket(state: FakeDoState, connectionId: string): FakeDoWebSocket {
   return ws;
 }
 
-describe("HelipodDurableObject (the single-shard DO host)", () => {
+describe("ConcileDurableObject (the single-shard DO host)", () => {
   it("boots and serves GET /api/health", async () => {
     const state = new FakeDoState();
     const doInstance = new TestDO(state, {});

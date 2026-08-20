@@ -29,15 +29,15 @@
  * package) keep seeing the union, so a caller that never calls `recordReadUnvalidated` sees
  * identical behavior to before this split existed.
  */
-import { CommitGuardRejection, OccConflictError } from "@helipod/errors";
-import { documentIdKey, encodeInternalDocumentId, encodeStorageTableId, type ShardId } from "@helipod/id-codec";
+import { CommitGuardRejection, OccConflictError } from "@concile/errors";
+import { documentIdKey, encodeInternalDocumentId, encodeStorageTableId, type ShardId } from "@concile/id-codec";
 import {
   RangeSet,
   serializeKeyRange,
   tableKeyspaceId,
   writtenTablesFromRanges,
-} from "@helipod/index-key-codec";
-import type { KeyRange } from "@helipod/index-key-codec";
+} from "@concile/index-key-codec";
+import type { KeyRange } from "@concile/index-key-codec";
 import type {
   DatabaseIndexUpdate,
   DocStore,
@@ -47,8 +47,8 @@ import type {
   IndexWrite,
   InternalDocumentId,
   TimestampOracle,
-} from "@helipod/docstore";
-import { convexToJson } from "@helipod/values";
+} from "@concile/docstore";
+import { convexToJson } from "@concile/values";
 import { AsyncMutex } from "./async-mutex";
 import type { HeadroomLimits } from "./headroom";
 import { HeadroomTracker } from "./headroom";
@@ -239,7 +239,7 @@ type StageOutcome<T> =
 /** Package-private tag: an `OccConflictError` raised against an IN-FLIGHT (flushing OR pending) write
  *  carries the conflicting batch's `promoted` promise, so the retry loop awaits that batch's landing
  *  before it replays (D2). A ring conflict is untagged and retries immediately, as today. Kept off the
- *  shared `@helipod/errors` type — a transactor-only concern that must not leak into the FSL surface. */
+ *  shared `@concile/errors` type — a transactor-only concern that must not leak into the FSL surface. */
 const CONFLICT_WAIT = Symbol("groupCommitConflictWait");
 type TaggedConflict = OccConflictError & { [CONFLICT_WAIT]?: Promise<void> };
 

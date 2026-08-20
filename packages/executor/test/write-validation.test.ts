@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { MonotonicTimestampOracle, type DocumentValue } from "@helipod/docstore";
-import { SingleWriterTransactor } from "@helipod/transactor";
-import { QueryRuntime } from "@helipod/query-engine";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { MonotonicTimestampOracle, type DocumentValue } from "@concile/docstore";
+import { SingleWriterTransactor } from "@concile/transactor";
+import { QueryRuntime } from "@concile/query-engine";
 import { InlineUdfExecutor, SimpleIndexCatalog, query, mutation } from "../src/index";
-import { v } from "@helipod/values";
+import { v } from "@concile/values";
 
 // --- functions (what a user would write in their functions directory) ---
 const insDocs = mutation<{ n: unknown; extra?: boolean }, string>({

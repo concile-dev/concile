@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * T3.5 — `FrontierMonitor` notify-on-advance. Root-caused by the fleet-connections bench (see
  * `.superpowers/sdd/notify-diagnosis.md`): `closeIdleFrontiers`/`bumpOrphanFrontiers` advance

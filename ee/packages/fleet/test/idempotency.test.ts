@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * Fleet B3, Task 3 — effectively-once forwarding: the `fleet_idempotency` control table, the
  * commit guard's atomic INSERT (`installCommitGuard`, `node.ts`), and `LeaseManager`'s
@@ -12,10 +12,10 @@
  * simulation through a real handler + real store) — this file covers the LEASE/GUARD half only.
  */
 import { describe, it, expect, vi } from "vitest";
-import { newDocumentId, type InternalDocumentId } from "@helipod/id-codec";
-import type { DocumentLogEntry } from "@helipod/docstore";
-import { PostgresDocStore } from "@helipod/docstore-postgres";
-import { CommitGuardRejection } from "@helipod/errors";
+import { newDocumentId, type InternalDocumentId } from "@concile/id-codec";
+import type { DocumentLogEntry } from "@concile/docstore";
+import { PostgresDocStore } from "@concile/docstore-postgres";
+import { CommitGuardRejection } from "@concile/errors";
 import { LeaseManager, IDEMPOTENCY_VALUE_CAP_BYTES } from "../src/lease";
 import { installCommitGuard } from "../src/node";
 import { FencedError } from "../src/fenced-error";

@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * `applySnapshotState` (Tier 3 Slice 5 re-review fix) — the MVCC-safe way to restore a
  * `SnapshotPayload` onto an already-materialized local `SqliteDocStore`: `write(..., "Overwrite")`
@@ -29,9 +29,9 @@
  * first-ever round) `dumpCurrentState()` returns no documents, so the diff is a no-op and this is
  * byte-identical to a plain snapshot apply — no behavior change for that path.
  */
-import type { DocumentLogEntry } from "@helipod/docstore";
-import type { SqliteDocStore } from "@helipod/docstore-sqlite";
-import { documentIdKey } from "@helipod/id-codec";
+import type { DocumentLogEntry } from "@concile/docstore";
+import type { SqliteDocStore } from "@concile/docstore-sqlite";
+import { documentIdKey } from "@concile/id-codec";
 import type { SnapshotPayload } from "./snapshot";
 
 /**

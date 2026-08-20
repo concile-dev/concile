@@ -10,13 +10,13 @@
  */
 import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
-import { defineSchema, defineTable, v } from "@helipod/values";
-import { D1DocStore, type D1Client, type D1PreparedStatement, type D1Session } from "@helipod/docstore-d1";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { QueryRuntime } from "@helipod/query-engine";
-import { DEFAULT_SHARD, encodeInternalDocumentId, encodeStorageIndexId, newDocumentId } from "@helipod/id-codec";
-import type { DocumentValue, InternalDocumentId } from "@helipod/docstore";
-import type { TransactionContext } from "@helipod/transactor";
+import { defineSchema, defineTable, v } from "@concile/values";
+import { D1DocStore, type D1Client, type D1PreparedStatement, type D1Session } from "@concile/docstore-d1";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { QueryRuntime } from "@concile/query-engine";
+import { DEFAULT_SHARD, encodeInternalDocumentId, encodeStorageIndexId, newDocumentId } from "@concile/id-codec";
+import type { DocumentValue, InternalDocumentId } from "@concile/docstore";
+import type { TransactionContext } from "@concile/transactor";
 import {
   createKernelRouter,
   SimpleIndexCatalog,

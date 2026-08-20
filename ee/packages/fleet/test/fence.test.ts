@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * Fenced Frontier B1 (Task 3) integration: `shard_leases` acquisition/heartbeat + the epoch-fenced
  * commit guard, exercised TOGETHER against a real `PostgresDocStore` over PGlite (real Postgres
@@ -8,9 +8,9 @@
  * the seam between them — the heartbeat-as-probe and commit-guard wiring `node.ts` installs.
  */
 import { describe, it, expect, vi } from "vitest";
-import { newDocumentId, type InternalDocumentId } from "@helipod/id-codec";
-import type { DocumentLogEntry } from "@helipod/docstore";
-import { PostgresDocStore } from "@helipod/docstore-postgres";
+import { newDocumentId, type InternalDocumentId } from "@concile/id-codec";
+import type { DocumentLogEntry } from "@concile/docstore";
+import { PostgresDocStore } from "@concile/docstore-postgres";
 import { LeaseManager } from "../src/lease";
 import { LeaseMonitor } from "../src/lease-monitor";
 import { FencedError } from "../src/fenced-error";

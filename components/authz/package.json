@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/authz",
+  "name": "@concile/authz",
   "version": "0.1.5",
   "license": "FSL-1.1-Apache-2.0",
   "type": "module",
@@ -17,15 +17,15 @@
     "test": "vitest run --testTimeout=60000 --hookTimeout=60000"
   },
   "dependencies": {
-    "@helipod/auth": "workspace:*",
-    "@helipod/component": "workspace:*",
-    "@helipod/errors": "workspace:*",
-    "@helipod/executor": "workspace:*",
-    "@helipod/values": "workspace:*"
+    "@concile/auth": "workspace:*",
+    "@concile/component": "workspace:*",
+    "@concile/errors": "workspace:*",
+    "@concile/executor": "workspace:*",
+    "@concile/values": "workspace:*"
   },
   "devDependencies": {
-    "@helipod/docstore-sqlite": "workspace:*",
-    "@helipod/runtime-embedded": "workspace:*",
+    "@concile/docstore-sqlite": "workspace:*",
+    "@concile/runtime-embedded": "workspace:*",
     "@types/node": "catalog:",
     "tsup": "catalog:",
     "typescript": "catalog:",
@@ -39,8 +39,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "components/authz"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

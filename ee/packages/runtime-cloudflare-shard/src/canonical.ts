@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 
 /**
  * Map a shard-key VALUE to the Durable Object NAME that owns its shard. Two routing modes (spec §1.1),
@@ -13,14 +13,14 @@
  *     reserved `"default"` DO or smuggle control characters into a DO name.
  *
  *   - **mode "hash" (B)** — fixed-N jump-consistent-hash, reusing `shardIdForKeyValue` from
- *     `@helipod/id-codec` VERBATIM. The DO name is the SAME `ShardId` string the portable path uses
+ *     `@concile/id-codec` VERBATIM. The DO name is the SAME `ShardId` string the portable path uses
  *     (`"default"`/`"s1"`/…), so an app's key→shard identity is byte-identical across the portable and
  *     DO hosts (important for a future migration tool, §7 #7). Cost: growing N needs an offline reshard.
  *
  * The DO name is a pure function of the value + mode; the Worker holds no shard map.
  */
-import { shardIdForKeyValue, DEFAULT_SHARD } from "@helipod/id-codec";
-import { encodeIndexKey, type IndexableValue } from "@helipod/index-key-codec";
+import { shardIdForKeyValue, DEFAULT_SHARD } from "@concile/id-codec";
+import { encodeIndexKey, type IndexableValue } from "@concile/index-key-codec";
 
 /** The DO name for unsharded tables / no-`shardBy` requests — byte-identical to Slice 3's single DO. */
 export const DEFAULT_SHARD_DO_NAME = DEFAULT_SHARD; // "default"

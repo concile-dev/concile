@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/vite",
+  "name": "@concile/vite",
   "version": "0.1.5",
   "type": "module",
   "exports": {
@@ -19,19 +19,19 @@
   },
   "peerDependencies": {
     "vite": ">=5.0.0",
-    "@helipod/cli": "workspace:*"
+    "@concile/cli": "workspace:*"
   },
   "peerDependenciesMeta": {
-    "@helipod/cli": {
+    "@concile/cli": {
       "optional": true
     }
   },
   "devDependencies": {
-    "@helipod/cli": "workspace:*",
-    "@helipod/client": "workspace:*",
-    "@helipod/executor": "workspace:*",
-    "@helipod/id-codec": "workspace:*",
-    "@helipod/values": "workspace:*",
+    "@concile/cli": "workspace:*",
+    "@concile/client": "workspace:*",
+    "@concile/executor": "workspace:*",
+    "@concile/id-codec": "workspace:*",
+    "@concile/values": "workspace:*",
     "@types/node": "catalog:",
     "@types/ws": "^8.5.13",
     "tsup": "catalog:",
@@ -49,8 +49,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "packages/vite"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

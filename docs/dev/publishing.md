@@ -1,6 +1,6 @@
 # Publishing & adding packages
 
-How helipod's ~44 npm packages get to the registry, and the one-time dance a
+How concile's ~44 npm packages get to the registry, and the one-time dance a
 **new** package needs. Read this before adding a package to `packages/`,
 `components/`, or `ee/packages/`.
 
@@ -9,7 +9,7 @@ How helipod's ~44 npm packages get to the registry, and the one-time dance a
 Every package is published by CI (`.github/workflows/release.yml` →
 `scripts/release.mjs`) using **npm trusted publishing (OIDC)** — no long-lived
 token, provenance attested. Trusted publishing means: npm knows "GitHub Actions
-in `helipod-sh/helipod` running `release.yml` is allowed to publish this
+in `concile-dev/concile` running `release.yml` is allowed to publish this
 package," so CI authenticates by identity, not secret. `release.mjs` publishes
 each package via OIDC first and only reaches for a token if OIDC fails (see
 below).
@@ -32,7 +32,7 @@ new package can't be OIDC-published on its very first release — chicken and eg
 Two things close this, and they compose:
 
 1. **`NPM_TOKEN` secret → automatic first publish.** The workflow passes this
-   secret to `release.mjs` as `HELIPOD_NPM_FALLBACK_TOKEN` (a private var name,
+   secret to `release.mjs` as `CONCILE_NPM_FALLBACK_TOKEN` (a private var name,
    *not* `NPM_TOKEN` — setting `NPM_TOKEN` would make the changesets action
    switch every package to token auth and defeat OIDC). `release.mjs` tries OIDC
    first for each package and, only if that fails, retries **that one package**
@@ -41,8 +41,8 @@ Two things close this, and they compose:
 
    ```bash
    # generate a granular/automation token at npmjs.com with publish rights
-   # (scope: @helipod, read+write), then:
-   gh secret set NPM_TOKEN -R helipod-sh/helipod
+   # (scope: @concile, read+write), then:
+   gh secret set NPM_TOKEN -R concile-dev/concile
    ```
 
    > Gotcha we hit once: the workflow originally exposed the secret as
@@ -71,22 +71,22 @@ move it onto OIDC. No per-package UI clicking, ever.
 
 ## Folder layout is irrelevant to any of this
 
-npm sees package **names and the `@helipod` scope**, never your directory tree.
+npm sees package **names and the `@concile` scope**, never your directory tree.
 Moving packages into `core/`, `adapters/`, etc. changes nothing about publish
 count or OIDC config. Don't reorganize folders to solve a publishing concern.
 
 ## Versioning: lockstep vs independent
 
 Core packages are a **`fixed` (lockstep)** group in `.changeset/config.json` —
-bump one, bump all, so `helipod@x` always pairs with `@helipod/*@x` (the
+bump one, bump all, so `concile@x` always pairs with `@concile/*@x` (the
 Babel/Jest model). This is why one release publishes many packages; it's a
 deliberate coherence choice, not overhead — the publishes are automated and free,
-and the umbrella `helipod` package pins exact versions so end users never see the
+and the umbrella `concile` package pins exact versions so end users never see the
 churn. Move a package to independent versioning only if spurious bumps start
 hurting *users*, which they don't while everything hides behind the umbrella.
 
 > **Known discrepancy (decide when convenient):** the `components/` packages
-> (`@helipod/auth`, `authz`, `notifications`, `scheduler`, `triggers`,
+> (`@concile/auth`, `authz`, `notifications`, `scheduler`, `triggers`,
 > `workflow`) are **published** by `release.mjs` but are **not** in the `fixed`
 > lockstep group, so they version independently of the core. That may be
 > intentional (components are opt-in) — but if you want them lockstepped with the

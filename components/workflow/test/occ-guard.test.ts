@@ -1,8 +1,8 @@
 // components/workflow/test/occ-guard.test.ts
 import { describe, it, expect } from "vitest";
-import { mutation } from "@helipod/executor";
-import { jsonToConvex } from "@helipod/values";
-import { workflow } from "@helipod/workflow"; // the authoring surface: workflow.define
+import { mutation } from "@concile/executor";
+import { jsonToConvex } from "@concile/values";
+import { workflow } from "@concile/workflow"; // the authoring surface: workflow.define
 import { _stepDone } from "../src/modules";
 import { runReplay, type JournalRow } from "../src/replay";
 import { makeRuntimeWithWorkflow, readTable } from "./helpers";

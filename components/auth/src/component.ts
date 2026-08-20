@@ -1,11 +1,11 @@
-import { defineComponent, type ComponentDefinition } from "@helipod/component";
+import { defineComponent, type ComponentDefinition } from "@concile/component";
 import { authSchema } from "./schema";
 import { makeAuthModules } from "./functions";
 import { authContext } from "./context";
 import { resolveAuthConfig, type AuthOptions } from "./config";
 
 /**
- * `defineAuth(options?)` — the `@helipod/auth` component: password + hardened session auth. The
+ * `defineAuth(options?)` — the `@concile/auth` component: password + hardened session auth. The
  * module set is built by `makeAuthModules(config)` closing over the resolved TTL config (spec
  * decision 10), following `defineScheduler`'s config-value convention. `ctx.auth.getUserId()`
  * resolves the ambient session token to a user id inside the transaction (read-set → reactive
@@ -18,7 +18,7 @@ export function defineAuth(options?: AuthOptions): ComponentDefinition {
     schema: authSchema,
     modules: makeAuthModules(config),
     context: authContext,
-    contextType: { import: "@helipod/auth", type: "AuthContext" },
+    contextType: { import: "@concile/auth", type: "AuthContext" },
     ...(config.oauth
       ? {
           // GET backs `/start` + the query-mode callback (Google/GitHub/Microsoft/Discord/Facebook);
@@ -34,5 +34,5 @@ export function defineAuth(options?: AuthOptions): ComponentDefinition {
   });
 }
 
-/** The default-config component — unchanged import for `helipod.config.ts` files composing `auth`. */
+/** The default-config component — unchanged import for `concile.config.ts` files composing `auth`. */
 export const auth = defineAuth();

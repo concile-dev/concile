@@ -1,18 +1,18 @@
-# @helipod/values
+# @concile/values
 
-Helipod's value system: the `v` validator builder, `defineSchema`/`defineTable` schema builders, document `Id` types, and the canonical value model every other Helipod package builds on.
+Concile's value system: the `v` validator builder, `defineSchema`/`defineTable` schema builders, document `Id` types, and the canonical value model every other Concile package builds on.
 
-Most users should install the umbrella package [`helipod`](https://www.npmjs.com/package/helipod) instead — it re-exports this package as `helipod/values`.
+Most users should install the umbrella package [`concile`](https://www.npmjs.com/package/concile) instead — it re-exports this package as `concile/values`.
 
 ```sh
-bun add helipod   # or: npm install helipod
+bun add concile   # or: npm install concile
 ```
 
 ## Usage
 
 ```ts
-// helipod/schema.ts
-import { defineSchema, defineTable, v } from "@helipod/values";
+// concile/schema.ts
+import { defineSchema, defineTable, v } from "@concile/values";
 
 export default defineSchema({
   conversations: defineTable({
@@ -37,6 +37,6 @@ The same `v` validators declare function arguments, and the engine enforces both
 - A total order over all values (`compareValues`) and a canonical JSON transport encoding, shared by the engine, the wire protocol, and the client.
 - Zero runtime dependencies; safe to import in server functions, the browser, and tooling alike.
 
-Part of [Helipod](https://github.com/helipod-sh/helipod) — docs at https://helipod-six.vercel.app/docs
+Part of [Concile](https://github.com/concile-dev/concile) — docs at https://concile-six.vercel.app/docs
 
 License: FSL-1.1-Apache-2.0

@@ -33,10 +33,10 @@ import type {
   ShardId,
   TimestampRange,
   InternalDocumentId,
-} from "@helipod/docstore";
-import { getPrevRevQueryKey, CLIENT_VERDICT_VALUE_CAP_BYTES } from "@helipod/docstore";
-import { encodeStorageTableId, decodeStorageTableId, DEFAULT_SHARD } from "@helipod/id-codec";
-import { convexToJson, jsonToConvex, type JSONValue, type Value } from "@helipod/values";
+} from "@concile/docstore";
+import { getPrevRevQueryKey, CLIENT_VERDICT_VALUE_CAP_BYTES } from "@concile/docstore";
+import { encodeStorageTableId, decodeStorageTableId, DEFAULT_SHARD } from "@concile/id-codec";
+import { convexToJson, jsonToConvex, type JSONValue, type Value } from "@concile/values";
 import type { PgClient, PgQuerier, PgRow, PgValue } from "./pg-client";
 import { ADVISORY_LOCK_KEY } from "./pg-client";
 import { SCHEMA_STATEMENTS } from "./schema";
@@ -224,7 +224,7 @@ export class PostgresDocStore implements DocStore {
       if (await this.writeGlobalIfAbsent("core:tsSeqSeeded", "1")) {
         await this.db.query(
           `SELECT setval(
-             'helipod_ts',
+             'concile_ts',
              GREATEST((SELECT COALESCE(MAX(ts), 0) FROM documents), 1),
              (SELECT COALESCE(MAX(ts), 0) FROM documents) > 0
            )`,
@@ -363,7 +363,7 @@ export class PostgresDocStore implements DocStore {
         // `MAX(ts)+1`. So ts's are strictly increasing across units, in unit order. Race-free under the
         // single writer.
         const rows = await tx.query(
-          `SELECT GREATEST(nextval('helipod_ts'), (SELECT COALESCE(MAX(ts), 0) FROM documents) + 1) AS ts`,
+          `SELECT GREATEST(nextval('concile_ts'), (SELECT COALESCE(MAX(ts), 0) FROM documents) + 1) AS ts`,
         );
         const commitTs = asBigInt(rows[0]!.ts);
         const stampedDocs = unit.documents.map((e) => ({ ...e, ts: commitTs }));

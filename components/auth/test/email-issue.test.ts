@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { composeComponents } from "@helipod/component";
-import { EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { defineSchema } from "@helipod/values";
-import { query, type QueryCtx } from "@helipod/executor";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { composeComponents } from "@concile/component";
+import { EmbeddedRuntime } from "@concile/runtime-embedded";
+import { defineSchema } from "@concile/values";
+import { query, type QueryCtx } from "@concile/executor";
 import { defineAuth } from "../src/component";
 import { sha256base64url, type AuthOptions, type EmailMessage, type EmailProvider } from "../src";
 
@@ -33,8 +33,8 @@ function extractToken(text: string): string {
  * `packages/executor/src/kernel.ts`'s `ctx.privileged ? spec.table : getFullTableName(...)`, and
  * `session-core.test.ts`'s `"auth/sessions"` precedent). Registered as a `systemModules` entry so it
  * runs via `EmbeddedRuntime.runSystem` (trusted callers only — no `isInternalPath` gate), the exact
- * mechanism `@helipod/test`'s own `_test:_run` uses; this slice's tests follow the raw
- * `composeComponents` + `EmbeddedRuntime.create` idiom (not `createTestHelipod`), so it's
+ * mechanism `@concile/test`'s own `_test:_run` uses; this slice's tests follow the raw
+ * `composeComponents` + `EmbeddedRuntime.create` idiom (not `createTestConcile`), so it's
  * reimplemented inline here rather than imported.
  */
 const _readAuthCode = query(async (ctx: QueryCtx, { email, flow }: { email: string; flow: string }) => {

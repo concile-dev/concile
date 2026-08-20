@@ -1,11 +1,11 @@
-Helipod Commercial License (Enterprise)
+Concile Commercial License (Enterprise)
 
-Copyright (c) 2026 Helipod.
+Copyright (c) 2026 Concile.
 
 This directory (ee/) and everything under it is NOT covered by the license of the
 rest of this repository. It is source-available for reference and, at present, free
 to use in production (no license key is required yet; future releases will gate
 paid entitlements behind a commercial license key). It may not be copied,
 modified, or distributed as part of a product or service that competes with
-Helipod. A commercial license activating paid entitlements will govern future
+Concile. A commercial license activating paid entitlements will govern future
 releases of this directory; code in ee/ never converts to an open-source license.

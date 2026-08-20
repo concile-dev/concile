@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { defineSchema, defineTable, v } from "@helipod/values";
-import { mutation, query, httpAction } from "@helipod/executor";
+import { defineSchema, defineTable, v } from "@concile/values";
+import { mutation, query, httpAction } from "@concile/executor";
 import { defineComponent } from "../src/define-component";
 import { composeComponents } from "../src/compose";
 

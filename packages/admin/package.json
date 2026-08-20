@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/admin",
+  "name": "@concile/admin",
   "version": "0.1.5",
   "type": "module",
   "exports": {
@@ -16,18 +16,18 @@
     "test": "vitest run --testTimeout=60000 --hookTimeout=60000"
   },
   "dependencies": {
-    "@helipod/docstore": "workspace:*",
-    "@helipod/errors": "workspace:*",
-    "@helipod/executor": "workspace:*",
-    "@helipod/id-codec": "workspace:*",
-    "@helipod/query-engine": "workspace:*",
-    "@helipod/runtime-embedded": "workspace:*",
-    "@helipod/values": "workspace:*"
+    "@concile/docstore": "workspace:*",
+    "@concile/errors": "workspace:*",
+    "@concile/executor": "workspace:*",
+    "@concile/id-codec": "workspace:*",
+    "@concile/query-engine": "workspace:*",
+    "@concile/runtime-embedded": "workspace:*",
+    "@concile/values": "workspace:*"
   },
   "devDependencies": {
-    "@helipod/component": "workspace:*",
-    "@helipod/docstore-sqlite": "workspace:*",
-    "@helipod/query-engine": "workspace:*",
+    "@concile/component": "workspace:*",
+    "@concile/docstore-sqlite": "workspace:*",
+    "@concile/query-engine": "workspace:*",
     "@types/node": "catalog:",
     "tsup": "catalog:",
     "typescript": "catalog:",
@@ -42,8 +42,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "packages/admin"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

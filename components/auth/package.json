@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/auth",
+  "name": "@concile/auth",
   "version": "0.1.5",
   "license": "FSL-1.1-Apache-2.0",
   "type": "module",
@@ -17,19 +17,19 @@
     "test": "vitest run --testTimeout=60000 --hookTimeout=60000"
   },
   "dependencies": {
-    "@helipod/component": "workspace:*",
-    "@helipod/errors": "workspace:*",
-    "@helipod/executor": "workspace:*",
-    "@helipod/values": "workspace:*",
+    "@concile/component": "workspace:*",
+    "@concile/errors": "workspace:*",
+    "@concile/executor": "workspace:*",
+    "@concile/values": "workspace:*",
     "@simplewebauthn/server": "13.3.2",
     "hash-wasm": "^4.12.0",
     "jose": "6.2.3",
     "oauth4webapi": "3.8.6"
   },
   "devDependencies": {
-    "@helipod/docstore-sqlite": "workspace:*",
-    "@helipod/runtime-embedded": "workspace:*",
-    "@helipod/test": "workspace:*",
+    "@concile/docstore-sqlite": "workspace:*",
+    "@concile/runtime-embedded": "workspace:*",
+    "@concile/test": "workspace:*",
     "@levischuck/tiny-cbor": "0.2.11",
     "@types/node": "catalog:",
     "tsup": "catalog:",
@@ -44,8 +44,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "components/auth"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

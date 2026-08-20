@@ -1,9 +1,9 @@
-import type { RegisteredFunction } from "@helipod/executor";
+import type { RegisteredFunction } from "@concile/executor";
 
-// Mirrors `DEFAULT_FUNCTIONS_DIR` from `@helipod/cli` (`packages/cli/src/functions-dir.ts`).
-// `packages/test` doesn't depend on `@helipod/cli`, so the value is duplicated rather than
+// Mirrors `DEFAULT_FUNCTIONS_DIR` from `@concile/cli` (`packages/cli/src/functions-dir.ts`).
+// `packages/test` doesn't depend on `@concile/cli`, so the value is duplicated rather than
 // imported — same pattern as `packages/vite/src/index.ts`'s own `DEFAULT_FUNCTIONS_DIR` mirror.
-const DEFAULT_FUNCTIONS_ROOT = "helipod";
+const DEFAULT_FUNCTIONS_ROOT = "concile";
 
 function isRegisteredFunction(v: unknown): v is RegisteredFunction {
   return typeof v === "object" && v !== null && typeof (v as { type?: unknown }).type === "string"
@@ -14,13 +14,13 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// `import.meta.glob("./helipod/**/*.ts")` keys come back prefixed with the glob's own leading
-// path segments (`./helipod/messages.ts`, `../helipod/messages.ts`, etc.) — not just an
+// `import.meta.glob("./concile/**/*.ts")` keys come back prefixed with the glob's own leading
+// path segments (`./concile/messages.ts`, `../concile/messages.ts`, etc.) — not just an
 // extension to strip. Normalize to the same function-path root the codegen `api`/string refs use
 // (relative to the app's functions root), so a glob-sourced module registers under the exact same
 // path an explicit `{ "messages.ts": messages }` map would. `functionsRoot` is the ONE leading path
 // segment to strip after the `./`/`../` prefix — it defaults to `DEFAULT_FUNCTIONS_ROOT` but a
-// caller on a non-default `functionsDir` (via `helipod.config.ts`) must pass its actual value;
+// caller on a non-default `functionsDir` (via `concile.config.ts`) must pass its actual value;
 // there is no implicit fallback to any other name (including the legacy `convex/`), by design.
 function normalizeModulePath(key: string, functionsRoot: string): string {
   const rootPattern = new RegExp(`^${escapeRegExp(functionsRoot)}/`);

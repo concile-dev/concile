@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/docstore",
+  "name": "@concile/docstore",
   "version": "0.1.5",
   "type": "module",
   "license": "FSL-1.1-Apache-2.0",
@@ -27,11 +27,11 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@helipod/id-codec": "workspace:*",
-    "@helipod/values": "workspace:*"
+    "@concile/id-codec": "workspace:*",
+    "@concile/values": "workspace:*"
   },
   "devDependencies": {
-    "@helipod/index-key-codec": "workspace:*",
+    "@concile/index-key-codec": "workspace:*",
     "tsup": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
@@ -41,8 +41,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "packages/docstore"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

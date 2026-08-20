@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * Unit tests for `ShardedObjectStoreDocStore` (object-storage multi-shard single-node write
  * scale-out) — the merging-read logic is the load-bearing correctness surface: `get`/`scan`/`count`/
@@ -20,12 +20,12 @@ import {
   shardIdList,
   type InternalDocumentId,
   type ShardId,
-} from "@helipod/id-codec";
-import { encodeIndexKey } from "@helipod/index-key-codec";
-import type { DocumentLogEntry, IndexWrite, DatabaseIndexUpdate, DocStore, CommitGuardUnit } from "@helipod/docstore";
-import { BunSqliteAdapter, NodeSqliteAdapter, SqliteDocStore } from "@helipod/docstore-sqlite";
-import { FsObjectStore } from "@helipod/objectstore-fs";
-import type { ObjectStore } from "@helipod/objectstore";
+} from "@concile/id-codec";
+import { encodeIndexKey } from "@concile/index-key-codec";
+import type { DocumentLogEntry, IndexWrite, DatabaseIndexUpdate, DocStore, CommitGuardUnit } from "@concile/docstore";
+import { BunSqliteAdapter, NodeSqliteAdapter, SqliteDocStore } from "@concile/docstore-sqlite";
+import { FsObjectStore } from "@concile/objectstore-fs";
+import type { ObjectStore } from "@concile/objectstore";
 import { ObjectStoreDocStore } from "../src/object-doc-store";
 import { ShardedObjectStoreDocStore } from "../src/sharded-object-doc-store";
 

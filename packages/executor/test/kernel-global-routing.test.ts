@@ -14,12 +14,12 @@
  */
 import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
-import { defineSchema, defineTable, v } from "@helipod/values";
-import { DocumentNotFoundError, InvalidClientIdError } from "@helipod/errors";
-import { D1DocStore, type D1Client, type D1PreparedStatement, type D1Session } from "@helipod/docstore-d1";
-import { DEFAULT_SHARD, encodeInternalDocumentId, encodeStorageIndexId, newDocumentId } from "@helipod/id-codec";
-import type { DocumentValue, InternalDocumentId } from "@helipod/docstore";
-import type { TransactionContext } from "@helipod/transactor";
+import { defineSchema, defineTable, v } from "@concile/values";
+import { DocumentNotFoundError, InvalidClientIdError } from "@concile/errors";
+import { D1DocStore, type D1Client, type D1PreparedStatement, type D1Session } from "@concile/docstore-d1";
+import { DEFAULT_SHARD, encodeInternalDocumentId, encodeStorageIndexId, newDocumentId } from "@concile/id-codec";
+import type { DocumentValue, InternalDocumentId } from "@concile/docstore";
+import type { TransactionContext } from "@concile/transactor";
 import {
   createKernelRouter,
   SimpleIndexCatalog,

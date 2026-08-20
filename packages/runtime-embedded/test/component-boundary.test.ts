@@ -1,10 +1,10 @@
 // packages/runtime-embedded/test/component-boundary.test.ts
 import { describe, it, expect } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { defineSchema, defineTable, v } from "@helipod/values";
-import { mutation, query, type RegisteredFunction } from "@helipod/executor";
-import { defineComponent, composeComponents } from "@helipod/component";
-import { DocumentNotFoundError } from "@helipod/errors";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { defineSchema, defineTable, v } from "@concile/values";
+import { mutation, query, type RegisteredFunction } from "@concile/executor";
+import { defineComponent, composeComponents } from "@concile/component";
+import { DocumentNotFoundError } from "@concile/errors";
 import { EmbeddedRuntime } from "../src/index";
 
 // Inline minimal system modules to avoid a circular dep: admin → runtime-embedded → admin.

@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { composeComponents } from "@helipod/component";
-import { EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { defineSchema } from "@helipod/values";
-import { query, mutation, type RegisteredFunction } from "@helipod/executor";
-import { auth } from "@helipod/auth";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { composeComponents } from "@concile/component";
+import { EmbeddedRuntime } from "@concile/runtime-embedded";
+import { defineSchema } from "@concile/values";
+import { query, mutation, type RegisteredFunction } from "@concile/executor";
+import { auth } from "@concile/auth";
 import { defineAuthz } from "../src/define-authz";
 
-// The privileged built-in the real bootstrap uses (admin API / `helipod` CLI) to seed the first
+// The privileged built-in the real bootstrap uses (admin API / `concile` CLI) to seed the first
 // admin directly — it bypasses the namespace boundary, so it can write `authz/role_assignments`
 // without holding any role. This is the ONLY ungated way a role assignment is created.
 function systemModules(): Record<string, RegisteredFunction> {

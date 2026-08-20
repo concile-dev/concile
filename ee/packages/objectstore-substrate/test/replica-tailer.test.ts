@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * Task 5.1 — `ObjectStoreReplicaTailer` (poll manifest → pull tail segments → apply verbatim → build
  * `AppliedInvalidation` → advance watermark) + `readGlobalFrontier` (design record §7/§8, Tier 3 Slice
@@ -11,11 +11,11 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { newDocumentId, encodeStorageTableId, type InternalDocumentId } from "@helipod/id-codec";
-import type { DocumentLogEntry } from "@helipod/docstore";
-import { BunSqliteAdapter, NodeSqliteAdapter, SqliteDocStore } from "@helipod/docstore-sqlite";
-import { FsObjectStore } from "@helipod/objectstore-fs";
-import type { ObjectStore } from "@helipod/objectstore";
+import { newDocumentId, encodeStorageTableId, type InternalDocumentId } from "@concile/id-codec";
+import type { DocumentLogEntry } from "@concile/docstore";
+import { BunSqliteAdapter, NodeSqliteAdapter, SqliteDocStore } from "@concile/docstore-sqlite";
+import { FsObjectStore } from "@concile/objectstore-fs";
+import type { ObjectStore } from "@concile/objectstore";
 import { ObjectStoreDocStore } from "../src/object-doc-store";
 import { readGlobalFrontier } from "../src/frontier";
 import { ObjectStoreReplicaTailer, type AppliedInvalidation } from "../src/replica-tailer";

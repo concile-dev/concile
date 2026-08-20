@@ -6,9 +6,9 @@
  * handleHttpRequest-direct style — no real fleet node needed for this shape assertion.
  */
 import { describe, it, expect } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { SimpleIndexCatalog, mutation } from "@helipod/executor";
-import { createEmbeddedRuntime } from "@helipod/runtime-embedded";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { SimpleIndexCatalog, mutation } from "@concile/executor";
+import { createEmbeddedRuntime } from "@concile/runtime-embedded";
 import { handleHttpRequest, type FleetHandles, type ServerInfo } from "../src/http-handler";
 
 const info: ServerInfo = { functions: [], tables: [] };

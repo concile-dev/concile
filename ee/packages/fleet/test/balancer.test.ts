@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * Shards B2b (Task 4) — rendezvous hashing + the `ShardLeaseBalancer`, exercised against a real
  * `PostgresDocStore`/`LeaseManager` over PGlite (real Postgres semantics, single in-process
@@ -13,8 +13,8 @@
  * substrate, exactly as they are across real nodes' separate connections.
  */
 import { describe, it, expect, vi } from "vitest";
-import { shardIdList, DEFAULT_SHARD, type ShardId } from "@helipod/id-codec";
-import { PostgresDocStore } from "@helipod/docstore-postgres";
+import { shardIdList, DEFAULT_SHARD, type ShardId } from "@concile/id-codec";
+import { PostgresDocStore } from "@concile/docstore-postgres";
 import { LeaseManager } from "../src/lease";
 import { relinquish } from "../src/node";
 import { ShardLeaseBalancer } from "../src/balancer";
@@ -42,7 +42,7 @@ async function makeFleet(): Promise<{
 }> {
   const client = new PgliteClient();
   const pgStore = new PostgresDocStore(client);
-  await pgStore.setupSchema(); // documents/indexes/persistence_globals + the helipod_ts sequence
+  await pgStore.setupSchema(); // documents/indexes/persistence_globals + the concile_ts sequence
   const leases = new Map<string, LeaseManager>();
   let setupDone = false;
   const leaseFor = (url: string): LeaseManager => {

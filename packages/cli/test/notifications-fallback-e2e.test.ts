@@ -6,12 +6,12 @@
  * eventual delivery (N2 already had that).
  */
 import { describe, it, expect, afterAll } from "vitest";
-import { v, defineSchema, defineTable } from "@helipod/values";
-import { mutation, query } from "@helipod/executor";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { createEmbeddedRuntime, type EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { HelipodClient, webSocketTransport, anyApi } from "@helipod/client";
-import { defineNotifications, NotificationSendError, type EmailProvider } from "@helipod/notifications";
+import { v, defineSchema, defineTable } from "@concile/values";
+import { mutation, query } from "@concile/executor";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { createEmbeddedRuntime, type EmbeddedRuntime } from "@concile/runtime-embedded";
+import { ConcileClient, webSocketTransport, anyApi } from "@concile/client";
+import { defineNotifications, NotificationSendError, type EmailProvider } from "@concile/notifications";
 import { loadProject, startDevServer, type DevServer } from "../src/index";
 
 // A provider that ALWAYS throws a retryable failure — simulates a primary outage that never clears
@@ -61,7 +61,7 @@ const api = anyApi as { notify: { ping: { __path: string }; statuses: { __path: 
 const servers: DevServer[] = [];
 afterAll(async () => { for (const s of servers) await s.close(); });
 
-async function bootServer(project: ReturnType<typeof loadProject>): Promise<{ server: DevServer; client: HelipodClient }> {
+async function bootServer(project: ReturnType<typeof loadProject>): Promise<{ server: DevServer; client: ConcileClient }> {
   const runtime: EmbeddedRuntime = await createEmbeddedRuntime({
     store: new SqliteDocStore(new NodeSqliteAdapter()),
     catalog: project.catalog, modules: project.moduleMap, tableNumbers: project.tableNumbers,
@@ -70,7 +70,7 @@ async function bootServer(project: ReturnType<typeof loadProject>): Promise<{ se
   });
   const server = await startDevServer(runtime, { port: 0, ip: "127.0.0.1" });
   servers.push(server);
-  const client = new HelipodClient(webSocketTransport(`ws://127.0.0.1:${server.port}/api/sync`, { reconnect: false }));
+  const client = new ConcileClient(webSocketTransport(`ws://127.0.0.1:${server.port}/api/sync`, { reconnect: false }));
   return { server, client };
 }
 

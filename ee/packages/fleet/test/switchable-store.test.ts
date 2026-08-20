@@ -1,9 +1,9 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 import { describe, it, expect, beforeEach } from "vitest";
-import { NodeSqliteAdapter, SqliteDocStore } from "@helipod/docstore-sqlite";
-import { newDocumentId, encodeStorageTableId, encodeStorageIndexId } from "@helipod/id-codec";
-import { encodeIndexKey } from "@helipod/index-key-codec";
-import type { DocumentLogEntry, InternalDocumentId } from "@helipod/docstore";
+import { NodeSqliteAdapter, SqliteDocStore } from "@concile/docstore-sqlite";
+import { newDocumentId, encodeStorageTableId, encodeStorageIndexId } from "@concile/id-codec";
+import { encodeIndexKey } from "@concile/index-key-codec";
+import type { DocumentLogEntry, InternalDocumentId } from "@concile/docstore";
 import { SwitchableDocStore } from "../src/switchable-store";
 
 const TABLE = 10001;

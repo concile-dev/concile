@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * Task 4.4 — the HEADLINE E2E (design record §4/§7/§10, Tier 3 Slice 4): a crashed shard owner is
  * failed over after its lease expires; the new owner bootstraps the FULL state from object storage
@@ -37,12 +37,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { CreateBucketCommand, S3Client } from "@aws-sdk/client-s3";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { newDocumentId, encodeStorageTableId, internalIdToHex, type InternalDocumentId } from "@helipod/id-codec";
-import type { DocumentLogEntry, IndexWrite } from "@helipod/docstore";
-import { BunSqliteAdapter, NodeSqliteAdapter, SqliteDocStore } from "@helipod/docstore-sqlite";
-import type { ObjectStore } from "@helipod/objectstore";
-import { FsObjectStore } from "@helipod/objectstore-fs";
-import { S3ObjectStore } from "@helipod/objectstore-s3";
+import { newDocumentId, encodeStorageTableId, internalIdToHex, type InternalDocumentId } from "@concile/id-codec";
+import type { DocumentLogEntry, IndexWrite } from "@concile/docstore";
+import { BunSqliteAdapter, NodeSqliteAdapter, SqliteDocStore } from "@concile/docstore-sqlite";
+import type { ObjectStore } from "@concile/objectstore";
+import { FsObjectStore } from "@concile/objectstore-fs";
+import { S3ObjectStore } from "@concile/objectstore-s3";
 import { ObjectStoreDocStore } from "../src/object-doc-store";
 import { ensureGlobals } from "../src/globals";
 import { FencedError } from "../src/fenced-error";
@@ -237,13 +237,13 @@ function dockerAvailable(): boolean {
   }
 }
 
-const RUN = dockerAvailable() && process.env.HELIPOD_OBJECTSTORE_S3 === "1";
+const RUN = dockerAvailable() && process.env.CONCILE_OBJECTSTORE_S3 === "1";
 const maybeDescribe = RUN ? describe : describe.skip;
 
 const MINIO_CONTAINER = `sb-minio-objectstore-substrate-failover-${process.pid}`;
 const MINIO_USER = "minioadmin";
 const MINIO_PASS = "minioadmin";
-const BUCKET = "helipod-objectstore-substrate-failover";
+const BUCKET = "concile-objectstore-substrate-failover";
 
 function runDocker(args: string[]): { status: number | null; stdout: string; stderr: string } {
   const r = spawnSync("docker", args, { encoding: "utf8" });

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  HelipodError,
+  ConcileError,
   UserError,
   SystemError,
   TransientError,
@@ -14,16 +14,16 @@ import {
   RateLimitError,
   TimeoutError,
   InternalError,
-  isHelipodError,
+  isConcileError,
   isRetryableError,
   getHttpStatus,
-  toHelipodError,
+  toConcileError,
 } from "../src/index";
 
-describe("HelipodError hierarchy", () => {
+describe("ConcileError hierarchy", () => {
   it("carries code/httpStatus/retryable and the concrete class name", () => {
     const e = new ArgumentValidationError("bad arg");
-    expect(e).toBeInstanceOf(HelipodError);
+    expect(e).toBeInstanceOf(ConcileError);
     expect(e).toBeInstanceOf(UserError);
     expect(e.name).toBe("ArgumentValidationError");
     expect(e.code).toBe("ARGUMENT_VALIDATION");
@@ -69,7 +69,7 @@ describe("CommitGuardRejection (Receipted Outbox, decision 2)", () => {
   it("is a retryable 409 ConflictError carrying unitIndex/rejectionCode/detail", () => {
     const e = new CommitGuardRejection(2, "FLEET_IDEMPOTENCY_CONFLICT", "key=abc");
     expect(e).toBeInstanceOf(ConflictError);
-    expect(e).toBeInstanceOf(HelipodError);
+    expect(e).toBeInstanceOf(ConcileError);
     expect(e.name).toBe("CommitGuardRejection");
     expect(e.code).toBe(COMMIT_GUARD_REJECTION_CODE);
     expect(e.httpStatus).toBe(409);
@@ -90,31 +90,31 @@ describe("CommitGuardRejection (Receipted Outbox, decision 2)", () => {
 });
 
 describe("helpers", () => {
-  it("isHelipodError discriminates", () => {
-    expect(isHelipodError(new InternalError("x"))).toBe(true);
-    expect(isHelipodError(new Error("plain"))).toBe(false);
-    expect(isHelipodError("nope")).toBe(false);
+  it("isConcileError discriminates", () => {
+    expect(isConcileError(new InternalError("x"))).toBe(true);
+    expect(isConcileError(new Error("plain"))).toBe(false);
+    expect(isConcileError("nope")).toBe(false);
   });
 
-  it("getHttpStatus defaults non-Helipod errors to 500", () => {
+  it("getHttpStatus defaults non-Concile errors to 500", () => {
     expect(getHttpStatus(new Error("plain"))).toBe(500);
     expect(getHttpStatus("oops")).toBe(500);
     expect(getHttpStatus(new TimeoutError("t"))).toBe(504);
   });
 
-  it("toHelipodError normalizes any thrown value", () => {
-    const fromHelipod = new ArgumentValidationError("a");
-    expect(toHelipodError(fromHelipod)).toBe(fromHelipod);
+  it("toConcileError normalizes any thrown value", () => {
+    const fromConcile = new ArgumentValidationError("a");
+    expect(toConcileError(fromConcile)).toBe(fromConcile);
 
-    const fromError = toHelipodError(new Error("boom"));
+    const fromError = toConcileError(new Error("boom"));
     expect(fromError).toBeInstanceOf(InternalError);
     expect(fromError.message).toBe("boom");
 
-    const fromString = toHelipodError("weird");
+    const fromString = toConcileError("weird");
     expect(fromString).toBeInstanceOf(InternalError);
     expect(fromString.message).toBe("weird");
 
-    const fromObject = toHelipodError({ nope: 1 });
+    const fromObject = toConcileError({ nope: 1 });
     expect(fromObject).toBeInstanceOf(InternalError);
     expect(fromObject.data).toEqual({ nope: 1 });
   });

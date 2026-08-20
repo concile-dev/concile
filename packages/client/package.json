@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/client",
+  "name": "@concile/client",
   "version": "0.1.5",
   "type": "module",
   "license": "FSL-1.1-Apache-2.0",
@@ -39,16 +39,16 @@
     }
   },
   "dependencies": {
-    "@helipod/id-codec": "workspace:*",
-    "@helipod/index-key-codec": "workspace:*",
-    "@helipod/sync": "workspace:*",
-    "@helipod/values": "workspace:*"
+    "@concile/id-codec": "workspace:*",
+    "@concile/index-key-codec": "workspace:*",
+    "@concile/sync": "workspace:*",
+    "@concile/values": "workspace:*"
   },
   "devDependencies": {
-    "@helipod/docstore-sqlite": "workspace:*",
-    "@helipod/executor": "workspace:*",
-    "@helipod/query-engine": "workspace:*",
-    "@helipod/runtime-embedded": "workspace:*",
+    "@concile/docstore-sqlite": "workspace:*",
+    "@concile/executor": "workspace:*",
+    "@concile/query-engine": "workspace:*",
+    "@concile/runtime-embedded": "workspace:*",
     "@testing-library/react": "^16.1.0",
     "@types/node": "catalog:",
     "@types/react": "^18.3.18",
@@ -65,8 +65,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "packages/client"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

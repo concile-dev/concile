@@ -1,13 +1,13 @@
 /**
- * `helipod fleet` — the CLI entrypoint for offline fleet maintenance operations that live in the
- * enterprise `@helipod/fleet` package. Today: `fleet reshard` (B5 Part 1, Task 9.2), which changes
+ * `concile fleet` — the CLI entrypoint for offline fleet maintenance operations that live in the
+ * enterprise `@concile/fleet` package. Today: `fleet reshard` (B5 Part 1, Task 9.2), which changes
  * a STOPPED Postgres fleet's shard count. Core `packages/cli` keeps ZERO static dependency on
- * `@helipod/fleet` — it's loaded only via dynamic `import()`, mirroring `serve --fleet`'s gate
+ * `@concile/fleet` — it's loaded only via dynamic `import()`, mirroring `serve --fleet`'s gate
  * (`serve.ts`'s `fleetSpecifier`/`FLEET_ERR_NO_PACKAGE`).
  */
 import { isPostgresUrl, makePgClient } from "./boot";
 
-/** The slice of `@helipod/fleet`'s reshard surface `fleetCommand` consumes (via dynamic import).
+/** The slice of `@concile/fleet`'s reshard surface `fleetCommand` consumes (via dynamic import).
  *  Declared locally (structural, not imported) for the same reason `serve.ts`'s `FleetModule` is —
  *  keep core `packages/cli` free of a static/type dependency on the enterprise package. Keep in sync
  *  with `ee/packages/fleet/src/reshard.ts`. */
@@ -27,7 +27,7 @@ export interface FleetModule {
 
 /** Same message shape as `serve.ts`'s `FLEET_ERR_NO_PACKAGE` — kept as an independent literal (no
  *  cross-file import) since the two commands' failure paths are otherwise unrelated. */
-export const FLEET_ERR_NO_PACKAGE = "fleet mode requires @helipod/fleet — install it (bun add @helipod/fleet).";
+export const FLEET_ERR_NO_PACKAGE = "fleet mode requires @concile/fleet — install it (bun add @concile/fleet).";
 
 interface ReshardArgs {
   targetShards: number;
@@ -38,7 +38,7 @@ interface ReshardArgs {
  *  missing/invalid flag, or the validated args on success. */
 export function parseReshardArgs(args: string[]): { ok: true; args: ReshardArgs } | { ok: false; error: string } {
   let shardsRaw: string | undefined;
-  let databaseUrl: string | undefined = process.env.HELIPOD_DATABASE_URL;
+  let databaseUrl: string | undefined = process.env.CONCILE_DATABASE_URL;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a === "--shards" && args[i + 1]) shardsRaw = args[++i];
@@ -56,14 +56,14 @@ export function parseReshardArgs(args: string[]): { ok: true; args: ReshardArgs 
   if (!isPostgresUrl(databaseUrl)) {
     return {
       ok: false,
-      error: "✗ --database-url postgres://… is required (or HELIPOD_DATABASE_URL) — fleet reshard is Postgres-only",
+      error: "✗ --database-url postgres://… is required (or CONCILE_DATABASE_URL) — fleet reshard is Postgres-only",
     };
   }
 
   return { ok: true, args: { targetShards, databaseUrl: databaseUrl! } };
 }
 
-/** `fleet reshard --shards M --database-url <pg>`: dynamically import `@helipod/fleet`, open a
+/** `fleet reshard --shards M --database-url <pg>`: dynamically import `@concile/fleet`, open a
  *  short-lived PgClient (via `makePgClient` — `BunSqlClient` under Bun, `NodePgClient` elsewhere),
  *  run `reshardFleet`, and print a clear result. Returns the process exit
  *  code (0 on success, 1 on any validation/refusal/error). */
@@ -78,8 +78,8 @@ async function reshardCommand(args: string[]): Promise<number> {
   let fleetModule: FleetModule;
   try {
     // Indirect specifier (typed `string`, not a literal) so tsc does NOT statically resolve
-    // `@helipod/fleet` — mirrors `serve.ts`'s `fleetSpecifier` gate.
-    const fleetSpecifier: string = "@helipod/fleet";
+    // `@concile/fleet` — mirrors `serve.ts`'s `fleetSpecifier` gate.
+    const fleetSpecifier: string = "@concile/fleet";
     fleetModule = (await import(fleetSpecifier)) as unknown as FleetModule;
   } catch {
     process.stderr.write(`✗ ${FLEET_ERR_NO_PACKAGE}\n`);
@@ -94,7 +94,7 @@ async function reshardCommand(args: string[]): Promise<number> {
         `(created: ${result.created.length ? result.created.join(", ") : "none"}, ` +
         `deleted: ${result.deleted.length ? result.deleted.join(", ") : "none"}, ` +
         `frontier floor: ${result.frontierFloor}); ` +
-        `update HELIPOD_FLEET_SHARDS to ${result.newShards} (or unset) before restarting the fleet\n`,
+        `update CONCILE_FLEET_SHARDS to ${result.newShards} (or unset) before restarting the fleet\n`,
     );
     return 0;
   } catch (e) {
@@ -105,7 +105,7 @@ async function reshardCommand(args: string[]): Promise<number> {
   }
 }
 
-/** `helipod fleet <sub> [...]` — sub-dispatches on `args[0]`. Unknown/absent sub → usage error. */
+/** `concile fleet <sub> [...]` — sub-dispatches on `args[0]`. Unknown/absent sub → usage error. */
 export async function fleetCommand(args: string[]): Promise<number> {
   const [sub, ...rest] = args;
   switch (sub) {
@@ -114,7 +114,7 @@ export async function fleetCommand(args: string[]): Promise<number> {
     default:
       process.stderr.write(
         `✗ unknown fleet subcommand: ${sub ?? "(none)"}\n` +
-          `Usage: helipod fleet reshard --shards M --database-url <url>\n`,
+          `Usage: concile fleet reshard --shards M --database-url <url>\n`,
       );
       return 1;
   }

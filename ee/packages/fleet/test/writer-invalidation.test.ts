@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * Shards B2b, Task 5 — Part (c): the WRITER INVALIDATION LISTENER (the T4 multi-writer discovery).
  *
@@ -16,17 +16,17 @@
  * on — this is the mechanism proof.
  */
 import { describe, it, expect } from "vitest";
-import { PostgresDocStore } from "@helipod/docstore-postgres";
-import { newDocumentId, encodeStorageIndexId, DEFAULT_SHARD } from "@helipod/id-codec";
-import { encodeIndexKey } from "@helipod/index-key-codec";
-import { SimpleIndexCatalog, query, type RegisteredFunction } from "@helipod/executor";
-import { createEmbeddedRuntime } from "@helipod/runtime-embedded";
+import { PostgresDocStore } from "@concile/docstore-postgres";
+import { newDocumentId, encodeStorageIndexId, DEFAULT_SHARD } from "@concile/id-codec";
+import { encodeIndexKey } from "@concile/index-key-codec";
+import { SimpleIndexCatalog, query, type RegisteredFunction } from "@concile/executor";
+import { createEmbeddedRuntime } from "@concile/runtime-embedded";
 import { PgliteClient } from "./pglite-client";
 import { LeaseManager } from "../src/lease";
 import { acquireShardAsWriter, keyToPointRange, docKeyToPointRange } from "../src/node";
 import { ReplicaTailer, type AppliedInvalidation } from "../src/replica-tailer";
 
-// `@helipod/query-engine`/`@helipod/sync` are transitive-only deps of `@helipod/fleet` (not
+// `@concile/query-engine`/`@concile/sync` are transitive-only deps of `@concile/fleet` (not
 // declared), so their types aren't nameable here under tsc — the index spec is passed as a plain
 // literal to `addIndex` (checked against executor's own param type) and server messages are read
 // structurally.
@@ -40,7 +40,7 @@ const byConversation = {
   indexId: INDEX_ID,
 };
 
-/** Structural read-only view of the server messages the loopback pushes (avoids importing `@helipod/sync`). */
+/** Structural read-only view of the server messages the loopback pushes (avoids importing `@concile/sync`). */
 type ServerMsg = { type: string; modifications?: Array<{ type: string; queryId?: number; value?: unknown }> };
 
 const modules: Record<string, RegisteredFunction> = {

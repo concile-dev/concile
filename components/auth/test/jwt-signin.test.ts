@@ -1,10 +1,10 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { SignJWT, UnsecuredJWT, exportJWK, generateKeyPair } from "jose";
 import { createServer, type Server } from "node:http";
-import { composeComponents } from "@helipod/component";
-import { EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { defineSchema } from "@helipod/values";
+import { composeComponents } from "@concile/component";
+import { EmbeddedRuntime } from "@concile/runtime-embedded";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { defineSchema } from "@concile/values";
 import { defineAuth, resolveAuthConfig, type MintResult } from "../src";
 
 let mock: Server;
@@ -42,14 +42,14 @@ async function mint(
     .setProtectedHeader({ alg: "RS256", kid: KID })
     .setIssuedAt()
     .setIssuer(over.iss ?? mockUrl)
-    .setAudience(over.aud ?? "helipod")
+    .setAudience(over.aud ?? "concile")
     .setExpirationTime(over.exp ?? "5m")
     .sign(priv);
 }
 
 async function runtime() {
   await startIssuer();
-  const comp = defineAuth({ jwt: { issuers: [{ issuer: mockUrl, audience: "helipod" }] } });
+  const comp = defineAuth({ jwt: { issuers: [{ issuer: mockUrl, audience: "concile" }] } });
   const { catalog, moduleMap, componentNames, contextProviders, tableNumbers } = composeComponents(
     { schemaJson: defineSchema({}).export(), moduleMap: {} },
     [comp],
@@ -123,7 +123,7 @@ describe("signInWithIdToken", () => {
       .setProtectedHeader({ alg: "RS256", kid: KID })
       .setIssuedAt()
       .setIssuer(mockUrl)
-      .setAudience("helipod")
+      .setAudience("concile")
       .setExpirationTime("5m")
       .sign(wrongKey);
     await expect(rt.runAction("auth:signInWithIdToken", { idToken: forged })).rejects.toThrow(/authentication failed/);
@@ -134,7 +134,7 @@ describe("signInWithIdToken", () => {
     const unsecured = new UnsecuredJWT({ sub: "attacker" })
       .setIssuedAt()
       .setIssuer(mockUrl)
-      .setAudience("helipod")
+      .setAudience("concile")
       .setExpirationTime("5m")
       .encode();
     await expect(rt.runAction("auth:signInWithIdToken", { idToken: unsecured })).rejects.toThrow(/authentication failed/);
@@ -147,7 +147,7 @@ describe("signInWithIdToken", () => {
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
       .setIssuer(mockUrl)
-      .setAudience("helipod")
+      .setAudience("concile")
       .setExpirationTime("5m")
       .sign(hsSecret);
     await expect(rt.runAction("auth:signInWithIdToken", { idToken: confused })).rejects.toThrow(/authentication failed/);

@@ -2,14 +2,14 @@
 import { useState } from "react";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { encodeStorageIndexId } from "@helipod/id-codec";
-import { SimpleIndexCatalog, query, mutation, action, type RegisteredFunction } from "@helipod/executor";
-import type { IndexSpec } from "@helipod/query-engine";
-import { createEmbeddedRuntime, type EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { HelipodClient, loopbackTransport, anyApi } from "../src/index";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { encodeStorageIndexId } from "@concile/id-codec";
+import { SimpleIndexCatalog, query, mutation, action, type RegisteredFunction } from "@concile/executor";
+import type { IndexSpec } from "@concile/query-engine";
+import { createEmbeddedRuntime, type EmbeddedRuntime } from "@concile/runtime-embedded";
+import { ConcileClient, loopbackTransport, anyApi } from "../src/index";
 import type { OptimisticLocalStore } from "../src/optimistic-store";
-import { HelipodProvider, useQuery, useMutation, useAction } from "../src/react";
+import { ConcileProvider, useQuery, useMutation, useAction } from "../src/react";
 
 const MESSAGES = 10001;
 const byConversation: IndexSpec = {
@@ -85,11 +85,11 @@ function StabilityProbe({ tick, onCapture }: { tick: number; onCapture: (fn: unk
 
 describe("React useQuery / useMutation", () => {
   it("renders a reactive list that updates after a mutation", async () => {
-    const client = new HelipodClient(loopbackTransport(runtime.connect("react")));
+    const client = new ConcileClient(loopbackTransport(runtime.connect("react")));
     render(
-      <HelipodProvider client={client}>
+      <ConcileProvider client={client}>
         <Chat />
-      </HelipodProvider>,
+      </ConcileProvider>,
     );
 
     // Initially no messages.
@@ -102,22 +102,22 @@ describe("React useQuery / useMutation", () => {
   });
 
   it("useAction: a callback that resolves with the action's return value (not reactive)", async () => {
-    const client = new HelipodClient(loopbackTransport(runtime.connect("react-action")));
+    const client = new ConcileClient(loopbackTransport(runtime.connect("react-action")));
     render(
-      <HelipodProvider client={client}>
+      <ConcileProvider client={client}>
         <Chat />
-      </HelipodProvider>,
+      </ConcileProvider>,
     );
     fireEvent.click(screen.getByText("shout"));
     await waitFor(() => expect(screen.getByLabelText("shouted").textContent).toBe("HI"));
   });
 
   it("useMutation(...).withOptimisticUpdate(...): renders the optimistic row instantly, before the server round trip settles", async () => {
-    const client = new HelipodClient(loopbackTransport(runtime.connect("react-optimistic")));
+    const client = new ConcileClient(loopbackTransport(runtime.connect("react-optimistic")));
     render(
-      <HelipodProvider client={client}>
+      <ConcileProvider client={client}>
         <OptimisticChat />
-      </HelipodProvider>,
+      </ConcileProvider>,
     );
     await waitFor(() => expect(screen.getByLabelText("messages").children.length).toBe(0));
 
@@ -133,17 +133,17 @@ describe("React useQuery / useMutation", () => {
   });
 
   it("useMutation(...).withOptimisticUpdate(...): the returned callable is stable across re-renders", () => {
-    const client = new HelipodClient(loopbackTransport(runtime.connect("react-stability")));
+    const client = new ConcileClient(loopbackTransport(runtime.connect("react-stability")));
     const captured: unknown[] = [];
     const { rerender } = render(
-      <HelipodProvider client={client}>
+      <ConcileProvider client={client}>
         <StabilityProbe tick={0} onCapture={(fn) => captured.push(fn)} />
-      </HelipodProvider>,
+      </ConcileProvider>,
     );
     rerender(
-      <HelipodProvider client={client}>
+      <ConcileProvider client={client}>
         <StabilityProbe tick={1} onCapture={(fn) => captured.push(fn)} />
-      </HelipodProvider>,
+      </ConcileProvider>,
     );
     expect(screen.getByLabelText("tick").textContent).toBe("1");
     expect(captured).toHaveLength(2);

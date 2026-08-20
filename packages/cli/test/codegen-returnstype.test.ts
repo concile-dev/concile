@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { v, defineSchema, defineTable } from "@helipod/values";
-import { mutation, query, action } from "@helipod/executor";
-import { generateApi } from "@helipod/codegen";
+import { v, defineSchema, defineTable } from "@concile/values";
+import { mutation, query, action } from "@concile/executor";
+import { generateApi } from "@concile/codegen";
 import { loadProject } from "../src/index";
 
 describe("codegen — returnsType derived from the returns validator (D10)", () => {

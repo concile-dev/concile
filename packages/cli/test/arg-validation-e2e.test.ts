@@ -3,7 +3,7 @@
  *
  * Argument validation (a call whose args don't match the function's `args` validator throws
  * ArgumentValidationError) is enforced in the executor and proven there by unit tests. This
- * proves the WHOLE path works through the shipped `helipod dev` server (real startDevServer +
+ * proves the WHOLE path works through the shipped `concile dev` server (real startDevServer +
  * loadProject, real HTTP), the "test through the shipped entrypoint" rule:
  *
  *   POST /api/run with well-typed args -> commits, read-back shows the row.
@@ -11,10 +11,10 @@
  *     NOT persisted — the transaction never ran.
  */
 import { describe, it, expect } from "vitest";
-import { v, defineSchema, defineTable } from "@helipod/values";
-import { mutation, query } from "@helipod/executor";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { createEmbeddedRuntime } from "@helipod/runtime-embedded";
+import { v, defineSchema, defineTable } from "@concile/values";
+import { mutation, query } from "@concile/executor";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { createEmbeddedRuntime } from "@concile/runtime-embedded";
 import { loadProject, startDevServer } from "../src/index";
 
 const schema = defineSchema({ notes: defineTable({ body: v.string() }) });

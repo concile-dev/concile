@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { helipod, DEFAULT_FUNCTIONS_DIR } from "../src/index";
+import { concile, DEFAULT_FUNCTIONS_DIR } from "../src/index";
 
-describe("helipod() plugin — config hook", () => {
+describe("concile() plugin — config hook", () => {
   it("injects the engine-owned proxy entries at the resolved port, with ws on /api", async () => {
-    const plugin = helipod({ port: 4567 });
+    const plugin = concile({ port: 4567 });
     // `config` may be a function; call it to get the partial config it contributes.
     const configHook =
       typeof plugin.config === "function"
@@ -21,8 +21,8 @@ describe("helipod() plugin — config hook", () => {
   });
 
   it("has the plugin name and a configureServer hook", () => {
-    const plugin = helipod();
-    expect(plugin.name).toBe("helipod");
+    const plugin = concile();
+    expect(plugin.name).toBe("concile");
     expect(plugin.configureServer).toBeTypeOf("function");
   });
 });
@@ -30,13 +30,13 @@ describe("helipod() plugin — config hook", () => {
 describe("DEFAULT_FUNCTIONS_DIR guard", () => {
   // 30s timeout: this dynamic import pulls the whole CLI dependency graph, which on a
   // cold-cache CI runner legitimately exceeds vitest's 5s default.
-  it("the module-local literal (deliberately not imported, see src/index.ts) has not drifted from @helipod/cli's own constant", { timeout: 30_000 }, async () => {
-    // A test file may import @helipod/cli freely — only the shipped proxy path (src/index.ts)
+  it("the module-local literal (deliberately not imported, see src/index.ts) has not drifted from @concile/cli's own constant", { timeout: 30_000 }, async () => {
+    // A test file may import @concile/cli freely — only the shipped proxy path (src/index.ts)
     // must avoid a static top-level import of it, to preserve the optional-peer-dependency
     // contract for proxy-mode-only consumers. See packages/vite/src/index.ts's DEFAULT_FUNCTIONS_DIR
     // comment and embed.ts's dynamic import for the two ways this package reaches the real value.
-    const { DEFAULT_FUNCTIONS_DIR: cliDefault } = await import("@helipod/cli");
+    const { DEFAULT_FUNCTIONS_DIR: cliDefault } = await import("@concile/cli");
     expect(DEFAULT_FUNCTIONS_DIR).toBe(cliDefault);
-    expect(DEFAULT_FUNCTIONS_DIR).toBe("helipod");
+    expect(DEFAULT_FUNCTIONS_DIR).toBe("concile");
   });
 });

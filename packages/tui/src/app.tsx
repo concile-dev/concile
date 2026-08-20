@@ -1,6 +1,6 @@
 /* @jsxImportSource @opentui/react */
 /**
- * The helipod terminal dashboard shell.
+ * The concile terminal dashboard shell.
  *
  * Layout is a three-row flex column that owns the full terminal: a header line,
  * a growing content region, and a status bar pinned to the bottom. (termcn's
@@ -14,7 +14,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useKeyboard, useTerminalDimensions, type createRoot } from "@opentui/react";
 import { ThemeProvider, useTheme } from "@/components/ui/theme-provider";
-import { helipodTheme } from "@/lib/terminal-themes/helipod";
+import { concileTheme } from "@/lib/terminal-themes/concile";
 import { OverviewScreen } from "./screens/overview";
 import { DataScreen } from "./screens/data";
 import { FunctionsScreen } from "./screens/functions";
@@ -148,7 +148,7 @@ function Frame({ bridge }: { bridge: TuiBridge }) {
       {/* header */}
       <box flexDirection="row" paddingLeft={1} paddingRight={1} paddingBottom={1} flexShrink={0}>
         <text>
-          <span fg={theme.colors.primary}>{"◆ helipod"}</span>
+          <span fg={theme.colors.primary}>{"◆ concile"}</span>
           <span fg={theme.colors.mutedForeground}>{`  dev  ·  ${bridge.deployment.url}`}</span>
         </text>
       </box>
@@ -188,7 +188,7 @@ export function mount(root: ReturnType<typeof createRoot>, bridge: TuiBridge) {
 
 export function App({ bridge }: { bridge: TuiBridge }) {
   return (
-    <ThemeProvider theme={helipodTheme}>
+    <ThemeProvider theme={concileTheme}>
       <Frame bridge={bridge} />
     </ThemeProvider>
   );

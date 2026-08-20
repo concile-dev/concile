@@ -1,6 +1,6 @@
 /**
- * `@helipod/codegen` — generates the typed client surface (`_generated/`) from a schema
- * and an analyzed function manifest. The end-to-end types that make Helipod feel like Convex.
+ * `@concile/codegen` — generates the typed client surface (`_generated/`) from a schema
+ * and an analyzed function manifest. The end-to-end types that make Concile feel like Convex.
  */
 export type { TypeEmitContext } from "./validator-to-ts";
 export { validatorToTsType, validatorToJson } from "./validator-to-ts";

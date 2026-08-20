@@ -3,15 +3,15 @@
 // Regression coverage for the reviewer-flagged footgun: composeComponents validates `requires`
 // presence but historically never REORDERED the input array, so a component listed BEFORE the
 // sibling it `requires` saw an empty `cctx.components` at build time (a real TypeError footgun
-// for @helipod/workflow, which reads `cctx.components.scheduler`). Fixed by a stable topological
+// for @concile/workflow, which reads `cctx.components.scheduler`). Fixed by a stable topological
 // sort by `requires`, applied once at the top of composeComponents.
 import { describe, it, expect } from "vitest";
-import { defineSchema } from "@helipod/values";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { MonotonicTimestampOracle } from "@helipod/docstore";
-import { SingleWriterTransactor } from "@helipod/transactor";
-import { QueryRuntime } from "@helipod/query-engine";
-import { InlineUdfExecutor, SimpleIndexCatalog, query, type ContextProvider } from "@helipod/executor";
+import { defineSchema } from "@concile/values";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { MonotonicTimestampOracle } from "@concile/docstore";
+import { SingleWriterTransactor } from "@concile/transactor";
+import { QueryRuntime } from "@concile/query-engine";
+import { InlineUdfExecutor, SimpleIndexCatalog, query, type ContextProvider } from "@concile/executor";
 import { defineComponent, type ComponentDefinition } from "../src/define-component";
 import { composeComponents } from "../src/compose";
 

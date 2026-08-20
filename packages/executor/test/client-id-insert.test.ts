@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { MonotonicTimestampOracle, type DocumentValue } from "@helipod/docstore";
-import { SingleWriterTransactor } from "@helipod/transactor";
-import { QueryRuntime } from "@helipod/query-engine";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { MonotonicTimestampOracle, type DocumentValue } from "@concile/docstore";
+import { SingleWriterTransactor } from "@concile/transactor";
+import { QueryRuntime } from "@concile/query-engine";
 import { InlineUdfExecutor, SimpleIndexCatalog, query, mutation } from "../src/index";
-import { v } from "@helipod/values";
-import { mintEncodedDocumentId, decodeDocumentId } from "@helipod/id-codec";
+import { v } from "@concile/values";
+import { mintEncodedDocumentId, decodeDocumentId } from "@concile/id-codec";
 
 const CONVOS = 10001;
 const MSGS = 10002;

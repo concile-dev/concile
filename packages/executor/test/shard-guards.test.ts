@@ -1,18 +1,18 @@
 /**
  * Shards B2a Task 3 — shardBy resolution + always-on kernel ownership guards, exercised at
  * Tier-0 SQLite through the REAL `InlineUdfExecutor` + `ShardedTransactor` (the every-tier proof:
- * these same guards run on the laptop, in `helipod dev`'s virtual shards, and on the fleet).
+ * these same guards run on the laptop, in `concile dev`'s virtual shards, and on the fleet).
  *
  * Representative channel ids (numShards = 8), found by scanning shardIdForKeyValue:
  *   chan-3 → default   chan-1 → s1   chan-5 → s2   chan-13 → s3   chan-0 → s4
  */
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { ShardedTransactor } from "@helipod/transactor";
-import { QueryRuntime, type IndexSpec } from "@helipod/query-engine";
-import { encodeStorageIndexId, encodeStorageTableId, shardIdForKeyValue } from "@helipod/id-codec";
-import { indexKeyspaceId } from "@helipod/index-key-codec";
-import * as idCodec from "@helipod/id-codec";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { ShardedTransactor } from "@concile/transactor";
+import { QueryRuntime, type IndexSpec } from "@concile/query-engine";
+import { encodeStorageIndexId, encodeStorageTableId, shardIdForKeyValue } from "@concile/id-codec";
+import { indexKeyspaceId } from "@concile/index-key-codec";
+import * as idCodec from "@concile/id-codec";
 import { InlineUdfExecutor, SimpleIndexCatalog, mutation, query, type RegisteredFunction, type UdfResult } from "../src/index";
 
 const MESSAGES = 10001;

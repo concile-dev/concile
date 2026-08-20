@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MemoryObjectStore } from "@helipod/objectstore/test-support/memory-objectstore";
-import { isCasConflict } from "@helipod/objectstore";
+import { MemoryObjectStore } from "@concile/objectstore/test-support/memory-objectstore";
+import { isCasConflict } from "@concile/objectstore";
 import { createGlobals, ensureGlobals, readGlobals, type FleetGlobals } from "../src/globals";
 
 describe("fleet globals", () => {

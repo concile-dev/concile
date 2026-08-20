@@ -1,5 +1,5 @@
 /**
- * `@helipod/sync` — the reactive sync tier: the version-bracketed protocol, the
+ * `@concile/sync` — the reactive sync tier: the version-bracketed protocol, the
  * subscription manager (table-level invalidation), the protocol handler that pushes reactive
  * transitions, and the client reducer. Talks only to abstract `SyncWebSocket`/`SyncUdfExecutor`
  * so it runs in-process at Tier 0 or as a fleet node at Tier 2.

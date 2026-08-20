@@ -1,10 +1,10 @@
 // packages/admin/test/set-schema.test.ts
 import { describe, it, expect } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { InMemoryLogSink, SimpleIndexCatalog, mutation, query } from "@helipod/executor";
-import { defineSchema, defineTable, v } from "@helipod/values";
-import { EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { encodeStorageIndexId } from "@helipod/id-codec";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { InMemoryLogSink, SimpleIndexCatalog, mutation, query } from "@concile/executor";
+import { defineSchema, defineTable, v } from "@concile/values";
+import { EmbeddedRuntime } from "@concile/runtime-embedded";
+import { encodeStorageIndexId } from "@concile/id-codec";
 import { AdminApi, type SchemaJsonLike } from "../src/admin-api";
 import { browseTableModule } from "../src/browse";
 

@@ -1,14 +1,14 @@
 /**
- * Terminal output styling for the helipod CLI — zero dependencies, degradation-first.
+ * Terminal output styling for the concile CLI — zero dependencies, degradation-first.
  *
  * Rules of the house:
  *  - Styling activates ONLY on a real interactive terminal (`isTTY`), and never when
  *    `NO_COLOR` (https://no-color.org) or `TERM=dumb` is set. Piped/CI output — including
  *    our own e2e tests, which scrape exact plain lines — stays byte-identical to the
  *    pre-styling CLI.
- *  - `helipod serve` never imports this module's styled paths: production logs are a
+ *  - `concile serve` never imports this module's styled paths: production logs are a
  *    machine contract (grep-able lines, the `{"ready":…}` JSON handshake).
- *  - No frameworks here. The interactive dashboard (@helipod/tui) is a separate,
+ *  - No frameworks here. The interactive dashboard (@concile/tui) is a separate,
  *    dynamically-imported package; this module is plain ANSI for run-and-exit commands.
  */
 
@@ -16,7 +16,7 @@ export const styled: boolean =
   Boolean(process.stdout.isTTY) &&
   process.env.NO_COLOR === undefined &&
   process.env.TERM !== "dumb" &&
-  process.env.HELIPOD_PLAIN === undefined;
+  process.env.CONCILE_PLAIN === undefined;
 
 const wrap = (open: string, close: string) => (s: string) => (styled ? `[${open}m${s}[${close}m` : s);
 
@@ -28,7 +28,7 @@ export const yellow = wrap("33", "39");
 export const blue = wrap("34", "39");
 export const magenta = wrap("35", "39");
 export const cyan = wrap("36", "39");
-/** The helipod brand crimson (website `--color-fd-primary`, dark), truecolor with 256-color fallback. */
+/** The concile brand crimson (website `--color-fd-primary`, dark), truecolor with 256-color fallback. */
 export const brand = (s: string) =>
   styled ? `[38;2;224;70;103m${s}[39m` : s;
 
@@ -42,9 +42,9 @@ export const sym = {
   arrow: dim("➜"),
 } as const;
 
-/** `◆ helipod v0.1.4` header for run-and-exit commands. */
+/** `◆ concile v0.1.4` header for run-and-exit commands. */
 export function banner(subtitle?: string, version = ""): string {
-  const parts = [`${sym.mark} ${bold("helipod")}`, version ? dim(`v${version}`) : "", subtitle ? dim(subtitle) : ""];
+  const parts = [`${sym.mark} ${bold("concile")}`, version ? dim(`v${version}`) : "", subtitle ? dim(subtitle) : ""];
   return parts.filter(Boolean).join(" ");
 }
 

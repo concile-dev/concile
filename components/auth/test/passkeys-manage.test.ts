@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { query, type QueryCtx } from "@helipod/executor";
-import type { Value } from "@helipod/values";
-import { createTestHelipod, type TestHelipod } from "@helipod/test";
+import { query, type QueryCtx } from "@concile/executor";
+import type { Value } from "@concile/values";
+import { createTestConcile, type TestConcile } from "@concile/test";
 import type {
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
@@ -13,7 +13,7 @@ import { createMockAuthenticator, type MockAuthenticator } from "./support/mock-
 
 /**
  * Task 5 device-management tests: `listPasskeys` / `renamePasskey` / `revokePasskey` — the A1
- * `listSessions`/`revokeSession` mirror. Driven through `@helipod/test`'s real engine (identity via
+ * `listSessions`/`revokeSession` mirror. Driven through `@concile/test`'s real engine (identity via
  * `withIdentity`, reactivity via `subscribe`). Registration ceremonies run the genuine
  * `@simplewebauthn/server` path via the T2 software authenticator, never a mock of the ceremony.
  */
@@ -42,10 +42,10 @@ const listPasskeysFor = query(async (ctx: QueryCtx, { userId }: { userId: string
   return rows.map((r) => ({ passkeyId: r._id as string, deviceName: (r.deviceName as string | undefined) ?? null }));
 });
 
-let t: TestHelipod;
+let t: TestConcile;
 
 async function setup(): Promise<void> {
-  t = await createTestHelipod({
+  t = await createTestConcile({
     modules: { app: { listPasskeysFor } },
     components: [defineAuth({ passkeys: VALID })],
     schema: false,

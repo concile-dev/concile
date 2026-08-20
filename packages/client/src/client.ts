@@ -1,5 +1,5 @@
 /**
- * `HelipodClient` — the reactive client, now a **Gated Ledger** (verdict §(b)-(c)). It manages
+ * `ConcileClient` — the reactive client, now a **Gated Ledger** (verdict §(b)-(c)). It manages
  * query subscriptions (deduped by path+args), applies the version-bracketed sync protocol, and
  * layers optimistic updates over a serializable pending log:
  *
@@ -19,8 +19,8 @@ import {
   type ClientMutationVerdict,
   type ServerMessage,
   type StateVersion,
-} from "@helipod/sync";
-import { convexToJson, jsonToConvex, type JSONValue, type Value } from "@helipod/values";
+} from "@concile/sync";
+import { convexToJson, jsonToConvex, type JSONValue, type Value } from "@concile/values";
 import { getFunctionPath, type AnyFunctionRef, type FunctionReference } from "./api";
 import type { AnyFunctionReference, FunctionArgs, FunctionReturnType } from "./function-types";
 import type { ClientTransport } from "./transport";
@@ -44,7 +44,7 @@ import {
 import { OutboxDrain, dropIfNonReplayable, type DrainHost, type OutboxLockManager, type PoisonPolicy } from "./outbox-drain";
 import { buildConnectMessage, outboxHeldFromLog } from "./connect-handshake";
 import { sha256Hex, sessionFingerprintKey } from "./identity-fingerprint";
-import type { MutationBatchEntry } from "@helipod/sync";
+import type { MutationBatchEntry } from "@concile/sync";
 
 export type { QueryListener, QueryErrorListener };
 
@@ -172,7 +172,7 @@ function makeEntropy(): string {
   return `${Date.now().toString(36)}-${(entropyCounter++).toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export class HelipodClient {
+export class ConcileClient {
   private readonly transport: ClientTransport;
   private version: StateVersion = { ...INITIAL_VERSION };
   private resyncing = false;
@@ -214,7 +214,7 @@ export class HelipodClient {
    *  stay fully synchronous (T1's open concern), so it cannot await `outboxIdentity`'s async
    *  `getMeta`/`setMeta` round-trip. Fed into `mintIdentity` via `opts.mintClientId` below so the
    *  durable meta row names this SAME id. Set once, iff `opts.outbox` is configured; never reused
-   *  across a reload (a fresh `HelipodClient` always mints again). */
+   *  across a reload (a fresh `ConcileClient` always mints again). */
   private outboxClientId?: string;
   /** In-memory serial `seq` counter for `outboxClientId` (verdict §(d): "seqs minted serially
    *  in-memory per tab"). Starts at 0 synchronously; `outboxIdentity`'s resolution only ever
@@ -285,7 +285,7 @@ export class HelipodClient {
 
   /** T5: the registry `mutation()` NEVER consults — only `addHydratedEntry` does, at hydrate time
    *  (verdict §(d): "call-site closure wins for the live call; the registry is consulted only at
-   *  hydrate"). Plain string-keyed: a generated `UdfPathOf<Api>` union (`@helipod/codegen`) narrows
+   *  hydrate"). Plain string-keyed: a generated `UdfPathOf<Api>` union (`@concile/codegen`) narrows
    *  the caller's OWN object-literal keys; this package never imports that generated type. */
   private readonly optimisticUpdates: Partial<Record<string, OptimisticUpdateFn>>;
   /** udfPaths already warned for a registry miss at hydrate — "one warn per udfPath" (spec §(k)6),
@@ -323,7 +323,7 @@ export class HelipodClient {
       /** The Web Locks manager for the drain leader — `undefined` probes `navigator.locks`, `null`
        *  forces single-tab, an object is used directly (tests inject a fake). */
       outboxLocks?: OutboxLockManager | null;
-      /** Distinguishes the drain's lock name per deployment (`helipod:outbox:<origin>:<deployment>`);
+      /** Distinguishes the drain's lock name per deployment (`concile:outbox:<origin>:<deployment>`);
        *  defaults to `"default"`. */
       outboxDeployment?: string;
       /** The drain's interval-nudge period (verdict §(d): never `navigator.onLine`). */
@@ -336,7 +336,7 @@ export class HelipodClient {
       onOutboxPause?: (info: { requestId: string; udfPath: string; code: string }) => void;
       /** T5: the durable-outbox registry — consulted ONLY when a durable entry is hydrated after a
        *  reload (never for a live call). Plain string-keyed here; a generated `UdfPathOf<Api>`
-       *  (`@helipod/codegen`) narrows an app's own object literal at the call site. */
+       *  (`@concile/codegen`) narrows an app's own object literal at the call site. */
       optimisticUpdates?: Partial<Record<string, OptimisticUpdateFn>>;
       /** T5 (R9): fired for a terminal durable failure with no live promise awaiter this session. */
       onMutationFailed?: (info: MutationFailedInfo) => void;
@@ -370,7 +370,7 @@ export class HelipodClient {
       // floors to the same observability path as any other meta-only durable write.
       this.outboxIdentity.catch((err: unknown) => this.handleOutboxWriteError("mintIdentity", this.outboxClientId, undefined, undefined, err));
       this.outboxDrain = new OutboxDrain(this.makeDrainHost(), {
-        lockName: `helipod:outbox:${this.originTag()}:${opts.outboxDeployment ?? "default"}`,
+        lockName: `concile:outbox:${this.originTag()}:${opts.outboxDeployment ?? "default"}`,
         locks: opts.outboxLocks,
         poisonPolicy: opts.poisonPolicy,
         chunkSize: opts.outboxChunkSize,
@@ -379,7 +379,7 @@ export class HelipodClient {
         onPause: opts.onOutboxPause,
       });
       this.outboxBroadcast =
-        opts.outboxBroadcast === null ? undefined : (opts.outboxBroadcast ?? probeBroadcastChannel(`helipod:outbox:${this.originTag()}:${opts.outboxDeployment ?? "default"}:pending`));
+        opts.outboxBroadcast === null ? undefined : (opts.outboxBroadcast ?? probeBroadcastChannel(`concile:outbox:${this.originTag()}:${opts.outboxDeployment ?? "default"}:pending`));
       if (this.outboxBroadcast) {
         this.outboxBroadcast.onmessage = (event) => {
           // Keep the unconditional accessor fan-out FIRST — every existing/legacy listener nudges
@@ -390,7 +390,7 @@ export class HelipodClient {
           try {
             this.handleOutboxBroadcastMessage(event.data);
           } catch (err) {
-            if (isDevMode()) console.error("[helipod] outbox: error handling a cross-tab broadcast message", err);
+            if (isDevMode()) console.error("[concile] outbox: error handling a cross-tab broadcast message", err);
           }
         };
       }
@@ -1343,7 +1343,7 @@ export class HelipodClient {
     if (!this.optimisticUpdateMissWarned.has(udfPath)) {
       this.optimisticUpdateMissWarned.add(udfPath);
       console.warn(
-        `[helipod] outbox: no optimisticUpdates registered for "${udfPath}" — a hydrated cross-reload ` +
+        `[concile] outbox: no optimisticUpdates registered for "${udfPath}" — a hydrated cross-reload ` +
           `mutation for it will drain without an optimistic layer (rendering only; the mutation itself is unaffected)`,
       );
     }
@@ -1701,7 +1701,7 @@ export class HelipodClient {
     if (clientId !== undefined && seq !== undefined) {
       this.notifyMutationFailed(clientId, seq, udfPath ?? "unknown", { message: `durable outbox ${op} failed: ${message}`, code });
     } else if (isDevMode()) {
-      console.error(`[helipod] durable outbox ${op} failed (clientId=${clientId ?? "unknown"}):`, err);
+      console.error(`[concile] durable outbox ${op} failed (clientId=${clientId ?? "unknown"}):`, err);
     }
   }
 
@@ -1716,14 +1716,14 @@ export class HelipodClient {
       this.onMutationFailedCallback({ clientId, seq, udfPath, error });
     } else if (isDevMode()) {
       console.error(
-        `[helipod] outbox: mutation "${udfPath}" (clientId=${clientId}, seq=${seq}) failed terminally` +
+        `[concile] outbox: mutation "${udfPath}" (clientId=${clientId}, seq=${seq}) failed terminally` +
           `${error.code ? ` (${error.code})` : ""} with no onMutationFailed handler registered: ${error.message}`,
       );
     }
   }
 
   /** R9 "resume" refire (constructor-only, verdict §(d) Observability: "`onMutationFailed` refires
-   *  from durable records on resume"): a fresh `HelipodClient` instance has made zero `mutation()`
+   *  from durable records on resume"): a fresh `ConcileClient` instance has made zero `mutation()`
    *  calls yet, so EVERY already-`"failed"` durable record found here is trivially "no live awaiter" —
    *  Lunora's `hadAwaiter` check is unconditionally false at this point, no gating needed. */
   private async refireDurableFailures(): Promise<void> {

@@ -13,11 +13,11 @@
  * FAKE `DriverContext` — i.e. against a stand-in for the very code under test here.
  */
 import { describe, it, expect } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { composeComponents, type DriverContext, type WakeHost } from "@helipod/component";
-import { EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { defineSchema, defineTable, v } from "@helipod/values";
-import { mutation } from "@helipod/executor";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { composeComponents, type DriverContext, type WakeHost } from "@concile/component";
+import { EmbeddedRuntime } from "@concile/runtime-embedded";
+import { defineSchema, defineTable, v } from "@concile/values";
+import { mutation } from "@concile/executor";
 
 /** Records every `armWake` crossing the seam — the arms are the assertion in most tests below. */
 function fakeWakeHost(): { host: WakeHost; arms: Array<number | null> } {

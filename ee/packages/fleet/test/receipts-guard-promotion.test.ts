@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * Receipted Outbox — the promotion-barrier hole (the final whole-branch review's composed-path catch:
  * "the exactly-once barrier silently vanishes on promotion").
@@ -22,12 +22,12 @@
  * and the real `clientReceiptsGuard` + `installCommitGuard`.
  */
 import { describe, it, expect } from "vitest";
-import { newDocumentId, type InternalDocumentId } from "@helipod/id-codec";
-import type { DocumentLogEntry } from "@helipod/docstore";
-import { PostgresDocStore } from "@helipod/docstore-postgres";
-import { NodeSqliteAdapter, SqliteDocStore } from "@helipod/docstore-sqlite";
-import { CommitGuardRejection } from "@helipod/errors";
-import { clientReceiptsGuard } from "@helipod/runtime-embedded";
+import { newDocumentId, type InternalDocumentId } from "@concile/id-codec";
+import type { DocumentLogEntry } from "@concile/docstore";
+import { PostgresDocStore } from "@concile/docstore-postgres";
+import { NodeSqliteAdapter, SqliteDocStore } from "@concile/docstore-sqlite";
+import { CommitGuardRejection } from "@concile/errors";
+import { clientReceiptsGuard } from "@concile/runtime-embedded";
 import { LeaseManager } from "../src/lease";
 import { installCommitGuard } from "../src/node";
 import { SwitchableDocStore } from "../src/switchable-store";

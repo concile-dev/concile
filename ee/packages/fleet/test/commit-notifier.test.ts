@@ -1,15 +1,15 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * `NotifyingFanoutAdapter` — the writer-side commit-notify wrapper. (The slice-1 `CommitTailer`
  * that used to live alongside it was removed in slice 2; its follower-side derive-and-invalidate
  * behavior is now `ReplicaTailer`'s, covered in `replica-tailer.test.ts`.)
  */
 import { describe, it, expect, vi } from "vitest";
-import type { EmbeddedWriteFanoutAdapter, EmbeddedWriteFanoutPayload, FanoutListener } from "@helipod/runtime-embedded";
+import type { EmbeddedWriteFanoutAdapter, EmbeddedWriteFanoutPayload, FanoutListener } from "@concile/runtime-embedded";
 import { NotifyingFanoutAdapter } from "../src/commit-notifier";
 
 describe("NotifyingFanoutAdapter", () => {
-  it("delegates publish/subscribe to the inner adapter and NOTIFYs helipod_commits per publish", () => {
+  it("delegates publish/subscribe to the inner adapter and NOTIFYs concile_commits per publish", () => {
     const published: EmbeddedWriteFanoutPayload[] = [];
     const listeners = new Set<FanoutListener>();
     const inner: EmbeddedWriteFanoutAdapter = {
@@ -43,7 +43,7 @@ describe("NotifyingFanoutAdapter", () => {
     expect(inner.publish).toHaveBeenCalledWith(payload);
     expect(published).toEqual([payload]);
     expect(received).toEqual([payload]); // delegated subscribe also observes it
-    expect(notify).toHaveBeenCalledWith("helipod_commits", "42");
+    expect(notify).toHaveBeenCalledWith("concile_commits", "42");
 
     unsubscribe();
   });

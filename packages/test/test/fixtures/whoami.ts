@@ -1,6 +1,6 @@
-import { defineComponent } from "@helipod/component";
-import { defineSchema } from "@helipod/values";
-import { query } from "@helipod/executor";
+import { defineComponent } from "@concile/component";
+import { defineSchema } from "@concile/values";
+import { query } from "@concile/executor";
 
 // A tiny component whose context facade exposes the ambient identity token (the real, faithful
 // path — cctx.identity is what components/auth's ctx.auth reads). `modules`/`schema` are required.

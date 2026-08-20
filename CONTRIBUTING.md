@@ -1,4 +1,4 @@
-# Contributing to Helipod
+# Contributing to Concile
 
 Thanks for helping build the open-source reactive backend. This document is the
 complete path from clone to merged PR.
@@ -6,8 +6,8 @@ complete path from clone to merged PR.
 ## Setup
 
 ```bash
-git clone https://github.com/helipod-sh/helipod
-cd helipod
+git clone https://github.com/concile-dev/concile
+cd concile
 bun install
 bun run build        # build all packages (required before running tests)
 bun run test         # fast lane — should pass before you start
@@ -25,7 +25,7 @@ only when CI passes.
    (prefixes: `feat/`, `fix/`, `docs/`, `test/`, `refactor/`, `ci/`, `chore/`)
 2. **Make the change.** Match the surrounding code's style. If you change
    behavior, add or update tests — a cross-package feature needs an end-to-end
-   test through the real `helipod dev`/`serve` server
+   test through the real `concile dev`/`serve` server
    (see `packages/cli/test/*-e2e.test.ts` for the pattern).
 3. **Add a changeset** if the change affects any published package:
    ```bash
@@ -57,7 +57,7 @@ and wire it to the package's `test:e2e` script — never let it into the default
 `test` script. Prefer deterministic constructions (injected clocks, explicit
 triggers) over wall-clock waits; CI runners are slow and will find your race.
 
-Run one package's tests with `bun run --filter @helipod/<name> test`.
+Run one package's tests with `bun run --filter @concile/<name> test`.
 Note that cross-package tests resolve dependencies via built `dist/` — rebuild
 (`bun run build`) after editing a dependency or your change is invisible.
 
