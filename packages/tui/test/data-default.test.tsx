@@ -18,7 +18,7 @@ const bridge = {
     url: "http://127.0.0.1:3210",
     dashboardUrl: null,
     adminKeyPreview: "k…1",
-    functionsDir: "helipod",
+    functionsDir: "concile",
     storage: "sqlite",
     version: "0.1.4",
   },

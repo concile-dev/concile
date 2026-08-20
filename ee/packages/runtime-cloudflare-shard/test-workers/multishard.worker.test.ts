@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 
 /**
  * The M1 scale-out proof inside REAL Durable Objects (workerd) — the highest fidelity achievable

@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { v, defineSchema, defineTable } from "@helipod/values";
-import { query, mutation } from "@helipod/executor";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { createEmbeddedRuntime } from "@helipod/runtime-embedded";
-import { HelipodClient, webSocketTransport, anyApi } from "@helipod/client";
+import { v, defineSchema, defineTable } from "@concile/values";
+import { query, mutation } from "@concile/executor";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { createEmbeddedRuntime } from "@concile/runtime-embedded";
+import { ConcileClient, webSocketTransport, anyApi } from "@concile/client";
 import { loadProject, startDevServer, type LoadedProject } from "../src/index";
 
 const schema = defineSchema({
@@ -43,8 +43,8 @@ describe("reactive sync over a real WebSocket", () => {
       { port: 0, ip: "127.0.0.1" },
     );
     const wsUrl = `ws://127.0.0.1:${server.port}/api/sync`;
-    const clientA = new HelipodClient(webSocketTransport(wsUrl));
-    const clientB = new HelipodClient(webSocketTransport(wsUrl));
+    const clientA = new ConcileClient(webSocketTransport(wsUrl));
+    const clientB = new ConcileClient(webSocketTransport(wsUrl));
 
     try {
       const updates: Array<Array<{ body: string }>> = [];

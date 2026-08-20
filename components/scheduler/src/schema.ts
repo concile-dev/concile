@@ -1,7 +1,7 @@
-import { defineSchema, defineTable, v } from "@helipod/values";
+import { defineSchema, defineTable, v } from "@concile/values";
 
 /**
- * The `@helipod/scheduler` component schema (namespaced `scheduler/*` when composed).
+ * The `@concile/scheduler` component schema (namespaced `scheduler/*` when composed).
  *
  * - `jobs` / `job_args`: split so a job's identity/state (small, hot — scanned by the driver's
  *   `by_next_ts` index) never carries the (possibly large) `args`/`context` payload.

@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { MonotonicTimestampOracle } from "@helipod/docstore";
-import { SingleWriterTransactor } from "@helipod/transactor";
-import { QueryRuntime } from "@helipod/query-engine";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { MonotonicTimestampOracle } from "@concile/docstore";
+import { SingleWriterTransactor } from "@concile/transactor";
+import { QueryRuntime } from "@concile/query-engine";
 import { InlineUdfExecutor, SimpleIndexCatalog, httpAction, type UdfResult } from "../src/index";
 
-// Self-contained harness (mirrors action-run.test.ts's makeRuntime): `@helipod/component` and
-// `@helipod/runtime-embedded` both depend on `@helipod/executor`, so pulling either into
+// Self-contained harness (mirrors action-run.test.ts's makeRuntime): `@concile/component` and
+// `@concile/runtime-embedded` both depend on `@concile/executor`, so pulling either into
 // packages/executor's own devDependencies would make the workspace's package graph cyclic. This
 // harness builds the same `ExecutorDeps` an httpAction needs — no db is ever touched by an
 // httpAction (see ACTION_PROFILE/HTTP_ACTION_PROFILE), but `runActionFn` needs a real transactor/

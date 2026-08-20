@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "helipod",
+      "name": "concile",
       "devDependencies": {
         "@changesets/changelog-github": "^0.7.0",
         "@changesets/cli": "^2.31.1",
@@ -14,7 +14,7 @@
       },
     },
     "apps/dashboard": {
-      "name": "@helipod/dashboard",
+      "name": "@concile/dashboard",
       "version": "0.1.5",
       "dependencies": {
         "@base-ui-components/react": "^1.0.0-alpha.5",
@@ -41,22 +41,22 @@
       },
     },
     "components/auth": {
-      "name": "@helipod/auth",
+      "name": "@concile/auth",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/component": "workspace:*",
-        "@helipod/errors": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/component": "workspace:*",
+        "@concile/errors": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/values": "workspace:*",
         "@simplewebauthn/server": "13.3.2",
         "hash-wasm": "^4.12.0",
         "jose": "6.2.3",
         "oauth4webapi": "3.8.6",
       },
       "devDependencies": {
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
-        "@helipod/test": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
+        "@concile/test": "workspace:*",
         "@levischuck/tiny-cbor": "0.2.11",
         "@types/node": "catalog:",
         "tsup": "catalog:",
@@ -65,18 +65,18 @@
       },
     },
     "components/authz": {
-      "name": "@helipod/authz",
+      "name": "@concile/authz",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/auth": "workspace:*",
-        "@helipod/component": "workspace:*",
-        "@helipod/errors": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/auth": "workspace:*",
+        "@concile/component": "workspace:*",
+        "@concile/errors": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
         "@types/node": "catalog:",
         "tsup": "catalog:",
         "typescript": "catalog:",
@@ -84,17 +84,17 @@
       },
     },
     "components/notifications": {
-      "name": "@helipod/notifications",
+      "name": "@concile/notifications",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/component": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/component": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/values": "workspace:*",
         "jose": "6.2.3",
       },
       "devDependencies": {
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
         "@types/node": "catalog:",
         "tsup": "catalog:",
         "typescript": "catalog:",
@@ -102,19 +102,19 @@
       },
     },
     "components/scheduler": {
-      "name": "@helipod/scheduler",
+      "name": "@concile/scheduler",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/component": "workspace:*",
-        "@helipod/errors": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/component": "workspace:*",
+        "@concile/errors": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/values": "workspace:*",
         "cron-parser": "^4.9.0",
       },
       "devDependencies": {
-        "@helipod/client": "workspace:*",
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
+        "@concile/client": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
         "@types/node": "catalog:",
         "tsup": "catalog:",
         "typescript": "catalog:",
@@ -122,17 +122,17 @@
       },
     },
     "components/triggers": {
-      "name": "@helipod/triggers",
+      "name": "@concile/triggers",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/component": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/scheduler": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/component": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/scheduler": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
         "@types/node": "catalog:",
         "tsup": "catalog:",
         "typescript": "catalog:",
@@ -140,18 +140,18 @@
       },
     },
     "components/workflow": {
-      "name": "@helipod/workflow",
+      "name": "@concile/workflow",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/component": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/scheduler": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/component": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/scheduler": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/client": "workspace:*",
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
+        "@concile/client": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
         "@types/node": "catalog:",
         "tsup": "catalog:",
         "typescript": "catalog:",
@@ -159,25 +159,25 @@
       },
     },
     "ee/packages/fleet": {
-      "name": "@helipod/fleet",
+      "name": "@concile/fleet",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/docstore": "workspace:*",
-        "@helipod/docstore-postgres": "workspace:*",
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/errors": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/index-key-codec": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/docstore": "workspace:*",
+        "@concile/docstore-postgres": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/errors": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/index-key-codec": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
+        "@concile/values": "workspace:*",
         "pg": "^8.13.1",
       },
       "devDependencies": {
+        "@concile/executor": "workspace:*",
+        "@concile/scheduler": "workspace:*",
+        "@concile/test": "workspace:*",
+        "@concile/transactor": "workspace:*",
         "@electric-sql/pglite": "^0.2.17",
-        "@helipod/executor": "workspace:*",
-        "@helipod/scheduler": "workspace:*",
-        "@helipod/test": "workspace:*",
-        "@helipod/transactor": "workspace:*",
         "@types/node": "catalog:",
         "@types/pg": "^8.11.10",
         "@types/ws": "^8.5.13",
@@ -188,23 +188,23 @@
       },
     },
     "ee/packages/objectstore-substrate": {
-      "name": "@helipod/objectstore-substrate",
+      "name": "@concile/objectstore-substrate",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/component": "workspace:*",
-        "@helipod/docstore": "workspace:*",
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/index-key-codec": "workspace:*",
-        "@helipod/objectstore": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/component": "workspace:*",
+        "@concile/docstore": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/index-key-codec": "workspace:*",
+        "@concile/objectstore": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
         "@aws-sdk/client-s3": "catalog:",
-        "@helipod/executor": "workspace:*",
-        "@helipod/objectstore-fs": "workspace:*",
-        "@helipod/objectstore-s3": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/objectstore-fs": "workspace:*",
+        "@concile/objectstore-s3": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
         "@types/node": "catalog:",
         "tsup": "catalog:",
         "typescript": "catalog:",
@@ -212,20 +212,20 @@
       },
     },
     "ee/packages/runtime-cloudflare-shard": {
-      "name": "@helipod/runtime-cloudflare-shard",
+      "name": "@concile/runtime-cloudflare-shard",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/cli": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/index-key-codec": "workspace:*",
-        "@helipod/runtime-cloudflare": "workspace:*",
+        "@concile/cli": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/index-key-codec": "workspace:*",
+        "@concile/runtime-cloudflare": "workspace:*",
       },
       "devDependencies": {
         "@cloudflare/vitest-pool-workers": "0.5.40",
         "@cloudflare/workers-types": "^4.20241127.0",
-        "@helipod/docstore-d1": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/docstore-d1": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/values": "workspace:*",
         "@types/node": "catalog:",
         "tsup": "catalog:",
         "typescript": "catalog:",
@@ -233,23 +233,23 @@
       },
     },
     "examples/auth-demo": {
-      "name": "@helipod/example-auth-demo",
+      "name": "@concile/example-auth-demo",
       "version": "0.0.3",
       "dependencies": {
-        "@helipod/auth": "workspace:*",
-        "@helipod/component": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/scheduler": "workspace:*",
-        "@helipod/values": "workspace:*",
-        "@helipod/workflow": "workspace:*",
+        "@concile/auth": "workspace:*",
+        "@concile/component": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/scheduler": "workspace:*",
+        "@concile/values": "workspace:*",
+        "@concile/workflow": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/admin": "workspace:*",
-        "@helipod/cli": "workspace:*",
-        "@helipod/client": "workspace:*",
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
+        "@concile/admin": "workspace:*",
+        "@concile/cli": "workspace:*",
+        "@concile/client": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
         "@types/node": "catalog:",
         "@types/react": "^18.3.18",
         "@types/react-dom": "^18.3.5",
@@ -260,21 +260,21 @@
       },
     },
     "examples/chat": {
-      "name": "helipod-example-chat",
+      "name": "concile-example-chat",
       "version": "0.0.3",
       "dependencies": {
-        "@helipod/component": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/triggers": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/component": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/triggers": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/cli": "workspace:*",
-        "@helipod/client": "workspace:*",
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/query-engine": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
+        "@concile/cli": "workspace:*",
+        "@concile/client": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/query-engine": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
         "@types/node": "catalog:",
         "@types/react": "^18.3.18",
         "@types/react-dom": "^18.3.5",
@@ -285,20 +285,20 @@
       },
     },
     "examples/offline-demo": {
-      "name": "helipod-example-offline-demo",
+      "name": "concile-example-offline-demo",
       "version": "0.0.3",
       "dependencies": {
-        "@helipod/errors": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/errors": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/cli": "workspace:*",
-        "@helipod/client": "workspace:*",
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/query-engine": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
+        "@concile/cli": "workspace:*",
+        "@concile/client": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/query-engine": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
         "@types/node": "catalog:",
         "@types/react": "^18.3.18",
         "@types/react-dom": "^18.3.5",
@@ -311,21 +311,21 @@
       },
     },
     "examples/optimistic-demo": {
-      "name": "helipod-example-optimistic-demo",
+      "name": "concile-example-optimistic-demo",
       "version": "0.0.3",
       "dependencies": {
-        "@helipod/errors": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/errors": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/cli": "workspace:*",
-        "@helipod/client": "workspace:*",
-        "@helipod/codegen": "workspace:*",
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/query-engine": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
+        "@concile/cli": "workspace:*",
+        "@concile/client": "workspace:*",
+        "@concile/codegen": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/query-engine": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
         "@types/node": "catalog:",
         "@types/react": "^18.3.18",
         "@types/react-dom": "^18.3.5",
@@ -338,21 +338,21 @@
       },
     },
     "packages/admin": {
-      "name": "@helipod/admin",
+      "name": "@concile/admin",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/docstore": "workspace:*",
-        "@helipod/errors": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/query-engine": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/docstore": "workspace:*",
+        "@concile/errors": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/query-engine": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/component": "workspace:*",
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/query-engine": "workspace:*",
+        "@concile/component": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/query-engine": "workspace:*",
         "@types/node": "catalog:",
         "tsup": "catalog:",
         "typescript": "catalog:",
@@ -360,7 +360,7 @@
       },
     },
     "packages/blobstore": {
-      "name": "@helipod/blobstore",
+      "name": "@concile/blobstore",
       "version": "0.1.5",
       "devDependencies": {
         "@types/node": "catalog:",
@@ -370,10 +370,10 @@
       },
     },
     "packages/blobstore-fs": {
-      "name": "@helipod/blobstore-fs",
+      "name": "@concile/blobstore-fs",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/blobstore": "workspace:*",
+        "@concile/blobstore": "workspace:*",
       },
       "devDependencies": {
         "@types/node": "catalog:",
@@ -383,10 +383,10 @@
       },
     },
     "packages/blobstore-r2": {
-      "name": "@helipod/blobstore-r2",
+      "name": "@concile/blobstore-r2",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/blobstore": "workspace:*",
+        "@concile/blobstore": "workspace:*",
       },
       "devDependencies": {
         "@cloudflare/workers-types": "^4.20241127.0",
@@ -397,12 +397,12 @@
       },
     },
     "packages/blobstore-s3": {
-      "name": "@helipod/blobstore-s3",
+      "name": "@concile/blobstore-s3",
       "version": "0.1.5",
       "dependencies": {
         "@aws-sdk/client-s3": "catalog:",
         "@aws-sdk/s3-request-presigner": "catalog:",
-        "@helipod/blobstore": "workspace:*",
+        "@concile/blobstore": "workspace:*",
       },
       "devDependencies": {
         "@types/node": "catalog:",
@@ -412,49 +412,49 @@
       },
     },
     "packages/cli": {
-      "name": "@helipod/cli",
+      "name": "@concile/cli",
       "version": "0.1.5",
       "bin": {
-        "helipod": "./dist/bin.js",
+        "concile": "./dist/bin.js",
       },
       "dependencies": {
-        "@helipod/admin": "workspace:*",
-        "@helipod/blobstore": "workspace:*",
-        "@helipod/blobstore-fs": "workspace:*",
-        "@helipod/blobstore-s3": "workspace:*",
-        "@helipod/codegen": "workspace:*",
-        "@helipod/component": "workspace:*",
-        "@helipod/dashboard": "workspace:*",
-        "@helipod/deploy": "workspace:*",
-        "@helipod/docstore": "workspace:*",
-        "@helipod/docstore-postgres": "workspace:*",
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/errors": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/objectstore": "workspace:*",
-        "@helipod/objectstore-fs": "workspace:*",
-        "@helipod/objectstore-s3": "workspace:*",
-        "@helipod/query-engine": "workspace:*",
-        "@helipod/receipts": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
-        "@helipod/storage": "workspace:*",
-        "@helipod/sync": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/admin": "workspace:*",
+        "@concile/blobstore": "workspace:*",
+        "@concile/blobstore-fs": "workspace:*",
+        "@concile/blobstore-s3": "workspace:*",
+        "@concile/codegen": "workspace:*",
+        "@concile/component": "workspace:*",
+        "@concile/dashboard": "workspace:*",
+        "@concile/deploy": "workspace:*",
+        "@concile/docstore": "workspace:*",
+        "@concile/docstore-postgres": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/errors": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/objectstore": "workspace:*",
+        "@concile/objectstore-fs": "workspace:*",
+        "@concile/objectstore-s3": "workspace:*",
+        "@concile/query-engine": "workspace:*",
+        "@concile/receipts": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
+        "@concile/storage": "workspace:*",
+        "@concile/sync": "workspace:*",
+        "@concile/values": "workspace:*",
         "esbuild": "^0.27.0",
         "ws": "^8.18.0",
       },
       "devDependencies": {
+        "@concile/auth": "workspace:*",
+        "@concile/client": "workspace:*",
+        "@concile/fleet": "workspace:*",
+        "@concile/notifications": "workspace:*",
+        "@concile/objectstore-substrate": "workspace:*",
+        "@concile/scheduler": "workspace:*",
+        "@concile/triggers": "workspace:*",
+        "@concile/tui": "workspace:*",
+        "@concile/workflow": "workspace:*",
         "@electric-sql/pglite": "^0.2.17",
-        "@helipod/auth": "workspace:*",
-        "@helipod/client": "workspace:*",
-        "@helipod/fleet": "workspace:*",
-        "@helipod/notifications": "workspace:*",
-        "@helipod/objectstore-substrate": "workspace:*",
-        "@helipod/scheduler": "workspace:*",
-        "@helipod/triggers": "workspace:*",
-        "@helipod/tui": "workspace:*",
-        "@helipod/workflow": "workspace:*",
         "@levischuck/tiny-cbor": "0.2.11",
         "@simplewebauthn/server": "13.3.2",
         "@types/node": "catalog:",
@@ -467,19 +467,19 @@
       },
     },
     "packages/client": {
-      "name": "@helipod/client",
+      "name": "@concile/client",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/index-key-codec": "workspace:*",
-        "@helipod/sync": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/index-key-codec": "workspace:*",
+        "@concile/sync": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/query-engine": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/query-engine": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
         "@testing-library/react": "^16.1.0",
         "@types/node": "catalog:",
         "@types/react": "^18.3.18",
@@ -499,10 +499,10 @@
       ],
     },
     "packages/codegen": {
-      "name": "@helipod/codegen",
+      "name": "@concile/codegen",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/values": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
         "@types/node": "catalog:",
@@ -512,31 +512,50 @@
       },
     },
     "packages/component": {
-      "name": "@helipod/component",
+      "name": "@concile/component",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/errors": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/index-key-codec": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/errors": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/index-key-codec": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/docstore": "workspace:*",
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/query-engine": "workspace:*",
-        "@helipod/transactor": "workspace:*",
+        "@concile/docstore": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/query-engine": "workspace:*",
+        "@concile/transactor": "workspace:*",
         "@types/node": "catalog:",
         "tsup": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:",
       },
     },
+    "packages/concile": {
+      "name": "concile",
+      "version": "0.1.5",
+      "bin": {
+        "concile": "./bin/concile.js",
+      },
+      "dependencies": {
+        "@concile/cli": "0.1.4",
+        "@concile/client": "0.1.4",
+        "@concile/component": "0.1.4",
+        "@concile/executor": "0.1.4",
+        "@concile/tui": "0.1.4",
+        "@concile/values": "0.1.4",
+      },
+      "devDependencies": {
+        "tsup": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/deploy": {
-      "name": "@helipod/deploy",
+      "name": "@concile/deploy",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/component": "workspace:*",
+        "@concile/component": "workspace:*",
       },
       "devDependencies": {
         "@types/node": "catalog:",
@@ -546,24 +565,24 @@
       },
     },
     "packages/docstore": {
-      "name": "@helipod/docstore",
+      "name": "@concile/docstore",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/index-key-codec": "workspace:*",
+        "@concile/index-key-codec": "workspace:*",
         "tsup": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:",
       },
     },
     "packages/docstore-d1": {
-      "name": "@helipod/docstore-d1",
+      "name": "@concile/docstore-d1",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/values": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
         "@types/better-sqlite3": "^7.6.12",
@@ -576,16 +595,16 @@
       },
     },
     "packages/docstore-do-sqlite": {
-      "name": "@helipod/docstore-do-sqlite",
+      "name": "@concile/docstore-do-sqlite",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/docstore-sqlite": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/docstore": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/index-key-codec": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/docstore": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/index-key-codec": "workspace:*",
+        "@concile/values": "workspace:*",
         "@types/node": "catalog:",
         "tsup": "catalog:",
         "typescript": "catalog:",
@@ -593,20 +612,20 @@
       },
     },
     "packages/docstore-postgres": {
-      "name": "@helipod/docstore-postgres",
+      "name": "@concile/docstore-postgres",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/docstore": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/index-key-codec": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/docstore": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/index-key-codec": "workspace:*",
+        "@concile/values": "workspace:*",
         "pg": "^8.13.1",
         "pg-cursor": "^2.21.0",
       },
       "devDependencies": {
+        "@concile/executor": "workspace:*",
+        "@concile/test": "workspace:*",
         "@electric-sql/pglite": "^0.2.17",
-        "@helipod/executor": "workspace:*",
-        "@helipod/test": "workspace:*",
         "@types/node": "catalog:",
         "@types/pg": "^8.11.10",
         "@types/pg-cursor": "^2.7.2",
@@ -617,15 +636,15 @@
       },
     },
     "packages/docstore-sqlite": {
-      "name": "@helipod/docstore-sqlite",
+      "name": "@concile/docstore-sqlite",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/docstore": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/docstore": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/index-key-codec": "workspace:*",
+        "@concile/index-key-codec": "workspace:*",
         "@types/node": "catalog:",
         "tsup": "catalog:",
         "typescript": "catalog:",
@@ -633,7 +652,7 @@
       },
     },
     "packages/errors": {
-      "name": "@helipod/errors",
+      "name": "@concile/errors",
       "version": "0.1.5",
       "devDependencies": {
         "tsup": "catalog:",
@@ -642,20 +661,20 @@
       },
     },
     "packages/executor": {
-      "name": "@helipod/executor",
+      "name": "@concile/executor",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/docstore": "workspace:*",
-        "@helipod/docstore-d1": "workspace:*",
-        "@helipod/errors": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/index-key-codec": "workspace:*",
-        "@helipod/query-engine": "workspace:*",
-        "@helipod/transactor": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/docstore": "workspace:*",
+        "@concile/docstore-d1": "workspace:*",
+        "@concile/errors": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/index-key-codec": "workspace:*",
+        "@concile/query-engine": "workspace:*",
+        "@concile/transactor": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/docstore-sqlite": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
         "@types/better-sqlite3": "^7.6.12",
         "better-sqlite3": "^11.8.0",
         "tsup": "catalog:",
@@ -663,30 +682,11 @@
         "vitest": "catalog:",
       },
     },
-    "packages/helipod": {
-      "name": "helipod",
-      "version": "0.1.5",
-      "bin": {
-        "helipod": "./bin/helipod.js",
-      },
-      "dependencies": {
-        "@helipod/cli": "0.1.4",
-        "@helipod/client": "0.1.4",
-        "@helipod/component": "0.1.4",
-        "@helipod/executor": "0.1.4",
-        "@helipod/tui": "0.1.4",
-        "@helipod/values": "0.1.4",
-      },
-      "devDependencies": {
-        "tsup": "catalog:",
-        "typescript": "catalog:",
-      },
-    },
     "packages/id-codec": {
-      "name": "@helipod/id-codec",
+      "name": "@concile/id-codec",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/index-key-codec": "workspace:*",
+        "@concile/index-key-codec": "workspace:*",
       },
       "devDependencies": {
         "tsup": "catalog:",
@@ -695,10 +695,10 @@
       },
     },
     "packages/index-key-codec": {
-      "name": "@helipod/index-key-codec",
+      "name": "@concile/index-key-codec",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/values": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
         "tsup": "catalog:",
@@ -707,7 +707,7 @@
       },
     },
     "packages/objectstore": {
-      "name": "@helipod/objectstore",
+      "name": "@concile/objectstore",
       "version": "0.1.5",
       "devDependencies": {
         "@types/node": "catalog:",
@@ -717,10 +717,10 @@
       },
     },
     "packages/objectstore-fs": {
-      "name": "@helipod/objectstore-fs",
+      "name": "@concile/objectstore-fs",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/objectstore": "workspace:*",
+        "@concile/objectstore": "workspace:*",
       },
       "devDependencies": {
         "@types/node": "catalog:",
@@ -730,11 +730,11 @@
       },
     },
     "packages/objectstore-s3": {
-      "name": "@helipod/objectstore-s3",
+      "name": "@concile/objectstore-s3",
       "version": "0.1.5",
       "dependencies": {
         "@aws-sdk/client-s3": "catalog:",
-        "@helipod/objectstore": "workspace:*",
+        "@concile/objectstore": "workspace:*",
       },
       "devDependencies": {
         "@types/node": "catalog:",
@@ -744,31 +744,31 @@
       },
     },
     "packages/query-engine": {
-      "name": "@helipod/query-engine",
+      "name": "@concile/query-engine",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/docstore": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/index-key-codec": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/docstore": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/index-key-codec": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/docstore-sqlite": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
         "tsup": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:",
       },
     },
     "packages/receipts": {
-      "name": "@helipod/receipts",
+      "name": "@concile/receipts",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/component": "workspace:*",
-        "@helipod/docstore": "workspace:*",
+        "@concile/component": "workspace:*",
+        "@concile/docstore": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/docstore-postgres": "workspace:*",
-        "@helipod/docstore-sqlite": "workspace:*",
+        "@concile/docstore-postgres": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
         "@types/node": "catalog:",
         "tsup": "catalog:",
         "typescript": "catalog:",
@@ -776,30 +776,30 @@
       },
     },
     "packages/runtime-cloudflare": {
-      "name": "@helipod/runtime-cloudflare",
+      "name": "@concile/runtime-cloudflare",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/admin": "workspace:*",
-        "@helipod/blobstore": "workspace:*",
-        "@helipod/cli": "workspace:*",
-        "@helipod/component": "workspace:*",
-        "@helipod/docstore": "workspace:*",
-        "@helipod/docstore-d1": "workspace:*",
-        "@helipod/docstore-do-sqlite": "workspace:*",
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
-        "@helipod/storage": "workspace:*",
-        "@helipod/sync": "workspace:*",
+        "@concile/admin": "workspace:*",
+        "@concile/blobstore": "workspace:*",
+        "@concile/cli": "workspace:*",
+        "@concile/component": "workspace:*",
+        "@concile/docstore": "workspace:*",
+        "@concile/docstore-d1": "workspace:*",
+        "@concile/docstore-do-sqlite": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
+        "@concile/storage": "workspace:*",
+        "@concile/sync": "workspace:*",
       },
       "devDependencies": {
         "@cloudflare/vitest-pool-workers": "0.5.40",
         "@cloudflare/workers-types": "^4.20241127.0",
-        "@helipod/blobstore-r2": "workspace:*",
-        "@helipod/docstore": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/index-key-codec": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/blobstore-r2": "workspace:*",
+        "@concile/docstore": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/index-key-codec": "workspace:*",
+        "@concile/values": "workspace:*",
         "@types/node": "catalog:",
         "tsup": "catalog:",
         "typescript": "catalog:",
@@ -807,23 +807,23 @@
       },
     },
     "packages/runtime-embedded": {
-      "name": "@helipod/runtime-embedded",
+      "name": "@concile/runtime-embedded",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/component": "workspace:*",
-        "@helipod/docstore": "workspace:*",
-        "@helipod/docstore-d1": "workspace:*",
-        "@helipod/errors": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/index-key-codec": "workspace:*",
-        "@helipod/query-engine": "workspace:*",
-        "@helipod/sync": "workspace:*",
-        "@helipod/transactor": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/component": "workspace:*",
+        "@concile/docstore": "workspace:*",
+        "@concile/docstore-d1": "workspace:*",
+        "@concile/errors": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/index-key-codec": "workspace:*",
+        "@concile/query-engine": "workspace:*",
+        "@concile/sync": "workspace:*",
+        "@concile/transactor": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/docstore-sqlite": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
         "@types/better-sqlite3": "^7.6.12",
         "better-sqlite3": "^11.8.0",
         "tsup": "catalog:",
@@ -832,19 +832,19 @@
       },
     },
     "packages/storage": {
-      "name": "@helipod/storage",
+      "name": "@concile/storage",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/blobstore": "workspace:*",
-        "@helipod/component": "workspace:*",
-        "@helipod/errors": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/blobstore": "workspace:*",
+        "@concile/component": "workspace:*",
+        "@concile/errors": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
         "@types/node": "catalog:",
         "tsup": "catalog:",
         "typescript": "catalog:",
@@ -852,20 +852,20 @@
       },
     },
     "packages/sync": {
-      "name": "@helipod/sync",
+      "name": "@concile/sync",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/errors": "workspace:*",
-        "@helipod/index-key-codec": "workspace:*",
-        "@helipod/query-engine": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/errors": "workspace:*",
+        "@concile/index-key-codec": "workspace:*",
+        "@concile/query-engine": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/docstore": "workspace:*",
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/transactor": "workspace:*",
+        "@concile/docstore": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/transactor": "workspace:*",
         "@types/node": "catalog:",
         "tsup": "catalog:",
         "typescript": "catalog:",
@@ -873,21 +873,21 @@
       },
     },
     "packages/test": {
-      "name": "@helipod/test",
+      "name": "@concile/test",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/blobstore-fs": "workspace:*",
-        "@helipod/client": "workspace:*",
-        "@helipod/component": "workspace:*",
-        "@helipod/docstore": "workspace:*",
-        "@helipod/docstore-sqlite": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/runtime-embedded": "workspace:*",
-        "@helipod/scheduler": "workspace:*",
-        "@helipod/storage": "workspace:*",
-        "@helipod/sync": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/blobstore-fs": "workspace:*",
+        "@concile/client": "workspace:*",
+        "@concile/component": "workspace:*",
+        "@concile/docstore": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/runtime-embedded": "workspace:*",
+        "@concile/scheduler": "workspace:*",
+        "@concile/storage": "workspace:*",
+        "@concile/sync": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
         "@types/node": "catalog:",
@@ -897,24 +897,24 @@
       },
     },
     "packages/transactor": {
-      "name": "@helipod/transactor",
+      "name": "@concile/transactor",
       "version": "0.1.5",
       "dependencies": {
-        "@helipod/docstore": "workspace:*",
-        "@helipod/errors": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/index-key-codec": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/docstore": "workspace:*",
+        "@concile/errors": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/index-key-codec": "workspace:*",
+        "@concile/values": "workspace:*",
       },
       "devDependencies": {
-        "@helipod/docstore-sqlite": "workspace:*",
+        "@concile/docstore-sqlite": "workspace:*",
         "tsup": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:",
       },
     },
     "packages/tui": {
-      "name": "@helipod/tui",
+      "name": "@concile/tui",
       "version": "0.1.5",
       "dependencies": {
         "@opentui/core": "^0.4.5",
@@ -931,7 +931,7 @@
       },
     },
     "packages/values": {
-      "name": "@helipod/values",
+      "name": "@concile/values",
       "version": "0.1.5",
       "devDependencies": {
         "tsup": "catalog:",
@@ -940,14 +940,14 @@
       },
     },
     "packages/vite": {
-      "name": "@helipod/vite",
+      "name": "@concile/vite",
       "version": "0.1.5",
       "devDependencies": {
-        "@helipod/cli": "workspace:*",
-        "@helipod/client": "workspace:*",
-        "@helipod/executor": "workspace:*",
-        "@helipod/id-codec": "workspace:*",
-        "@helipod/values": "workspace:*",
+        "@concile/cli": "workspace:*",
+        "@concile/client": "workspace:*",
+        "@concile/executor": "workspace:*",
+        "@concile/id-codec": "workspace:*",
+        "@concile/values": "workspace:*",
         "@types/node": "catalog:",
         "@types/ws": "^8.5.13",
         "tsup": "catalog:",
@@ -957,11 +957,11 @@
         "ws": "^8.18.0",
       },
       "peerDependencies": {
-        "@helipod/cli": "workspace:*",
+        "@concile/cli": "workspace:*",
         "vite": ">=5.0.0",
       },
       "optionalPeers": [
-        "@helipod/cli",
+        "@concile/cli",
       ],
     },
   },
@@ -1122,6 +1122,94 @@
 
     "@cloudflare/workers-types": ["@cloudflare/workers-types@4.20260702.1", "", {}, "sha512-mOhf5TUEB1m2vPrxtqoIGfz0fUC9xyxRDx5gWHy5s+OCo6dcV+g7wI1R7gYCMFohhqF/2y2xeKVwMwCJjfn/WA=="],
 
+    "@concile/admin": ["@concile/admin@workspace:packages/admin"],
+
+    "@concile/auth": ["@concile/auth@workspace:components/auth"],
+
+    "@concile/authz": ["@concile/authz@workspace:components/authz"],
+
+    "@concile/blobstore": ["@concile/blobstore@workspace:packages/blobstore"],
+
+    "@concile/blobstore-fs": ["@concile/blobstore-fs@workspace:packages/blobstore-fs"],
+
+    "@concile/blobstore-r2": ["@concile/blobstore-r2@workspace:packages/blobstore-r2"],
+
+    "@concile/blobstore-s3": ["@concile/blobstore-s3@workspace:packages/blobstore-s3"],
+
+    "@concile/cli": ["@concile/cli@workspace:packages/cli"],
+
+    "@concile/client": ["@concile/client@workspace:packages/client"],
+
+    "@concile/codegen": ["@concile/codegen@workspace:packages/codegen"],
+
+    "@concile/component": ["@concile/component@workspace:packages/component"],
+
+    "@concile/dashboard": ["@concile/dashboard@workspace:apps/dashboard"],
+
+    "@concile/deploy": ["@concile/deploy@workspace:packages/deploy"],
+
+    "@concile/docstore": ["@concile/docstore@workspace:packages/docstore"],
+
+    "@concile/docstore-d1": ["@concile/docstore-d1@workspace:packages/docstore-d1"],
+
+    "@concile/docstore-do-sqlite": ["@concile/docstore-do-sqlite@workspace:packages/docstore-do-sqlite"],
+
+    "@concile/docstore-postgres": ["@concile/docstore-postgres@workspace:packages/docstore-postgres"],
+
+    "@concile/docstore-sqlite": ["@concile/docstore-sqlite@workspace:packages/docstore-sqlite"],
+
+    "@concile/errors": ["@concile/errors@workspace:packages/errors"],
+
+    "@concile/example-auth-demo": ["@concile/example-auth-demo@workspace:examples/auth-demo"],
+
+    "@concile/executor": ["@concile/executor@workspace:packages/executor"],
+
+    "@concile/fleet": ["@concile/fleet@workspace:ee/packages/fleet"],
+
+    "@concile/id-codec": ["@concile/id-codec@workspace:packages/id-codec"],
+
+    "@concile/index-key-codec": ["@concile/index-key-codec@workspace:packages/index-key-codec"],
+
+    "@concile/notifications": ["@concile/notifications@workspace:components/notifications"],
+
+    "@concile/objectstore": ["@concile/objectstore@workspace:packages/objectstore"],
+
+    "@concile/objectstore-fs": ["@concile/objectstore-fs@workspace:packages/objectstore-fs"],
+
+    "@concile/objectstore-s3": ["@concile/objectstore-s3@workspace:packages/objectstore-s3"],
+
+    "@concile/objectstore-substrate": ["@concile/objectstore-substrate@workspace:ee/packages/objectstore-substrate"],
+
+    "@concile/query-engine": ["@concile/query-engine@workspace:packages/query-engine"],
+
+    "@concile/receipts": ["@concile/receipts@workspace:packages/receipts"],
+
+    "@concile/runtime-cloudflare": ["@concile/runtime-cloudflare@workspace:packages/runtime-cloudflare"],
+
+    "@concile/runtime-cloudflare-shard": ["@concile/runtime-cloudflare-shard@workspace:ee/packages/runtime-cloudflare-shard"],
+
+    "@concile/runtime-embedded": ["@concile/runtime-embedded@workspace:packages/runtime-embedded"],
+
+    "@concile/scheduler": ["@concile/scheduler@workspace:components/scheduler"],
+
+    "@concile/storage": ["@concile/storage@workspace:packages/storage"],
+
+    "@concile/sync": ["@concile/sync@workspace:packages/sync"],
+
+    "@concile/test": ["@concile/test@workspace:packages/test"],
+
+    "@concile/transactor": ["@concile/transactor@workspace:packages/transactor"],
+
+    "@concile/triggers": ["@concile/triggers@workspace:components/triggers"],
+
+    "@concile/tui": ["@concile/tui@workspace:packages/tui"],
+
+    "@concile/values": ["@concile/values@workspace:packages/values"],
+
+    "@concile/vite": ["@concile/vite@workspace:packages/vite"],
+
+    "@concile/workflow": ["@concile/workflow@workspace:components/workflow"],
+
     "@cspotcode/source-map-support": ["@cspotcode/source-map-support@0.8.1", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.9" } }, "sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw=="],
 
     "@csstools/color-helpers": ["@csstools/color-helpers@5.1.0", "", {}, "sha512-S11EXWJyy0Mz5SYvRmY8nJYTFFd1LCNV+7cXyAgQtOOuzb4EsgfqDufL+9esx72/eLhsRdGZwaldu/h+E4t4BA=="],
@@ -1217,94 +1305,6 @@
     "@floating-ui/react-dom": ["@floating-ui/react-dom@2.1.8", "", { "dependencies": { "@floating-ui/dom": "^1.7.6" }, "peerDependencies": { "react": ">=16.8.0", "react-dom": ">=16.8.0" } }, "sha512-cC52bHwM/n/CxS87FH0yWdngEZrjdtLW/qVruo68qg+prK7ZQ4YGdut2GyDVpoGeAYe/h899rVeOVm6Oi40k2A=="],
 
     "@floating-ui/utils": ["@floating-ui/utils@0.2.11", "", {}, "sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg=="],
-
-    "@helipod/admin": ["@helipod/admin@workspace:packages/admin"],
-
-    "@helipod/auth": ["@helipod/auth@workspace:components/auth"],
-
-    "@helipod/authz": ["@helipod/authz@workspace:components/authz"],
-
-    "@helipod/blobstore": ["@helipod/blobstore@workspace:packages/blobstore"],
-
-    "@helipod/blobstore-fs": ["@helipod/blobstore-fs@workspace:packages/blobstore-fs"],
-
-    "@helipod/blobstore-r2": ["@helipod/blobstore-r2@workspace:packages/blobstore-r2"],
-
-    "@helipod/blobstore-s3": ["@helipod/blobstore-s3@workspace:packages/blobstore-s3"],
-
-    "@helipod/cli": ["@helipod/cli@workspace:packages/cli"],
-
-    "@helipod/client": ["@helipod/client@workspace:packages/client"],
-
-    "@helipod/codegen": ["@helipod/codegen@workspace:packages/codegen"],
-
-    "@helipod/component": ["@helipod/component@workspace:packages/component"],
-
-    "@helipod/dashboard": ["@helipod/dashboard@workspace:apps/dashboard"],
-
-    "@helipod/deploy": ["@helipod/deploy@workspace:packages/deploy"],
-
-    "@helipod/docstore": ["@helipod/docstore@workspace:packages/docstore"],
-
-    "@helipod/docstore-d1": ["@helipod/docstore-d1@workspace:packages/docstore-d1"],
-
-    "@helipod/docstore-do-sqlite": ["@helipod/docstore-do-sqlite@workspace:packages/docstore-do-sqlite"],
-
-    "@helipod/docstore-postgres": ["@helipod/docstore-postgres@workspace:packages/docstore-postgres"],
-
-    "@helipod/docstore-sqlite": ["@helipod/docstore-sqlite@workspace:packages/docstore-sqlite"],
-
-    "@helipod/errors": ["@helipod/errors@workspace:packages/errors"],
-
-    "@helipod/example-auth-demo": ["@helipod/example-auth-demo@workspace:examples/auth-demo"],
-
-    "@helipod/executor": ["@helipod/executor@workspace:packages/executor"],
-
-    "@helipod/fleet": ["@helipod/fleet@workspace:ee/packages/fleet"],
-
-    "@helipod/id-codec": ["@helipod/id-codec@workspace:packages/id-codec"],
-
-    "@helipod/index-key-codec": ["@helipod/index-key-codec@workspace:packages/index-key-codec"],
-
-    "@helipod/notifications": ["@helipod/notifications@workspace:components/notifications"],
-
-    "@helipod/objectstore": ["@helipod/objectstore@workspace:packages/objectstore"],
-
-    "@helipod/objectstore-fs": ["@helipod/objectstore-fs@workspace:packages/objectstore-fs"],
-
-    "@helipod/objectstore-s3": ["@helipod/objectstore-s3@workspace:packages/objectstore-s3"],
-
-    "@helipod/objectstore-substrate": ["@helipod/objectstore-substrate@workspace:ee/packages/objectstore-substrate"],
-
-    "@helipod/query-engine": ["@helipod/query-engine@workspace:packages/query-engine"],
-
-    "@helipod/receipts": ["@helipod/receipts@workspace:packages/receipts"],
-
-    "@helipod/runtime-cloudflare": ["@helipod/runtime-cloudflare@workspace:packages/runtime-cloudflare"],
-
-    "@helipod/runtime-cloudflare-shard": ["@helipod/runtime-cloudflare-shard@workspace:ee/packages/runtime-cloudflare-shard"],
-
-    "@helipod/runtime-embedded": ["@helipod/runtime-embedded@workspace:packages/runtime-embedded"],
-
-    "@helipod/scheduler": ["@helipod/scheduler@workspace:components/scheduler"],
-
-    "@helipod/storage": ["@helipod/storage@workspace:packages/storage"],
-
-    "@helipod/sync": ["@helipod/sync@workspace:packages/sync"],
-
-    "@helipod/test": ["@helipod/test@workspace:packages/test"],
-
-    "@helipod/transactor": ["@helipod/transactor@workspace:packages/transactor"],
-
-    "@helipod/triggers": ["@helipod/triggers@workspace:components/triggers"],
-
-    "@helipod/tui": ["@helipod/tui@workspace:packages/tui"],
-
-    "@helipod/values": ["@helipod/values@workspace:packages/values"],
-
-    "@helipod/vite": ["@helipod/vite@workspace:packages/vite"],
-
-    "@helipod/workflow": ["@helipod/workflow@workspace:components/workflow"],
 
     "@hexagon/base64": ["@hexagon/base64@1.1.28", "", {}, "sha512-lhqDEAvWixy3bZ+UOYbPwUbBkwBq5C1LAJ/xPC8Oi+lL54oyakv/npbA0aU2hgCsx/1NUd4IBvV03+aUBWxerw=="],
 
@@ -1622,6 +1622,14 @@
 
     "commander": ["commander@4.1.1", "", {}, "sha512-NOKm8xhkzAjzFx8B2v5OAHT+u5pRQc2UCa2Vq9jYL/31o2wi9mxBA7LIFs3sV5VSC49z6pEhfbMULvShKj26WA=="],
 
+    "concile": ["concile@workspace:packages/concile"],
+
+    "concile-example-chat": ["concile-example-chat@workspace:examples/chat"],
+
+    "concile-example-offline-demo": ["concile-example-offline-demo@workspace:examples/offline-demo"],
+
+    "concile-example-optimistic-demo": ["concile-example-optimistic-demo@workspace:examples/optimistic-demo"],
+
     "confbox": ["confbox@0.1.8", "", {}, "sha512-RMtmw0iFkeR4YV+fUOSucriAQNb9g8zFR52MWCtl+cCZOFRNL6zeB395vPzFhEjjn4fMxXudmELnl/KF/WrK6w=="],
 
     "consola": ["consola@3.4.2", "", {}, "sha512-5IKcdX0nnYavi6G7TtOhwkYzyjfJlatbjMjuLSfE2kYT5pMDOilZ4OvMhi637CcDICTmz3wARPoyhqyX1Y+XvA=="],
@@ -1783,14 +1791,6 @@
     "hash-wasm": ["hash-wasm@4.12.0", "", {}, "sha512-+/2B2rYLb48I/evdOIhP+K/DD2ca2fgBjp6O+GBEnCDk2e4rpeXIK8GvIyRPjTezgmWn9gmKwkQjjx6BtqDHVQ=="],
 
     "hasown": ["hasown@2.0.4", "", { "dependencies": { "function-bind": "^1.1.2" } }, "sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A=="],
-
-    "helipod": ["helipod@workspace:packages/helipod"],
-
-    "helipod-example-chat": ["helipod-example-chat@workspace:examples/chat"],
-
-    "helipod-example-offline-demo": ["helipod-example-offline-demo@workspace:examples/offline-demo"],
-
-    "helipod-example-optimistic-demo": ["helipod-example-optimistic-demo@workspace:examples/optimistic-demo"],
 
     "html-encoding-sniffer": ["html-encoding-sniffer@4.0.0", "", { "dependencies": { "whatwg-encoding": "^3.1.1" } }, "sha512-Y22oTqIU4uuPgEemfz7NDJz6OeKf12Lsu+QC+s3BVpda64lTiMYCyGwg5ki4vFxkMwQdeZDl2adZoqUgdFuTgQ=="],
 
@@ -2268,7 +2268,7 @@
 
     "@cloudflare/vitest-pool-workers/esbuild": ["esbuild@0.17.19", "", { "optionalDependencies": { "@esbuild/android-arm": "0.17.19", "@esbuild/android-arm64": "0.17.19", "@esbuild/android-x64": "0.17.19", "@esbuild/darwin-arm64": "0.17.19", "@esbuild/darwin-x64": "0.17.19", "@esbuild/freebsd-arm64": "0.17.19", "@esbuild/freebsd-x64": "0.17.19", "@esbuild/linux-arm": "0.17.19", "@esbuild/linux-arm64": "0.17.19", "@esbuild/linux-ia32": "0.17.19", "@esbuild/linux-loong64": "0.17.19", "@esbuild/linux-mips64el": "0.17.19", "@esbuild/linux-ppc64": "0.17.19", "@esbuild/linux-riscv64": "0.17.19", "@esbuild/linux-s390x": "0.17.19", "@esbuild/linux-x64": "0.17.19", "@esbuild/netbsd-x64": "0.17.19", "@esbuild/openbsd-x64": "0.17.19", "@esbuild/sunos-x64": "0.17.19", "@esbuild/win32-arm64": "0.17.19", "@esbuild/win32-ia32": "0.17.19", "@esbuild/win32-x64": "0.17.19" }, "bin": { "esbuild": "bin/esbuild" } }, "sha512-XQ0jAPFkK/u3LcVRcvVHQcTIqD6E2H1fvZMA5dQPSOWb3suUbWbfbRf94pjc0bNzRYLfIrDRQXr7X+LHIm5oHw=="],
 
-    "@helipod/tui/react": ["react@19.2.8", "", {}, "sha512-PWaYA1L/q9u2u7xYQi+Y3L3Yfnie7XyLeaJICV1MGD6LprsBxcAqGjYyr0eY3p+QdsA+x/Irkt4Qif8D63+Sbw=="],
+    "@concile/tui/react": ["react@19.2.8", "", {}, "sha512-PWaYA1L/q9u2u7xYQi+Y3L3Yfnie7XyLeaJICV1MGD6LprsBxcAqGjYyr0eY3p+QdsA+x/Irkt4Qif8D63+Sbw=="],
 
     "@jridgewell/gen-mapping/@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 

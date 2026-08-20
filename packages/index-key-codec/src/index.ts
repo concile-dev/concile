@@ -1,5 +1,5 @@
 /**
- * `@helipod/index-key-codec` — the order-preserving key codec plus key-range
+ * `@concile/index-key-codec` — the order-preserving key codec plus key-range
  * machinery. Canonical home (design §3.1) for `KeyRange`, `RangeSet`,
  * `SerializedKeyRange`, `WriteInvalidation`, cursors, and the keyspace helpers; every
  * other package imports these from here rather than redeclaring them.

@@ -27,9 +27,9 @@
 // module.exports) and read the member off it, which works on Bun and Node alike.
 import cronParser from "cron-parser";
 const { parseExpression } = cronParser;
-import type { JSONValue } from "@helipod/values";
-import type { BootContext } from "@helipod/component";
-import { GuestDatabaseWriter } from "@helipod/executor";
+import type { JSONValue } from "@concile/values";
+import type { BootContext } from "@concile/component";
+import { GuestDatabaseWriter } from "@concile/executor";
 import { getFunctionPath, enqueueInternal, type FnRef, type EnqueueTables } from "./facade";
 
 export type CatchUpPolicy = "skip" | "fireOnce" | "fireAll";
@@ -70,7 +70,7 @@ export interface MonthlyAt {
   minuteUTC: number;
 }
 
-/** `tz`/`catchUp` are additive Helipod extensions (absent on Convex) — see the design spec §5.2. */
+/** `tz`/`catchUp` are additive Concile extensions (absent on Convex) — see the design spec §5.2. */
 export interface CronOpts {
   tz?: string;
   catchUp?: CatchUpPolicy;
@@ -228,7 +228,7 @@ export async function enqueueCadenceJob(
  * cronJobs } from "./_generated/server"; const crons = cronJobs(); ...; export default crons;`)
  * is UNCHANGED and still the file an app author writes — Task 6 (or the CLI) just needs to
  * `import crons from "./crons"` and pass it to `defineScheduler({ crons })` in the app's compose
- * step, which is a few lines of glue, not a new loading mechanism. This keeps `@helipod/
+ * step, which is a few lines of glue, not a new loading mechanism. This keeps `@concile/
  * scheduler` itself free of filesystem/module-resolution concerns (which belong in `packages/
  * cli`), while the public authoring convention Task 6 needs is already fully exercised by this
  * task's tests (`cronJobs()` → `defineScheduler({ crons })`).

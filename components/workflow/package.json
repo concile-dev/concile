@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/workflow",
+  "name": "@concile/workflow",
   "version": "0.1.5",
   "license": "FSL-1.1-Apache-2.0",
   "type": "module",
@@ -17,15 +17,15 @@
     "test": "vitest run --testTimeout=60000 --hookTimeout=60000"
   },
   "dependencies": {
-    "@helipod/component": "workspace:*",
-    "@helipod/executor": "workspace:*",
-    "@helipod/values": "workspace:*",
-    "@helipod/scheduler": "workspace:*"
+    "@concile/component": "workspace:*",
+    "@concile/executor": "workspace:*",
+    "@concile/values": "workspace:*",
+    "@concile/scheduler": "workspace:*"
   },
   "devDependencies": {
-    "@helipod/client": "workspace:*",
-    "@helipod/docstore-sqlite": "workspace:*",
-    "@helipod/runtime-embedded": "workspace:*",
+    "@concile/client": "workspace:*",
+    "@concile/docstore-sqlite": "workspace:*",
+    "@concile/runtime-embedded": "workspace:*",
     "@types/node": "catalog:",
     "tsup": "catalog:",
     "typescript": "catalog:",
@@ -39,8 +39,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "components/workflow"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

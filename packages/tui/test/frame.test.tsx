@@ -25,7 +25,7 @@ function makeBridge(): { bridge: TuiBridge; emit: (e: TuiEvent) => void } {
         url: "http://127.0.0.1:3210",
         dashboardUrl: "http://127.0.0.1:3210/_dashboard",
         adminKeyPreview: "cxgr6-v…foI_",
-        functionsDir: "helipod",
+        functionsDir: "concile",
         storage: "sqlite",
         version: "9.9.9",
       },
@@ -49,7 +49,7 @@ describe("dashboard frame", () => {
     await renderOnce();
 
     const lines = captureCharFrame().split("\n");
-    expect(lines[0]).toContain("helipod");
+    expect(lines[0]).toContain("concile");
     expect(lines[0]).toContain("127.0.0.1:3210");
 
     // The status bar owns the bottom row — not floating mid-screen.
@@ -61,7 +61,7 @@ describe("dashboard frame", () => {
     renderer.destroy();
   });
 
-  it("shows deployment facts and the project summary, with helipod's own version", async () => {
+  it("shows deployment facts and the project summary, with concile's own version", async () => {
     const { renderer, renderOnce, flush, captureCharFrame } = await createTestRenderer({ width: 100, height: 24 });
     const { bridge } = makeBridge();
     createRoot(renderer).render(<App bridge={bridge} />);

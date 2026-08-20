@@ -1,10 +1,10 @@
 // packages/auth/test/auth-reactive.test.ts
 import { describe, it, expect } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { composeComponents } from "@helipod/component";
-import { defineSchema } from "@helipod/values";
-import { query } from "@helipod/executor";
-import { EmbeddedRuntime } from "@helipod/runtime-embedded";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { composeComponents } from "@concile/component";
+import { defineSchema } from "@concile/values";
+import { query } from "@concile/executor";
+import { EmbeddedRuntime } from "@concile/runtime-embedded";
 import { auth } from "../src/component";
 
 function mockSocket(): { send(d: string): void; bufferedAmount: number; close(): void; sent: any[] } {

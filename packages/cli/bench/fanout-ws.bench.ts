@@ -7,18 +7,18 @@
  *
  * Boot pattern mirrors action-e2e.test.ts: build a runtime from an inline loadProject({schema,
  * modules}) and hand it to startDevServer(runtime, {port, ip}) — no fixture dir / codegen needed.
- * Opt-in (HELIPOD_BENCH_FANOUT_WS=1) — heavier than the in-process run (spins a server + K sockets).
+ * Opt-in (CONCILE_BENCH_FANOUT_WS=1) — heavier than the in-process run (spins a server + K sockets).
  */
 import { describe, it, expect } from "vitest";
 import { performance } from "node:perf_hooks";
-import { v, defineSchema, defineTable } from "@helipod/values";
-import { query, mutation } from "@helipod/executor";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { createEmbeddedRuntime } from "@helipod/runtime-embedded";
+import { v, defineSchema, defineTable } from "@concile/values";
+import { query, mutation } from "@concile/executor";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { createEmbeddedRuntime } from "@concile/runtime-embedded";
 import { loadProject, startDevServer } from "../src/index";
-import { HelipodClient, webSocketTransport } from "@helipod/client";
+import { ConcileClient, webSocketTransport } from "@concile/client";
 
-const RUN_WS = process.env["HELIPOD_BENCH_FANOUT_WS"] === "1";
+const RUN_WS = process.env["CONCILE_BENCH_FANOUT_WS"] === "1";
 const wsDescribe = RUN_WS ? describe : describe.skip;
 
 const schema = defineSchema({
@@ -57,7 +57,7 @@ function percentile(sortedMs: readonly number[], q: number): number {
   return sortedMs[Math.min(sortedMs.length - 1, Math.floor(q * sortedMs.length))]!;
 }
 
-wsDescribe("bench-fanout-ws — end-to-end propagation (opt-in: HELIPOD_BENCH_FANOUT_WS=1)", () => {
+wsDescribe("bench-fanout-ws — end-to-end propagation (opt-in: CONCILE_BENCH_FANOUT_WS=1)", () => {
   it("K WS clients on one channel: measures write -> each client receives push", async () => {
     const project = loadProject({ schema, modules: { bench: appModule } });
     const runtime = await createEmbeddedRuntime({
@@ -72,7 +72,7 @@ wsDescribe("bench-fanout-ws — end-to-end propagation (opt-in: HELIPOD_BENCH_FA
       await runtime.run("bench:seed", { channelId: "c0" });
 
       const K = 100;
-      const clients = Array.from({ length: K }, () => new HelipodClient(webSocketTransport(wsUrl)));
+      const clients = Array.from({ length: K }, () => new ConcileClient(webSocketTransport(wsUrl)));
       const latencies: number[] = [];
       let received = 0;
       let subscribed = 0;

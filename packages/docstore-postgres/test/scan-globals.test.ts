@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { PostgresDocStore } from "../src/postgres-docstore";
 import { PgliteClient } from "./pglite-client";
-import { newDocumentId, encodeStorageTableId } from "@helipod/id-codec";
-import type { DocumentLogEntry, InternalDocumentId } from "@helipod/docstore";
+import { newDocumentId, encodeStorageTableId } from "@concile/id-codec";
+import type { DocumentLogEntry, InternalDocumentId } from "@concile/docstore";
 
 const TABLE = 10001;
 const TABLE_ID = encodeStorageTableId(TABLE);

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { v, defineSchema, defineTable } from "@helipod/values";
+import { v, defineSchema, defineTable } from "@concile/values";
 import { validateShardByDeclarations, assertShardByDeclarations, type ShardByDeclaration } from "../src/index";
 
 const schema = defineSchema({

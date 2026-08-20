@@ -1,5 +1,5 @@
 /**
- * @helipod/tui — the helipod terminal dashboard (OpenTUI + vendored termcn components).
+ * @concile/tui — the concile terminal dashboard (OpenTUI + vendored termcn components).
  *
  * Loaded by the CLI via dynamic `import()` ONLY after a runtime probe: importing this
  * module never touches FFI, but `runDashboard()` calls `createCliRenderer()`, which

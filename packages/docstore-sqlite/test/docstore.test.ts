@@ -1,4 +1,4 @@
-import { runDocStoreConformance } from "@helipod/docstore/test-support/conformance";
+import { runDocStoreConformance } from "@concile/docstore/test-support/conformance";
 import { NodeSqliteAdapter, SqliteDocStore } from "../src/index";
 
 runDocStoreConformance("sqlite", async () => {

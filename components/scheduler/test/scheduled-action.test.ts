@@ -1,6 +1,6 @@
 // components/scheduler/test/scheduled-action.test.ts
 import { describe, it, expect } from "vitest";
-import { action, mutation } from "@helipod/executor";
+import { action, mutation } from "@concile/executor";
 import { makeRuntimeWithScheduler, readTable } from "./helpers";
 
 describe("schedulerDriver — scheduled actions execute", () => {

@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 import type {
   CommitGuardUnit,
   ClientVerdictRecord,
@@ -16,8 +16,8 @@ import type {
   ShardId,
   TimestampRange,
   InternalDocumentId,
-} from "@helipod/docstore";
-import type { JSONValue } from "@helipod/values";
+} from "@concile/docstore";
+import type { JSONValue } from "@concile/values";
 
 /**
  * A `DocStore` that forwards every call to a swappable inner delegate, so a replica-to-primary

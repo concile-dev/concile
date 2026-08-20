@@ -1,17 +1,17 @@
 /**
- * Regenerate helipod/_generated from the schema + functions. Run with `bun run scripts/codegen.ts`.
+ * Regenerate concile/_generated from the schema + functions. Run with `bun run scripts/codegen.ts`.
  * The dev CLI does this automatically; this script also backs the "generated is up to date" test.
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { push } from "@helipod/cli";
-import schema from "../helipod/schema";
-import * as lists from "../helipod/lists";
-import * as items from "../helipod/items";
+import { push } from "@concile/cli";
+import schema from "../concile/schema";
+import * as lists from "../concile/lists";
+import * as items from "../concile/items";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const generatedDir = join(here, "../helipod/_generated");
+const generatedDir = join(here, "../concile/_generated");
 
 const { generated } = push({ schema, modules: { lists, items } });
 mkdirSync(generatedDir, { recursive: true });

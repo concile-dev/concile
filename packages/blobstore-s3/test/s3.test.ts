@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { runBlobStoreConformance } from "@helipod/blobstore/test-support/conformance";
+import { runBlobStoreConformance } from "@concile/blobstore/test-support/conformance";
 import { S3BlobStore } from "../src/s3-blobstore";
 
-const endpoint = process.env.HELIPOD_TEST_S3_ENDPOINT;
-const bucket = process.env.HELIPOD_TEST_S3_BUCKET ?? "helipod-test";
+const endpoint = process.env.CONCILE_TEST_S3_ENDPOINT;
+const bucket = process.env.CONCILE_TEST_S3_BUCKET ?? "concile-test";
 
 const suite = endpoint ? describe : describe.skip;
 
@@ -16,8 +16,8 @@ suite("S3BlobStore conformance (real endpoint)", () => {
         endpoint,
         forcePathStyle: true,
         region: "us-east-1",
-        accessKeyId: process.env.HELIPOD_TEST_S3_KEY ?? "minioadmin",
-        secretAccessKey: process.env.HELIPOD_TEST_S3_SECRET ?? "minioadmin",
+        accessKeyId: process.env.CONCILE_TEST_S3_KEY ?? "minioadmin",
+        secretAccessKey: process.env.CONCILE_TEST_S3_SECRET ?? "minioadmin",
       }),
   );
 });

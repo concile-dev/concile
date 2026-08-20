@@ -1,6 +1,6 @@
-# @helipod/transactor
+# @concile/transactor
 
-The single-writer, optimistic-concurrency transaction engine at the heart of Helipod's
+The single-writer, optimistic-concurrency transaction engine at the heart of Concile's
 write path.
 
 This package runs each mutation as a serializable transaction over the append-only
@@ -12,9 +12,9 @@ reactive. Group commit batches concurrent transactions through the single writer
 throughput, and a sharded variant partitions the write path across multiple writers
 while preserving cross-shard read consistency.
 
-> This is an internal package of the Helipod engine. Most applications should install
-> [`helipod`](https://www.npmjs.com/package/helipod) instead.
+> This is an internal package of the Concile engine. Most applications should install
+> [`concile`](https://www.npmjs.com/package/concile) instead.
 
-Part of [Helipod](https://github.com/helipod-sh/helipod) — docs at https://helipod-six.vercel.app/docs
+Part of [Concile](https://github.com/concile-dev/concile) — docs at https://concile-six.vercel.app/docs
 
 License: FSL-1.1-Apache-2.0

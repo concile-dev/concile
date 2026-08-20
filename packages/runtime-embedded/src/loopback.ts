@@ -5,8 +5,8 @@
  * listeners. No sockets, no serialization-over-the-wire — but the EXACT same `SyncWebSocket`
  * the handler talks to, so a real WebSocket transport drops in unchanged at Tier 2.
  */
-import type { SyncWebSocket } from "@helipod/sync";
-import { parseClientMessage, type ClientMessage, type ServerMessage } from "@helipod/sync";
+import type { SyncWebSocket } from "@concile/sync";
+import { parseClientMessage, type ClientMessage, type ServerMessage } from "@concile/sync";
 
 export type ServerMessageListener = (msg: ServerMessage) => void;
 

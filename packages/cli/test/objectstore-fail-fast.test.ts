@@ -66,7 +66,7 @@ describe("isObjectStoreBootFailFast (F2 — distinguishes KNOWN object-store boo
     // short to ever win — produces the genuine production Error object (not a fabricated string).
     const root = mkdtempSync(join(tmpdir(), "sb-objstore-failfast-"));
     try {
-      const loaded = await loadFunctionsDir("test/fixtures/deploy-v2/helipod");
+      const loaded = await loadFunctionsDir("test/fixtures/deploy-v2/concile");
       const nodeA = await bootLoaded({
         loaded,
         components: [],
@@ -106,7 +106,7 @@ describe("isObjectStoreBootFailFast (F2 — distinguishes KNOWN object-store boo
   });
 
   it("classifies resolveObjectStore's parse/validation throws (bad scheme, missing bucket, missing creds)", async () => {
-    const loaded = await loadFunctionsDir("test/fixtures/deploy-v2/helipod");
+    const loaded = await loadFunctionsDir("test/fixtures/deploy-v2/concile");
     const root = mkdtempSync(join(tmpdir(), "sb-objstore-failfast-badurl-"));
     try {
       let caught: unknown;
@@ -153,18 +153,18 @@ function makeFixtureFunctionsDir(): string {
   const dir = mkdtempSync(join(tmpdir(), "sb-objstore-failfast-serve-"));
   const nm = join(dir, "node_modules");
   mkdirSync(nm);
-  symlinkSync(join(cliNodeModules(), "@helipod"), join(nm, "@helipod"));
+  symlinkSync(join(cliNodeModules(), "@concile"), join(nm, "@concile"));
   writeFileSync(
     join(dir, "schema.ts"),
     `
-    import { v, defineSchema, defineTable } from "@helipod/values";
+    import { v, defineSchema, defineTable } from "@concile/values";
     export default defineSchema({ items: defineTable({ body: v.string() }) });
     `,
   );
   writeFileSync(
     join(dir, "app.ts"),
     `
-    import { query } from "@helipod/executor";
+    import { query } from "@concile/executor";
     export const list = query({ handler: async () => [] });
     `,
   );
@@ -174,14 +174,14 @@ function makeFixtureFunctionsDir(): string {
 }
 
 describe("serveCommand — object-store fail-fast UX (F2)", () => {
-  const OLD_KEY = process.env.HELIPOD_ADMIN_KEY;
+  const OLD_KEY = process.env.CONCILE_ADMIN_KEY;
   function restoreEnv(): void {
-    if (OLD_KEY === undefined) delete process.env.HELIPOD_ADMIN_KEY;
-    else process.env.HELIPOD_ADMIN_KEY = OLD_KEY;
+    if (OLD_KEY === undefined) delete process.env.CONCILE_ADMIN_KEY;
+    else process.env.CONCILE_ADMIN_KEY = OLD_KEY;
   }
 
   it("a bad --object-store URL prints a clean ✗ message and returns 1 — not a raw stack trace", async () => {
-    process.env.HELIPOD_ADMIN_KEY = "test-key";
+    process.env.CONCILE_ADMIN_KEY = "test-key";
     const dir = makeFixtureFunctionsDir();
     let stderr = "";
     const origWrite = process.stderr.write.bind(process.stderr);
@@ -202,7 +202,7 @@ describe("serveCommand — object-store fail-fast UX (F2)", () => {
         "gs://unsupported-scheme/bucket",
       ]);
       expect(code).toBe(1);
-      expect(stderr).toContain("✗ helipod: --object-store URL");
+      expect(stderr).toContain("✗ concile: --object-store URL");
       expect(stderr).toContain("unsupported scheme");
       // The whole point of F2: no raw stack trace (no "at " frame lines, no source-file references).
       expect(stderr).not.toMatch(/\n\s+at /);
@@ -216,7 +216,7 @@ describe("serveCommand — object-store fail-fast UX (F2)", () => {
   // Tier 3 multi-shard single-node serve: `--shards N` (N>1) validation — an object-store WRITER
   // concept, rejected clearly for the combinations that can't mean it.
   async function runServeCapturingStderr(args: string[]): Promise<{ code: number; stderr: string }> {
-    process.env.HELIPOD_ADMIN_KEY = "test-key";
+    process.env.CONCILE_ADMIN_KEY = "test-key";
     let stderr = "";
     const origWrite = process.stderr.write.bind(process.stderr);
     process.stderr.write = ((chunk: string) => ((stderr += chunk), true)) as typeof process.stderr.write;

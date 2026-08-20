@@ -1,4 +1,4 @@
-export const appName = 'helipod';
+export const appName = 'concile';
 export const docsRoute = '/docs';
 export const docsImageRoute = '/og/docs';
 export const docsContentRoute = '/llms.mdx/docs';

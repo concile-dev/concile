@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/errors",
+  "name": "@concile/errors",
   "version": "0.1.5",
   "type": "module",
   "license": "FSL-1.1-Apache-2.0",
@@ -32,8 +32,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "packages/errors"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

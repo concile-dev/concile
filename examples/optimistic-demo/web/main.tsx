@@ -1,11 +1,11 @@
 import { StrictMode, useState, type FormEvent } from "react";
 import { createRoot } from "react-dom/client";
-import { HelipodClient, anyApi, type OptimisticLocalStore } from "@helipod/client";
-import { HelipodProvider, useQuery, useMutation } from "@helipod/client/react";
+import { ConcileClient, anyApi, type OptimisticLocalStore } from "@concile/client";
+import { ConcileProvider, useQuery, useMutation } from "@concile/client/react";
 import { delayTransport } from "./delay-transport";
 // Type-only imports — erased at bundle time, so server-side re-exports never reach the browser.
-import type { Api } from "../helipod/_generated/api";
-import type { Doc, Id } from "../helipod/_generated/dataModel";
+import type { Api } from "../concile/_generated/api";
+import type { Doc, Id } from "../concile/_generated/dataModel";
 
 const api = anyApi as Api;
 
@@ -15,7 +15,7 @@ export const transport = delayTransport(`${wsProtocol}://${location.host}/api/sy
 // NO outbox, NO optimisticUpdates registry: this demo is the pure ONLINE optimistic path —
 // examples/offline-demo owns durability. A failed mutation here rejects its promise and the
 // optimistic layer is dropped in the same reconcile pass (the exact-rollback demo).
-const client = new HelipodClient(transport);
+const client = new ConcileClient(transport);
 
 /* ------------------------------------------------------------------------------------------------
  * Optimistic updaters — module-scoped and PURE (replay-safe): ids/time only from the store API,
@@ -256,9 +256,9 @@ const root = document.getElementById("root");
 if (root) {
   createRoot(root).render(
     <StrictMode>
-      <HelipodProvider client={client}>
+      <ConcileProvider client={client}>
         <App />
-      </HelipodProvider>
+      </ConcileProvider>
     </StrictMode>,
   );
 }

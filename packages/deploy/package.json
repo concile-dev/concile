@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/deploy",
+  "name": "@concile/deploy",
   "version": "0.1.5",
   "type": "module",
   "exports": {
@@ -18,7 +18,7 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@helipod/component": "workspace:*"
+    "@concile/component": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:",
@@ -35,8 +35,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "packages/deploy"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

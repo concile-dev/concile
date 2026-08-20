@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { ClientTransport } from "@helipod/client";
+import type { ClientTransport } from "@concile/client";
 import { offlineToggleTransport } from "../web/offline-transport";
 
 type Sent = Parameters<ClientTransport["send"]>[0];

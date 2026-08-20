@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { createTestHelipod, type TestHelipod } from "../../src";
-import { defineScheduler } from "@helipod/scheduler";
-import { mutation, query } from "@helipod/executor";
-import { defineSchema, defineTable, v } from "@helipod/values";
+import { createTestConcile, type TestConcile } from "../../src";
+import { defineScheduler } from "@concile/scheduler";
+import { mutation, query } from "@concile/executor";
+import { defineSchema, defineTable, v } from "@concile/values";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type A = any;
@@ -37,7 +37,7 @@ const mod = {
   byRange: query(async (ctx: A, a: { lo: number; hi: number }) =>
     ctx.db.query("events", "by_seq").gte("seq", a.lo).lt("seq", a.hi).collect()),
   insertEvent: mutation(async (ctx: A, a: { seq: number; label: string }) => ctx.db.insert("events", a)),
-  // Schedules `mod:insert` to run later via `@helipod/scheduler` — used to prove a scheduled
+  // Schedules `mod:insert` to run later via `@concile/scheduler` — used to prove a scheduled
   // mutation's write fans out to a live subscription the same as a directly-called mutation.
   scheduleInsert: mutation(async (ctx: A, a: { room: string; body: string }) =>
     ctx.scheduler.runAfter(1000, "mod:insert", a)),
@@ -54,10 +54,10 @@ async function waitFor(pred: () => boolean, ms = 1000) {
 const GRACE_MS = 70;
 
 describe("conformance — reactive invalidation precision", () => {
-  let t: TestHelipod;
+  let t: TestConcile;
 
   beforeEach(async () => {
-    t = await createTestHelipod({
+    t = await createTestConcile({
       modules: { "mod.ts": mod, "schema.ts": { default: schema } },
       components: [defineScheduler()],
     });

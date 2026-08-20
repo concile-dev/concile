@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * `ShardedObjectStoreDocStore` — object-storage multi-shard SINGLE-NODE write scale-out: one node
  * owns ALL N object-storage lanes (each a full `ObjectStoreDocStore`, design record §5's `s{shard}/…`
@@ -45,9 +45,9 @@ import type {
   TimestampRange,
   InternalDocumentId,
   IndexWrite,
-} from "@helipod/docstore";
-import { DEFAULT_SHARD } from "@helipod/id-codec";
-import type { JSONValue } from "@helipod/values";
+} from "@concile/docstore";
+import { DEFAULT_SHARD } from "@concile/id-codec";
+import type { JSONValue } from "@concile/values";
 import { mergeSortedAsyncGenerators, compareBytesLex, compareBigint } from "./merge-sorted";
 
 export interface ShardedObjectStoreDocStoreOpts {

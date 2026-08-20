@@ -13,13 +13,13 @@
  * {onlyIf})`) is a DIFFERENT surface that signals a failed precondition by returning `null` rather
  * than throwing — an `objectstore-r2` binding adapter would need its own conformance run.
  *
- * GATED: only runs when `HELIPOD_OBJECTSTORE_R2=1` AND the four R2_* vars are set, so the default
- * `bun run --filter @helipod/objectstore-s3 test` stays green (skipped) with no R2 account present.
+ * GATED: only runs when `CONCILE_OBJECTSTORE_R2=1` AND the four R2_* vars are set, so the default
+ * `bun run --filter @concile/objectstore-s3 test` stays green (skipped) with no R2 account present.
  * Mirrors `./s3.conformance.test.ts`'s gating shape.
  *
- *   HELIPOD_OBJECTSTORE_R2=1 \
+ *   CONCILE_OBJECTSTORE_R2=1 \
  *   R2_ACCOUNT_ID=... R2_ACCESS_KEY_ID=... R2_SECRET_ACCESS_KEY=... R2_BUCKET=... \
- *   bun run --filter @helipod/objectstore-s3 test
+ *   bun run --filter @concile/objectstore-s3 test
  *
  * RUN ISOLATION: unlike the MinIO suite (fresh container per run ⇒ always-clean fixed keys), R2 is a
  * real PERSISTENT bucket, so the suite's fixed keys (`cas/create`, …) would collide with the previous
@@ -29,8 +29,8 @@
  */
 import { randomBytes } from "node:crypto";
 import { afterAll, describe } from "vitest";
-import { runObjectStoreConformance } from "@helipod/objectstore/test-support/conformance";
-import type { ObjectStore } from "@helipod/objectstore";
+import { runObjectStoreConformance } from "@concile/objectstore/test-support/conformance";
+import type { ObjectStore } from "@concile/objectstore";
 import { S3ObjectStore } from "../src/s3-objectstore";
 
 const ACCOUNT_ID = process.env.R2_ACCOUNT_ID ?? "";
@@ -39,7 +39,7 @@ const SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY ?? "";
 const BUCKET = process.env.R2_BUCKET ?? "";
 
 const RUN =
-  process.env.HELIPOD_OBJECTSTORE_R2 === "1" &&
+  process.env.CONCILE_OBJECTSTORE_R2 === "1" &&
   Boolean(ACCOUNT_ID && ACCESS_KEY_ID && SECRET_ACCESS_KEY && BUCKET);
 const maybeDescribe = RUN ? describe : describe.skip;
 
@@ -105,10 +105,10 @@ async function sweepRunPrefix(): Promise<void> {
   await Promise.all(keys.map((k) => store.delete(k)));
 }
 
-if (!RUN && process.env.HELIPOD_OBJECTSTORE_R2 === "1") {
+if (!RUN && process.env.CONCILE_OBJECTSTORE_R2 === "1") {
   // Opted in but under-configured — say so loudly rather than silently skipping.
   console.warn(
-    "[r2.conformance] HELIPOD_OBJECTSTORE_R2=1 but R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / " +
+    "[r2.conformance] CONCILE_OBJECTSTORE_R2=1 but R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / " +
       "R2_SECRET_ACCESS_KEY / R2_BUCKET are not all set — skipping.",
   );
 }

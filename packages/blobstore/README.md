@@ -1,18 +1,18 @@
-# @helipod/blobstore
+# @concile/blobstore
 
-The `BlobStore` interface: the byte-storage seam behind Helipod's file storage.
+The `BlobStore` interface: the byte-storage seam behind Concile's file storage.
 
-This package defines the contract Helipod's file-storage engine
-(`@helipod/storage`) uses to read and write actual file bytes — upload targets
+This package defines the contract Concile's file-storage engine
+(`@concile/storage`) uses to read and write actual file bytes — upload targets
 (proxied or presigned), streamed store/read with byte-range support, signed
 URLs, and metadata lookup. File metadata itself lives in the database; only the
 bytes go through this seam. Concrete implementations live in sibling packages
-such as `@helipod/blobstore-fs`, `@helipod/blobstore-s3`, and
-`@helipod/blobstore-r2`, and the engine never imports a storage driver
+such as `@concile/blobstore-fs`, `@concile/blobstore-s3`, and
+`@concile/blobstore-r2`, and the engine never imports a storage driver
 directly. The shared adapter conformance suite also lives here.
 
-> This is an internal package of the Helipod engine. Most applications should install [`helipod`](https://www.npmjs.com/package/helipod) instead.
+> This is an internal package of the Concile engine. Most applications should install [`concile`](https://www.npmjs.com/package/concile) instead.
 
-Part of [Helipod](https://github.com/helipod-sh/helipod) — docs at https://helipod-six.vercel.app/docs
+Part of [Concile](https://github.com/concile-dev/concile) — docs at https://concile-six.vercel.app/docs
 
 License: FSL-1.1-Apache-2.0

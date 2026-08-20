@@ -1,14 +1,14 @@
-import { encodeStorageTableId } from "@helipod/id-codec";
-import { convexToJson, type JSONValue, type Value, type ValidatorJSON } from "@helipod/values";
+import { encodeStorageTableId } from "@concile/id-codec";
+import { convexToJson, type JSONValue, type Value, type ValidatorJSON } from "@concile/values";
 import {
   applyDumpToStore,
   exportDumpFromStore,
   parseDump,
   type ImportableDocStore,
   type MigrationDump,
-} from "@helipod/docstore";
-import type { EmbeddedRuntime } from "@helipod/runtime-embedded";
-import type { ExecutionLogEntry, IndexCatalog, LogFilter, LogSink } from "@helipod/executor";
+} from "@concile/docstore";
+import type { EmbeddedRuntime } from "@concile/runtime-embedded";
+import type { ExecutionLogEntry, IndexCatalog, LogFilter, LogSink } from "@concile/executor";
 import type { FilterCond } from "./browse";
 
 export type SchemaJsonLike = {
@@ -17,9 +17,9 @@ export type SchemaJsonLike = {
     {
       indexes: { indexDescriptor: string }[];
       shardKey?: string | null;
-      // The real schema always sets this (see SchemaDefinitionJSON in @helipod/values); optional
+      // The real schema always sets this (see SchemaDefinitionJSON in @concile/values); optional
       // here only because callers that build a SchemaJsonLike by hand (tests, component tables with
-      // no app-level schema entry) don't always carry it. `helipod deploy`'s schema diff reads it
+      // no app-level schema entry) don't always carry it. `concile deploy`'s schema diff reads it
       // off the live `AdminApi.getSchema()` snapshot — see DeployDeps["current"] in deploy-apply.ts.
       documentType?: ValidatorJSON;
     }

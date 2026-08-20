@@ -14,12 +14,12 @@ dist/
 !.env.example
 .DS_Store
 
-# helipod local data (Tier 0 embedded db)
+# concile local data (Tier 0 embedded db)
 *.db
 *.db-wal
 *.db-shm
-.helipod/
-.helipod-deploy/
+.concile/
+.concile-deploy/
 
 # benchmark results
 benchmarks/results/
@@ -28,7 +28,7 @@ benchmarks/results/
 examples/*/web/main.js
 examples/*/web/*.js.map
 
-# built dashboard SPA bundle (run `pnpm --filter @helipod/dashboard build`)
+# built dashboard SPA bundle (run `pnpm --filter @concile/dashboard build`)
 apps/*/dist/
 
 # local agent / tooling / verification artifacts
@@ -36,7 +36,7 @@ apps/*/dist/
 .workflows/
 .remember/
 .claude/
-helipod-chat-working.png
+concile-chat-working.png
 
 # SDD scratch (progress ledger, briefs, reports)
 .superpowers/

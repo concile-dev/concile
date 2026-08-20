@@ -1,12 +1,12 @@
 // components/triggers/test/boot.test.ts — handler-path validation (fail-fast) + cursor init (tip / fromStart)
 import { describe, it, expect } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { composeComponents } from "@helipod/component";
-import { EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { mutation, query, action } from "@helipod/executor";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { composeComponents } from "@concile/component";
+import { EmbeddedRuntime } from "@concile/runtime-embedded";
+import { mutation, query, action } from "@concile/executor";
 import { makeRuntimeWithTriggers, readCursors, testAppSchema } from "./helpers";
 
-describe("@helipod/triggers — boot validation", () => {
+describe("@concile/triggers — boot validation", () => {
   it("rejects an unknown handler path", async () => {
     await expect(
       makeRuntimeWithTriggers({}, { messages: { handler: "notifications:_onMessage" } }),

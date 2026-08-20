@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * Shards B2a (Task 4) — the N-shard fleet layer, exercised against a real `PostgresDocStore` over
  * PGlite (real Postgres semantics, single in-process connection). PGlite has no commit pool, so the
@@ -7,13 +7,13 @@
  * are connection-agnostic; genuine cross-connection parallelism + failover are the fleet-e2e's job.
  */
 import { describe, it, expect, vi } from "vitest";
-import { newDocumentId, shardIdList, DEFAULT_SHARD, encodeStorageIndexId, type InternalDocumentId } from "@helipod/id-codec";
-import { encodeIndexKey } from "@helipod/index-key-codec";
-import type { DocumentLogEntry, IndexWrite } from "@helipod/docstore";
-import { PostgresDocStore } from "@helipod/docstore-postgres";
-import type { CommitUnit } from "@helipod/docstore";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { ShardedTransactor } from "@helipod/transactor";
+import { newDocumentId, shardIdList, DEFAULT_SHARD, encodeStorageIndexId, type InternalDocumentId } from "@concile/id-codec";
+import { encodeIndexKey } from "@concile/index-key-codec";
+import type { DocumentLogEntry, IndexWrite } from "@concile/docstore";
+import { PostgresDocStore } from "@concile/docstore-postgres";
+import type { CommitUnit } from "@concile/docstore";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { ShardedTransactor } from "@concile/transactor";
 import { FencedError } from "../src/fenced-error";
 import { LeaseManager, type TryRunExclusiveOnShard } from "../src/lease";
 import { installCommitGuard, relinquish, FrontierMonitor, acquireShardAsWriter } from "../src/node";

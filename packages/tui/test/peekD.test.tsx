@@ -13,7 +13,7 @@ for (let i = 0; i < 60; i++) logs.push({ id: 500 + i, path: "messages:list", kin
 for (let i = 0; i < 200; i++) logs.push({ id: 2000 + i, path: "_admin:browseTable", kind: "query", ts: now - i * 2500, durationMs: 1, status: "ok" });
 const bridge = {
   deployment: { url: "http://127.0.0.1:3210", dashboardUrl: "x", adminKeyPreview: "k…1",
-    functionsDir: "helipod", storage: "sqlite", version: "0.1.4" },
+    functionsDir: "concile", storage: "sqlite", version: "0.1.4" },
   counts: () => ({ functions: 11, tables: 5, components: 1 }),
   onEvent: () => () => {}, requestQuit: () => {},
   data: { listTables: async () => [], getTableData: async () => ({ documents: [], cursor: null, isDone: true }),

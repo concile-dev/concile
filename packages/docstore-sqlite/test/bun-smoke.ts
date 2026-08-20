@@ -5,9 +5,9 @@
  */
 import assert from "node:assert/strict";
 import { BunSqliteAdapter, SqliteDocStore } from "../src/index";
-import { newDocumentId, encodeStorageTableId, encodeStorageIndexId } from "@helipod/id-codec";
-import { encodeIndexKey } from "@helipod/index-key-codec";
-import type { DocumentLogEntry } from "@helipod/docstore";
+import { newDocumentId, encodeStorageTableId, encodeStorageIndexId } from "@concile/id-codec";
+import { encodeIndexKey } from "@concile/index-key-codec";
+import type { DocumentLogEntry } from "@concile/docstore";
 
 const TABLE = 10001;
 const TABLE_ID = encodeStorageTableId(TABLE);

@@ -3,9 +3,9 @@ import { PgliteClient } from "./pglite-client";
 import { PostgresDocStore } from "../src/postgres-docstore";
 import { STREAM_BATCH_INITIAL } from "../src/pg-client";
 import type { PgRow, PgValue } from "../src/pg-client";
-import { newDocumentId, encodeStorageIndexId } from "@helipod/id-codec";
-import { encodeIndexKey } from "@helipod/index-key-codec";
-import type { DocumentLogEntry, IndexWrite, InternalDocumentId, Interval } from "@helipod/docstore";
+import { newDocumentId, encodeStorageIndexId } from "@concile/id-codec";
+import { encodeIndexKey } from "@concile/index-key-codec";
+import type { DocumentLogEntry, IndexWrite, InternalDocumentId, Interval } from "@concile/docstore";
 
 async function drain<T>(it: AsyncIterable<T>, n?: number): Promise<T[]> {
   const out: T[] = [];

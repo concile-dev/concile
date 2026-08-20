@@ -1,5 +1,5 @@
-import { mutation, query, type MutationCtx, type QueryCtx, type RegisteredFunction } from "@helipod/executor";
-import type { GuestDatabaseReader, GuestDatabaseWriter } from "@helipod/executor";
+import { mutation, query, type MutationCtx, type QueryCtx, type RegisteredFunction } from "@concile/executor";
+import type { GuestDatabaseReader, GuestDatabaseWriter } from "@concile/executor";
 import type { NotificationsConfig, Channel } from "./config";
 import { compact } from "./render";
 import { callerId } from "./inbox";

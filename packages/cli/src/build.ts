@@ -1,5 +1,5 @@
 /**
- * `helipod build` — compile the app to a self-contained executable via `bun build --compile`.
+ * `concile build` — compile the app to a self-contained executable via `bun build --compile`.
  * Refresh codegen (so the app's `import "./_generated/server"` resolves at compile time), codegen a
  * static-import entrypoint, shell out to `bun build --compile`, then clean up.
  */
@@ -7,7 +7,7 @@ import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } f
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
-import { writeGenerated } from "@helipod/codegen";
+import { writeGenerated } from "@concile/codegen";
 import { loadFunctionsDir, listFunctionModuleFiles, moduleKeyForFile } from "./load-modules";
 import { loadConfig } from "./load-config";
 import { push } from "./push-pipeline";
@@ -17,7 +17,7 @@ import { resolveFunctionsDir, ensureFunctionsDirExists } from "./functions-dir";
 export interface BuildOptions { functionsDir: string; outfile: string; target: string | null; dashboard: boolean; verbose: boolean }
 
 export async function resolveBuildOptions(args: string[]): Promise<BuildOptions> {
-  let dirFlag: string | undefined, outfile = "./helipod-server", target: string | null = null, dashboard = true, verbose = false;
+  let dirFlag: string | undefined, outfile = "./concile-server", target: string | null = null, dashboard = true, verbose = false;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a === "--dir" && args[i + 1]) dirFlag = args[++i] as string;
@@ -44,7 +44,7 @@ export function bunTargetFor(friendly: string): string {
 /** Enumerate the built dashboard dist as {urlPath, absPath}. "/" maps to index.html. */
 function dashboardFiles(): Array<{ urlPath: string; absPath: string }> | null {
   try {
-    const indexPath = createRequire(import.meta.url).resolve("@helipod/dashboard/dist");
+    const indexPath = createRequire(import.meta.url).resolve("@concile/dashboard/dist");
     const dist = dirname(indexPath);
     const out: Array<{ urlPath: string; absPath: string }> = [];
     const walk = (rel: string) => {
@@ -73,10 +73,10 @@ export async function buildCommand(args: string[]): Promise<number> {
   // 2. Codegen the entrypoint.
   const moduleImports = listFunctionModuleFiles(functionsDirAbs).map((f) => ({ key: moduleKeyForFile(f), absPath: join(functionsDirAbs, f) }));
   const schemaAbsPath = join(functionsDirAbs, existsSync(join(functionsDirAbs, "schema.ts")) ? "schema.ts" : "schema.js");
-  const cfgTs = join(dirname(functionsDirAbs), "helipod.config.ts"), cfgJs = join(dirname(functionsDirAbs), "helipod.config.js");
+  const cfgTs = join(dirname(functionsDirAbs), "concile.config.ts"), cfgJs = join(dirname(functionsDirAbs), "concile.config.js");
   const configAbsPath = existsSync(cfgTs) ? cfgTs : existsSync(cfgJs) ? cfgJs : null;
   const entrySrc = generateEntrySource({ moduleImports, schemaAbsPath, configAbsPath, dashboardFiles: opts.dashboard ? dashboardFiles() : null });
-  const buildDir = resolve(".helipod-build");
+  const buildDir = resolve(".concile-build");
   mkdirSync(buildDir, { recursive: true });
   const entryPath = join(buildDir, "entry.ts");
   writeFileSync(entryPath, entrySrc);

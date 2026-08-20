@@ -11,7 +11,7 @@
  *     is tokenless and needs no secret in the environment.
  *   - A brand-NEW package has no trusted publisher configured on npm yet, so
  *     OIDC can't authenticate it (chicken-and-egg). If OIDC fails and
- *     HELIPOD_NPM_FALLBACK_TOKEN is set (CI: the NPM_TOKEN secret), we retry
+ *     CONCILE_NPM_FALLBACK_TOKEN is set (CI: the NPM_TOKEN secret), we retry
  *     that one package with token auth. Existing packages never touch the token.
  *   The token is passed as its own env var — NOT as NPM_TOKEN — so the
  *   changesets action doesn't switch every package to token auth and OIDC stays
@@ -92,15 +92,15 @@ for (const [name, { dir, version }] of order) {
   } catch (oidcErr) {
     // OIDC couldn't authenticate — the usual cause is a brand-new package with
     // no trusted publisher yet. Retry once with the bootstrap token if present.
-    const token = process.env.HELIPOD_NPM_FALLBACK_TOKEN;
+    const token = process.env.CONCILE_NPM_FALLBACK_TOKEN;
     if (!token) {
       failures.push(name);
       console.error(
-        `PUBLISH FAILED ${name}@${version} (OIDC failed, no HELIPOD_NPM_FALLBACK_TOKEN): ${oidcErr.message ?? oidcErr}`,
+        `PUBLISH FAILED ${name}@${version} (OIDC failed, no CONCILE_NPM_FALLBACK_TOKEN): ${oidcErr.message ?? oidcErr}`,
       );
       continue;
     }
-    const rc = join(tmpdir(), `helipod-publish-${process.pid}.npmrc`);
+    const rc = join(tmpdir(), `concile-publish-${process.pid}.npmrc`);
     try {
       writeFileSync(rc, `//registry.npmjs.org/:_authToken=${token}\n`, { mode: 0o600 });
       console.log(`  OIDC failed; retrying ${name} with the bootstrap token …`);

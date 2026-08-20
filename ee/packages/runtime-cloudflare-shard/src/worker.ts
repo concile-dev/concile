@@ -1,16 +1,16 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 
 /**
  * The multi-shard stateless Worker router (M1). The DO-native analog of `ee/fleet` for the portable
  * path — but a SIBLING, not a consumer: Cloudflare's native `namespace.getByName(shardKey)` addressing
  * replaces the lease/forwarder mechanism entirely. This handler holds NO state; it resolves the ONE
  * owning shard-DO name from the request envelope (`resolveShard`) and forwards the ORIGINAL request to
- * it. Each shard-DO is an UNMODIFIED `HelipodDurableObject` from the FREE `@helipod/runtime-cloudflare`
+ * it. Each shard-DO is an UNMODIFIED `ConcileDurableObject` from the FREE `@concile/runtime-cloudflare`
  * package (reused verbatim — N distinct keys ⇒ N distinct DOs ⇒ N× the single-DO write ceiling AND
  * N×10 GB storage). No engine change: a shard-DO differs from Slice 3 in nothing.
  *
  * Licensing (locked): this package DEPENDS ON the free single-shard host and reuses its DO class;
- * nothing in `@helipod/runtime-cloudflare` imports back into here. The single-shard vs multi-shard
+ * nothing in `@concile/runtime-cloudflare` imports back into here. The single-shard vs multi-shard
  * choice is made at the APP'S Worker entry (which handler it `export default`s), never by a runtime
  * gate — so a free single-node deploy never statically links this ee code.
  */
@@ -18,7 +18,7 @@ import {
   DEFAULT_SHARD_NAME,
   type WorkerHandler,
   type DurableObjectNamespaceLike,
-} from "@helipod/runtime-cloudflare";
+} from "@concile/runtime-cloudflare";
 import { resolveShard, type ShardRoutingOptions } from "./route";
 
 // Re-export the Slice-3 default name so an app/rig references one symbol. `getByName(name)` (CF's
@@ -29,7 +29,7 @@ export { DEFAULT_SHARD_NAME };
 
 /**
  * Build the multi-shard Worker `fetch` handler. `bindingName` is the shard-DO `durable_objects`
- * binding in `wrangler.jsonc` (e.g. `"HELIPOD_DO"`); `opts` selects the routing mode and — for the
+ * binding in `wrangler.jsonc` (e.g. `"CONCILE_DO"`); `opts` selects the routing mode and — for the
  * derive-from-args convenience — the bundled `loaded` app.
  */
 export function createShardWorkerHandler(bindingName: string, opts: ShardRoutingOptions = {}): WorkerHandler {
@@ -38,7 +38,7 @@ export function createShardWorkerHandler(bindingName: string, opts: ShardRouting
       const ns = env[bindingName] as DurableObjectNamespaceLike | undefined;
       if (!ns || typeof ns.idFromName !== "function") {
         return json(500, {
-          error: `helipod: Durable Object binding "${bindingName}" is not configured in wrangler.jsonc`,
+          error: `concile: Durable Object binding "${bindingName}" is not configured in wrangler.jsonc`,
         });
       }
       const resolution = await resolveShard(request, opts);

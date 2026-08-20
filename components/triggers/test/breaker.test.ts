@@ -2,10 +2,10 @@
 // net, distinct from the failure-count breaker (a self-recursive/runaway handler that keeps
 // SUCCEEDING too often, not one that fails).
 import { describe, it, expect } from "vitest";
-import { mutation } from "@helipod/executor";
+import { mutation } from "@concile/executor";
 import { makeRuntimeWithTriggers, readCursors } from "./helpers";
 
-describe("@helipod/triggers — circuit breaker", () => {
+describe("@concile/triggers — circuit breaker", () => {
   it('1001 deliveries within the window pauses the trigger with pausedReason "circuit-breaker"', async () => {
     let deliveries = 0;
     const { runtime, tick } = await makeRuntimeWithTriggers(

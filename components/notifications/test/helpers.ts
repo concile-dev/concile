@@ -1,8 +1,8 @@
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { composeComponents, type ComponentDefinition, type Driver } from "@helipod/component";
-import { EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { defineSchema, type SchemaDefinitionJSON } from "@helipod/values";
-import { mutation, query, type RegisteredFunction } from "@helipod/executor";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { composeComponents, type ComponentDefinition, type Driver } from "@concile/component";
+import { EmbeddedRuntime } from "@concile/runtime-embedded";
+import { defineSchema, type SchemaDefinitionJSON } from "@concile/values";
+import { mutation, query, type RegisteredFunction } from "@concile/executor";
 import { NotificationSendError, type EmailProvider, type SmsProvider, type EmailMessage, type SmsMessage } from "../src/provider";
 
 /** A privileged raw-table scan so tests can assert on the component's own namespaced tables

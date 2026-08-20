@@ -1,11 +1,11 @@
 /**
- * `helipod` CLI. `dev` loads the project, generates `_generated/`, boots the embedded
+ * `concile` CLI. `dev` loads the project, generates `_generated/`, boots the embedded
  * engine, serves HTTP, and hot-reloads on change. `codegen` just regenerates types.
  */
 import { watch as fsWatch } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
-import { writeGenerated } from "@helipod/codegen";
-import { generateAdminKey } from "@helipod/admin";
+import { writeGenerated } from "@concile/codegen";
+import { generateAdminKey } from "@concile/admin";
 import { resolveDevOptions, type DevOptions } from "./dev-options";
 import * as ui from "./ui";
 import { CLI_VERSION } from "./version";
@@ -51,10 +51,10 @@ export async function devCommand(args: string[]): Promise<number> {
 
   const config = await loadConfig(projectRoot);
 
-  // Treat an empty/whitespace HELIPOD_ADMIN_KEY as unset (a blank key would 401 everything).
-  const envKey = process.env.HELIPOD_ADMIN_KEY?.trim();
-  if (process.env.HELIPOD_ADMIN_KEY !== undefined && !envKey) {
-    process.stderr.write("⚠ HELIPOD_ADMIN_KEY is set but empty — generating an ephemeral key instead.\n");
+  // Treat an empty/whitespace CONCILE_ADMIN_KEY as unset (a blank key would 401 everything).
+  const envKey = process.env.CONCILE_ADMIN_KEY?.trim();
+  if (process.env.CONCILE_ADMIN_KEY !== undefined && !envKey) {
+    process.stderr.write("⚠ CONCILE_ADMIN_KEY is set but empty — generating an ephemeral key instead.\n");
   }
   const adminKey = envKey || generateAdminKey();
   const ephemeralKey = !envKey; // a generated per-run key, not the operator's persistent secret
@@ -70,7 +70,7 @@ export async function devCommand(args: string[]): Promise<number> {
   writeGenerated(generated.files, generatedDir);
 
   // Only inject the key into the (unauthenticated) dashboard HTML when it's an ephemeral key on a
-  // loopback bind — never embed a persistent HELIPOD_ADMIN_KEY where any network client can read
+  // loopback bind — never embed a persistent CONCILE_ADMIN_KEY where any network client can read
   // it. Otherwise serve the SPA without a key so it prompts the operator (stored client-side).
   const dashboard = loadDashboard(ephemeralKey && loopback ? adminKey : undefined);
   // Reach serving through the RuntimeHost seam (Slice 1) — the CLI never touches Bun.serve/node:http.
@@ -86,19 +86,19 @@ export async function devCommand(args: string[]): Promise<number> {
     const rows: Array<[string, string]> = [
       ["API", ui.cyan(server.url)],
       ["Dashboard", ui.cyan(`${server.url}/_dashboard`)],
-      ["Admin key", `${adminKey.slice(0, 7)}…${adminKey.slice(-4)} ${ui.dim("(full key: HELIPOD_ADMIN_KEY or plain output)")}`],
+      ["Admin key", `${adminKey.slice(0, 7)}…${adminKey.slice(-4)} ${ui.dim("(full key: CONCILE_ADMIN_KEY or plain output)")}`],
     ];
     if (opts.webDir) rows.push(["Web UI", ui.cyan(`${server.url}/`)]);
     process.stdout.write(`\n${ui.banner("dev", CLI_VERSION)}\n\n${ui.keyValues(rows)}\n\n`);
     process.stdout.write(
       ui.status("ok", `${fnCount} functions · ${tableCount} tables · ${componentCount} components`) + "\n",
     );
-    if (!dashboard) process.stdout.write(ui.status("warn", "dashboard SPA not built", "bun run --filter @helipod/dashboard build") + "\n");
+    if (!dashboard) process.stdout.write(ui.status("warn", "dashboard SPA not built", "bun run --filter @concile/dashboard build") + "\n");
     process.stdout.write(`  ${ui.dim(`watching ${opts.functionsDir} for changes…`)}\n\n`);
   } else {
     // Plain mode is a byte-stable contract: scripts and our own e2e tests scrape these lines.
-    process.stdout.write(`helipod dev → ${server.url}  (dashboard: ${server.url}/_dashboard)\n`);
-    if (!dashboard) process.stdout.write(`  (dashboard SPA not built — run \`bun run --filter @helipod/dashboard build\`)\n`);
+    process.stdout.write(`concile dev → ${server.url}  (dashboard: ${server.url}/_dashboard)\n`);
+    if (!dashboard) process.stdout.write(`  (dashboard SPA not built — run \`bun run --filter @concile/dashboard build\`)\n`);
     process.stdout.write(`admin key → ${adminKey}\n`);
     if (opts.webDir) process.stdout.write(`web UI → ${server.url}/\n`);
   }
@@ -108,15 +108,15 @@ export async function devCommand(args: string[]): Promise<number> {
   let currentModules: Record<string, unknown> = project.moduleMap as Record<string, unknown>;
   let currentTableNumbers: Record<string, number> = project.tableNumbers;
 
-  // The interactive terminal dashboard (@helipod/tui, OpenTUI): Bun + TTY only, dynamic
-  // import so @helipod/cli carries no static dependency on it (the @helipod/fleet seam
+  // The interactive terminal dashboard (@concile/tui, OpenTUI): Bun + TTY only, dynamic
+  // import so @concile/cli carries no static dependency on it (the @concile/fleet seam
   // pattern). Any failure — package absent, Node without FFI — falls back silently to
   // the styled plain output above.
   type TuiEmit = (e: import("./tui-bridge").AnyTuiEvent) => void;
   let tuiEmit: TuiEmit | null = null;
   const wantTui =
-    process.env.HELIPOD_TUI === "1" ||
-    (ui.styled && !flags.noUi && process.env.HELIPOD_TUI !== "0" && typeof (globalThis as { Bun?: unknown }).Bun !== "undefined");
+    process.env.CONCILE_TUI === "1" ||
+    (ui.styled && !flags.noUi && process.env.CONCILE_TUI !== "0" && typeof (globalThis as { Bun?: unknown }).Bun !== "undefined");
   if (wantTui) {
     try {
       const { attachTui } = await import("./tui-bridge");
@@ -166,9 +166,9 @@ export async function devCommand(args: string[]): Promise<number> {
       });
     } catch (e) {
       // Never fatal: the styled plain output above stays active. Set
-      // HELIPOD_TUI_DEBUG=1 to see why the dashboard did not attach.
+      // CONCILE_TUI_DEBUG=1 to see why the dashboard did not attach.
       tuiEmit = null;
-      if (process.env.HELIPOD_TUI_DEBUG) {
+      if (process.env.CONCILE_TUI_DEBUG) {
         process.stderr.write(`  ${ui.dim("tui unavailable:")} ${e instanceof Error ? (e.stack ?? e.message) : String(e)}\n`);
       }
     }
@@ -229,7 +229,7 @@ export async function devCommand(args: string[]): Promise<number> {
 
 export async function codegenCommand(args: string[]): Promise<number> {
   const flags = parseFlags(args);
-  // Same two-step resolve as `devCommand`: consult `functionsDir` in helipod.config.ts when
+  // Same two-step resolve as `devCommand`: consult `functionsDir` in concile.config.ts when
   // `--dir` isn't given, instead of `resolveDevOptions`'s own bare `?? DEFAULT_FUNCTIONS_DIR`
   // fallback (which never reads the config file) — otherwise `codegen` and `dev` could disagree
   // about where the functions live on a project that sets the config key.
@@ -247,16 +247,16 @@ export async function codegenCommand(args: string[]): Promise<number> {
 function printHelp(): void {
   process.stdout.write(
     [
-      "helipod - the reactive backend you self-host",
+      "concile - the reactive backend you self-host",
       "",
-      "Usage: helipod <command> [options]",
+      "Usage: concile <command> [options]",
       "",
       "Commands:",
       "  dev        Run the engine with hot reload + dashboard",
-      "  serve      Run the production server (requires HELIPOD_ADMIN_KEY)",
+      "  serve      Run the production server (requires CONCILE_ADMIN_KEY)",
       "  deploy     Deploy the app: --target <serve|cloudflare|docker|railway|fly|aws> --env <name> [--dry-run] [--check]",
       "  build      Compile the app to a self-contained executable (bun build --compile)",
-      "  migrate    Migrate a Convex project into Helipod (imports + report)",
+      "  migrate    Migrate a Convex project into Concile (imports + report)",
       "  migrate export --url <src> --out dump.json   Export app data to a portable dump",
       "  migrate import --url <dst> --in  dump.json   Import a dump into a deployment",
       "  codegen    Regenerate <functionsDir>/_generated types",

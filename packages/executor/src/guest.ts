@@ -4,9 +4,9 @@
  * touches the engine directly. Queries get a read-only `GuestDatabaseReader`; mutations get
  * a `GuestDatabaseWriter`.
  */
-import { convexToJson, jsonToConvex, type JSONValue, type Value } from "@helipod/values";
-import type { DocumentValue } from "@helipod/docstore";
-import type { ComparisonOp, ScanOrder } from "@helipod/query-engine";
+import { convexToJson, jsonToConvex, type JSONValue, type Value } from "@concile/values";
+import type { DocumentValue } from "@concile/docstore";
+import type { ComparisonOp, ScanOrder } from "@concile/query-engine";
 import { COLLECT_BRAND, type SyscallChannel } from "./kernel";
 
 export type DocId = string;
@@ -146,8 +146,8 @@ export interface MutationCtx {
 
 /**
  * A ref carries its resolved path (`__path`, set by the generated `api` proxy) or a caller
- * passes the path string directly. Structural (not imported from `@helipod/client`) to avoid
- * a dependency cycle — `@helipod/client` doesn't depend on the executor, but pulling it in
+ * passes the path string directly. Structural (not imported from `@concile/client`) to avoid
+ * a dependency cycle — `@concile/client` doesn't depend on the executor, but pulling it in
  * here would still add an unnecessary package edge for a one-field shape.
  */
 export interface FunctionReference {

@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * `ReplicaTailer` — the slice 2 core: verbatim MVCC log apply from a Postgres primary onto a local
  * embedded replica (`SqliteDocStore`), batch-derived invalidation, bootstrap catch-up, and the
@@ -11,17 +11,17 @@
  * serialization exactly (`postgres-docstore.ts`'s `write()`).
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { PostgresDocStore } from "@helipod/docstore-postgres";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { newDocumentId, encodeStorageTableId, encodeStorageIndexId } from "@helipod/id-codec";
-import { encodeIndexKey } from "@helipod/index-key-codec";
+import { PostgresDocStore } from "@concile/docstore-postgres";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { newDocumentId, encodeStorageTableId, encodeStorageIndexId } from "@concile/id-codec";
+import { encodeIndexKey } from "@concile/index-key-codec";
 import type {
   DocStore,
   DocumentLogEntry,
   IndexWrite,
   Interval,
   InternalDocumentId,
-} from "@helipod/docstore";
+} from "@concile/docstore";
 import { PgliteClient } from "./pglite-client";
 import { ReplicaTailer, type AppliedInvalidation } from "../src/replica-tailer";
 import { stablePrefixFromFrontier, type StablePrefixTs } from "../src/stable-prefix";

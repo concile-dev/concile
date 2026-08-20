@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { composeComponents, defineComponent } from "@helipod/component";
-import { EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { defineSchema } from "@helipod/values";
-import { query, type QueryCtx } from "@helipod/executor";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { composeComponents, defineComponent } from "@concile/component";
+import { EmbeddedRuntime } from "@concile/runtime-embedded";
+import { defineSchema } from "@concile/values";
+import { query, type QueryCtx } from "@concile/executor";
 import { authSchema } from "../src/schema";
 import { authContext } from "../src/context";
 import { makeAuthModules } from "../src/functions";
@@ -32,7 +32,7 @@ function defineAuthWithMfa(options: AuthOptions) {
     schema: authSchema,
     modules: { ...makeAuthModules(config), ...(config.mfa ? makeMfaModules(config) : {}) },
     context: authContext,
-    contextType: { import: "@helipod/auth", type: "AuthContext" },
+    contextType: { import: "@concile/auth", type: "AuthContext" },
   });
 }
 

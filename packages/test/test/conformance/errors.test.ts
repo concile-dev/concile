@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { createTestHelipod, type TestHelipod } from "../../src";
-import { mutation, query, action } from "@helipod/executor";
-import { defineSchema, defineTable, v } from "@helipod/values";
+import { createTestConcile, type TestConcile } from "../../src";
+import { mutation, query, action } from "@concile/executor";
+import { defineSchema, defineTable, v } from "@concile/values";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type A = any;
@@ -59,10 +59,10 @@ const mod = {
 };
 
 describe("conformance — errors", () => {
-  let t: TestHelipod;
+  let t: TestConcile;
 
   beforeEach(async () => {
-    t = await createTestHelipod({ modules: { "mod.ts": mod, "schema.ts": { default: schema } } });
+    t = await createTestConcile({ modules: { "mod.ts": mod, "schema.ts": { default: schema } } });
   });
 
   afterEach(async () => {

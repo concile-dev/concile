@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/runtime-cloudflare",
+  "name": "@concile/runtime-cloudflare",
   "version": "0.1.5",
   "type": "module",
   "license": "FSL-1.1-Apache-2.0",
@@ -25,27 +25,27 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@helipod/admin": "workspace:*",
-    "@helipod/blobstore": "workspace:*",
-    "@helipod/cli": "workspace:*",
-    "@helipod/component": "workspace:*",
-    "@helipod/docstore": "workspace:*",
-    "@helipod/docstore-d1": "workspace:*",
-    "@helipod/docstore-do-sqlite": "workspace:*",
-    "@helipod/docstore-sqlite": "workspace:*",
-    "@helipod/executor": "workspace:*",
-    "@helipod/runtime-embedded": "workspace:*",
-    "@helipod/storage": "workspace:*",
-    "@helipod/sync": "workspace:*"
+    "@concile/admin": "workspace:*",
+    "@concile/blobstore": "workspace:*",
+    "@concile/cli": "workspace:*",
+    "@concile/component": "workspace:*",
+    "@concile/docstore": "workspace:*",
+    "@concile/docstore-d1": "workspace:*",
+    "@concile/docstore-do-sqlite": "workspace:*",
+    "@concile/docstore-sqlite": "workspace:*",
+    "@concile/executor": "workspace:*",
+    "@concile/runtime-embedded": "workspace:*",
+    "@concile/storage": "workspace:*",
+    "@concile/sync": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.5.40",
     "@cloudflare/workers-types": "^4.20241127.0",
-    "@helipod/blobstore-r2": "workspace:*",
-    "@helipod/docstore": "workspace:*",
-    "@helipod/id-codec": "workspace:*",
-    "@helipod/index-key-codec": "workspace:*",
-    "@helipod/values": "workspace:*",
+    "@concile/blobstore-r2": "workspace:*",
+    "@concile/docstore": "workspace:*",
+    "@concile/id-codec": "workspace:*",
+    "@concile/index-key-codec": "workspace:*",
+    "@concile/values": "workspace:*",
     "@types/node": "catalog:",
     "tsup": "catalog:",
     "typescript": "catalog:",
@@ -56,8 +56,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "packages/runtime-cloudflare"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

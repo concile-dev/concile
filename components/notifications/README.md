@@ -1,11 +1,11 @@
-# @helipod/notifications
+# @concile/notifications
 
-Multi-channel notifications for helipod: send email, SMS, push, and in-app messages from your mutations through a pluggable provider seam, with durable retries, per-user preferences and topics, and a reactive in-app inbox.
+Multi-channel notifications for concile: send email, SMS, push, and in-app messages from your mutations through a pluggable provider seam, with durable retries, per-user preferences and topics, and a reactive in-app inbox.
 
 ## Install
 
 ```sh
-bun add @helipod/notifications
+bun add @concile/notifications
 ```
 
 ## Enable
@@ -13,9 +13,9 @@ bun add @helipod/notifications
 Components are opt-in per project. `defineNotifications(opts)` takes a `channels` map; each channel gets a provider and named templates:
 
 ```ts
-// helipod.config.ts
-import { defineConfig } from "@helipod/component";
-import { defineNotifications, consoleEmail, twilioSms } from "@helipod/notifications";
+// concile.config.ts
+import { defineConfig } from "@concile/component";
+import { defineNotifications, consoleEmail, twilioSms } from "@concile/notifications";
 
 export default defineConfig({
   components: [
@@ -76,6 +76,6 @@ export const welcome = mutation({
 
 No required dependency on other components; the background delivery loop runs on the engine's recurring-driver seam.
 
-Part of [Helipod](https://github.com/helipod-sh/helipod) — docs at https://helipod-six.vercel.app/docs
+Part of [Concile](https://github.com/concile-dev/concile) — docs at https://concile-six.vercel.app/docs
 
 License: FSL-1.1-Apache-2.0

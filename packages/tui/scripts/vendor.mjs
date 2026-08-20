@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * WARNING: this OVERWRITES the files it vendors, including local patches. Some
- * components carry helipod fixes (see the "helipod patch" comments — Card's
+ * components carry concile fixes (see the "concile patch" comments — Card's
  * unapplied `width`, Sidebar's global key handler). After re-running this,
  * `git diff` and restore those hunks.
  *

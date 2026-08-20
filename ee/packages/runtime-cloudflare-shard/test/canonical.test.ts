@@ -1,6 +1,6 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 import { describe, it, expect } from "vitest";
-import { shardIdForKeyValue } from "@helipod/id-codec";
+import { shardIdForKeyValue } from "@concile/id-codec";
 import { shardDoName, DEFAULT_SHARD_DO_NAME } from "../src/canonical";
 
 describe("shardDoName — mode 'key' (one DO per value)", () => {

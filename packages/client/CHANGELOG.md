@@ -1,31 +1,31 @@
-# @helipod/client
+# @concile/client
 
 ## 0.1.5
 
 ### Patch Changes
 
-- Updated dependencies [[`6e857cd`](https://github.com/helipod-sh/helipod/commit/6e857cd3338a8b9604ab1e4014740ab91567c6ac)]:
-  - @helipod/sync@0.1.5
-  - @helipod/id-codec@0.1.5
-  - @helipod/index-key-codec@0.1.5
-  - @helipod/values@0.1.5
+- Updated dependencies [[`6e857cd`](https://github.com/concile-dev/concile/commit/6e857cd3338a8b9604ab1e4014740ab91567c6ac)]:
+  - @concile/sync@0.1.5
+  - @concile/id-codec@0.1.5
+  - @concile/index-key-codec@0.1.5
+  - @concile/values@0.1.5
 
 ## 0.1.4
 
 ### Patch Changes
 
 - Updated dependencies []:
-  - @helipod/id-codec@0.1.4
-  - @helipod/index-key-codec@0.1.4
-  - @helipod/sync@0.1.4
-  - @helipod/values@0.1.4
+  - @concile/id-codec@0.1.4
+  - @concile/index-key-codec@0.1.4
+  - @concile/sync@0.1.4
+  - @concile/values@0.1.4
 
 ## 0.1.3
 
 ### Patch Changes
 
 - Updated dependencies []:
-  - @helipod/id-codec@0.1.3
-  - @helipod/index-key-codec@0.1.3
-  - @helipod/sync@0.1.3
-  - @helipod/values@0.1.3
+  - @concile/id-codec@0.1.3
+  - @concile/index-key-codec@0.1.3
+  - @concile/sync@0.1.3
+  - @concile/values@0.1.3

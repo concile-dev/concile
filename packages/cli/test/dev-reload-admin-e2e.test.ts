@@ -1,5 +1,5 @@
 /**
- * Regression test for issue #1: `helipod dev`'s hot-reload watcher must refresh the
+ * Regression test for issue #1: `concile dev`'s hot-reload watcher must refresh the
  * AdminApi manifest, not just the runtime modules and HTTP routes.
  *
  * The bug: the watcher's onTrigger called `runtime.setModules(...)` and
@@ -8,7 +8,7 @@
  * serving the boot-time function list until the process was restarted — even though
  * newly saved functions were already live and callable.
  *
- * This test runs the REAL `helipod dev` entrypoint as a child process (the in-process
+ * This test runs the REAL `concile dev` entrypoint as a child process (the in-process
  * `startDevServer` harness other e2es use would bypass the watcher closure where the
  * bug lives): boot on a copied fixture app, read `/_admin/functions`, save a new
  * function into the watched dir, wait for the watcher's "↻ pushed" line, and assert
@@ -54,20 +54,20 @@ async function adminFunctions(): Promise<string[]> {
 }
 
 beforeAll(async () => {
-  // Inside the repo so the copied app resolves bare @helipod/* imports via the
+  // Inside the repo so the copied app resolves bare @concile/* imports via the
   // repository's own node_modules (a /tmp copy would have no resolution chain).
   root = mkdtempSync(join(__dirname, ".tmp-dev-reload-"));
   cpSync(FIXTURE, root, { recursive: true });
 
-  child = spawn("bun", [BIN, "dev", "--dir", join(root, "helipod"), "--data", join(root, "db.sqlite"), "--port", "0"], {
+  child = spawn("bun", [BIN, "dev", "--dir", join(root, "concile"), "--data", join(root, "db.sqlite"), "--port", "0"], {
     cwd: root,
-    env: { ...process.env, HELIPOD_ADMIN_KEY: ADMIN_KEY },
+    env: { ...process.env, CONCILE_ADMIN_KEY: ADMIN_KEY },
     stdio: ["ignore", "pipe", "pipe"],
   });
   child.stdout!.on("data", (d) => (out += String(d)));
   child.stderr!.on("data", (d) => (out += String(d)));
 
-  const m = await waitForOutput(/helipod dev → (http:\/\/[^\s]+)/);
+  const m = await waitForOutput(/concile dev → (http:\/\/[^\s]+)/);
   if (!m[1]) throw new Error(`could not parse dev server url from: ${m[0]}`);
   baseUrl = m[1];
 }, 60_000);
@@ -86,9 +86,9 @@ describe("dev hot-reload refreshes the admin function manifest (issue #1)", () =
 
     // Save a brand-new module into the watched functions dir.
     writeFileSync(
-      join(root, "helipod", "ping.ts"),
+      join(root, "concile", "ping.ts"),
       `import { query } from "./_generated/server";\n` +
-        `import { v } from "@helipod/values";\n` +
+        `import { v } from "@concile/values";\n` +
         `export const pong = query({ args: {}, returns: v.string(), handler: () => "pong" });\n`,
     );
 

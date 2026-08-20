@@ -17,23 +17,23 @@ describe("docker config", () => {
     // anchored so a prose placeholder that merely mentions "serve" can't false-green this.
     expect(dockerfile).toMatch(/^(ENTRYPOINT|CMD)\s*\[.*"serve"/m);
   });
-  it("the runtime image links workspace @helipod/* packages into node_modules for bind-mounted apps", () => {
-    // A bind-mounted /app/convex resolves bare `@helipod/*` imports up to /app/node_modules;
+  it("the runtime image links workspace @concile/* packages into node_modules for bind-mounted apps", () => {
+    // A bind-mounted /app/convex resolves bare `@concile/*` imports up to /app/node_modules;
     // turbo-prune keeps workspace links nested per-package, so without these root symlinks every
-    // app's schema.ts `import "@helipod/values"` fails at load (verified via real docker compose up).
-    expect(dockerfile).toMatch(/node_modules\/@helipod/);
+    // app's schema.ts `import "@concile/values"` fails at load (verified via real docker compose up).
+    expect(dockerfile).toMatch(/node_modules\/@concile/);
     expect(dockerfile).toMatch(/symlinkSync/);
   });
   it("the runtime image makes the deploy scratch dir writable by the non-root user", () => {
-    // `helipod deploy` writes the pushed tree under /app/.helipod-deploy; /app's dir node is
+    // `concile deploy` writes the pushed tree under /app/.concile-deploy; /app's dir node is
     // root-owned (COPY chowns only its contents), so the runner stage must chown /app + create the
     // deploy dir before USER bun — else deploy fails with EACCES (verified via real docker deploy).
-    expect(dockerfile).toMatch(/\.helipod-deploy/);
+    expect(dockerfile).toMatch(/\.concile-deploy/);
     expect(dockerfile).toMatch(/chown bun:bun[^\n]*\/app/);
   });
   it("compose mounts the app dir and a data volume and requires the admin key", () => {
-    expect(compose).toMatch(/\/app\/helipod/);
-    expect(compose).toMatch(/HELIPOD_ADMIN_KEY/);
+    expect(compose).toMatch(/\/app\/concile/);
+    expect(compose).toMatch(/CONCILE_ADMIN_KEY/);
     expect(compose).toMatch(/serve/);
   });
 });

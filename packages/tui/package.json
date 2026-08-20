@@ -1,7 +1,7 @@
 {
-  "name": "@helipod/tui",
+  "name": "@concile/tui",
   "version": "0.1.5",
-  "description": "The helipod terminal dashboard — OpenTUI-rendered, vendored termcn components, helipod dark theme.",
+  "description": "The concile terminal dashboard — OpenTUI-rendered, vendored termcn components, concile dark theme.",
   "type": "module",
   "license": "FSL-1.1-Apache-2.0",
   "exports": {
@@ -38,8 +38,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "packages/tui"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { randomBytes } from "node:crypto";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { composeComponents } from "@helipod/component";
-import { EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { defineSchema } from "@helipod/values";
-import { query, type QueryCtx } from "@helipod/executor";
-import type { JSONValue } from "@helipod/values";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { composeComponents } from "@concile/component";
+import { EmbeddedRuntime } from "@concile/runtime-embedded";
+import { defineSchema } from "@concile/values";
+import { query, type QueryCtx } from "@concile/executor";
+import type { JSONValue } from "@concile/values";
 import type { PublicKeyCredentialCreationOptionsJSON, RegistrationResponseJSON } from "@simplewebauthn/server";
 import { defineAuth, type MintResult, type PasskeyOptions } from "../src";
 import { createMockAuthenticator, type MockAuthenticator } from "./support/mock-authenticator";

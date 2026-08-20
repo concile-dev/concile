@@ -1,6 +1,6 @@
 /**
- * Auth A4 (MFA/TOTP) — E2E through the real `helipod dev` server (e2e-through-shipped-entrypoint
- * rule). A REAL `@helipod/client` over a REAL WebSocket to a REAL server with `@helipod/auth`
+ * Auth A4 (MFA/TOTP) — E2E through the real `concile dev` server (e2e-through-shipped-entrypoint
+ * rule). A REAL `@concile/client` over a REAL WebSocket to a REAL server with `@concile/auth`
  * composed WITH an `mfa` config block, mirroring `auth-session-e2e.test.ts`/`auth-email-e2e.test.ts`
  * exactly (`loadProject` + `createEmbeddedRuntime` + `startDevServer` + real client/WebSocket
  * transport, event-driven `waitFor` — no bare sleeps for correctness-critical waits).
@@ -19,16 +19,16 @@
  */
 import { describe, it, expect, afterAll } from "vitest";
 import { randomBytes } from "node:crypto";
-import { v, defineSchema, defineTable } from "@helipod/values";
-import { query, mutation } from "@helipod/executor";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { createEmbeddedRuntime, type EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { HelipodClient, webSocketTransport, anyApi } from "@helipod/client";
-import { defineAuth, type MintResult, type MfaRequired } from "@helipod/auth";
+import { v, defineSchema, defineTable } from "@concile/values";
+import { query, mutation } from "@concile/executor";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { createEmbeddedRuntime, type EmbeddedRuntime } from "@concile/runtime-embedded";
+import { ConcileClient, webSocketTransport, anyApi } from "@concile/client";
+import { defineAuth, type MintResult, type MfaRequired } from "@concile/auth";
 import { loadProject, startDevServer, type DevServer } from "../src/index";
 // The real RFC 6238 primitive Tasks 1-5 shipped — used here (not mocked) to derive a LIVE code from
 // the raw secret `startMfaEnrollment` hands back, proving the actual authenticator-app ceremony.
-// `@helipod/auth`'s package exports only its root entrypoint (this internal primitive is
+// `@concile/auth`'s package exports only its root entrypoint (this internal primitive is
 // deliberately un-exported source, not part of the public surface), so this reaches across the
 // package boundary by relative path — outside `packages/cli`'s own `rootDir`, hence the suppression
 // below (a `tsc --noEmit` quirk: it computes a common source directory even without emitting).
@@ -117,7 +117,7 @@ afterAll(async () => { for (const s of servers) await s.close(); });
 describe("auth A4 MFA/TOTP — E2E through the real dev server", () => {
   it("(1) enroll → confirm → gate → complete with a live TOTP code → working session", async () => {
     const { wsUrl } = await startServer();
-    const c = new HelipodClient(webSocketTransport(wsUrl, { reconnect: false }));
+    const c = new ConcileClient(webSocketTransport(wsUrl, { reconnect: false }));
     try {
       const email = "totp@user.test";
       const signUp = (await c.mutation(api.auth.signUp, { email, password: "pw", deviceLabel: "Chrome" })) as unknown as MintResult;
@@ -171,7 +171,7 @@ describe("auth A4 MFA/TOTP — E2E through the real dev server", () => {
 
   it("(2) sign-in gate completes with a RECOVERY code instead of a TOTP code (consumed once)", async () => {
     const { wsUrl } = await startServer();
-    const c = new HelipodClient(webSocketTransport(wsUrl, { reconnect: false }));
+    const c = new ConcileClient(webSocketTransport(wsUrl, { reconnect: false }));
     try {
       const email = "recovery@user.test";
       const signUp = (await c.mutation(api.auth.signUp, { email, password: "pw" })) as unknown as MintResult;
@@ -218,7 +218,7 @@ describe("auth A4 MFA/TOTP — E2E through the real dev server", () => {
 
   it("(3) disableMfa un-gates the account — a subsequent sign-in mints directly", async () => {
     const { wsUrl } = await startServer();
-    const c = new HelipodClient(webSocketTransport(wsUrl, { reconnect: false }));
+    const c = new ConcileClient(webSocketTransport(wsUrl, { reconnect: false }));
     try {
       const email = "disable@user.test";
       const signUp = (await c.mutation(api.auth.signUp, { email, password: "pw" })) as unknown as MintResult;

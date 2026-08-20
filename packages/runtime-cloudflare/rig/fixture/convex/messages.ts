@@ -1,4 +1,4 @@
-import { query, mutation } from "@helipod/executor";
+import { query, mutation } from "@concile/executor";
 
 export const send = mutation<{ conversationId: string; body: string }, string>({
   handler: (ctx, { conversationId, body }) => ctx.db.insert("messages", { conversationId, body }),

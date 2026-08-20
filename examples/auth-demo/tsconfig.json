@@ -5,5 +5,5 @@
     "types": ["node"],
     "jsx": "react-jsx"
   },
-  "include": ["helipod", "helipod.config.ts", "test", "web"]
+  "include": ["concile", "concile.config.ts", "test", "web"]
 }

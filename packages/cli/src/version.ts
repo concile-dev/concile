@@ -1,5 +1,5 @@
 /**
- * helipod's own version, read from this package's manifest at runtime — never
+ * concile's own version, read from this package's manifest at runtime — never
  * `process.env.npm_package_version`, which reports whichever app's package.json
  * the user happened to run `bun run` from (the TUI header showed a chat example's
  * "0.0.2" before this).
@@ -15,7 +15,7 @@ function read(): string {
     for (const rel of ["../package.json", "../../package.json"]) {
       try {
         const pkg = JSON.parse(readFileSync(join(here, rel), "utf8")) as { name?: string; version?: string };
-        if (pkg.name === "@helipod/cli" && pkg.version) return pkg.version;
+        if (pkg.name === "@concile/cli" && pkg.version) return pkg.version;
       } catch {
         /* try the next candidate */
       }

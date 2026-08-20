@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/runtime-embedded",
+  "name": "@concile/runtime-embedded",
   "version": "0.1.5",
   "type": "module",
   "license": "FSL-1.1-Apache-2.0",
@@ -23,20 +23,20 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@helipod/component": "workspace:*",
-    "@helipod/docstore": "workspace:*",
-    "@helipod/docstore-d1": "workspace:*",
-    "@helipod/errors": "workspace:*",
-    "@helipod/executor": "workspace:*",
-    "@helipod/id-codec": "workspace:*",
-    "@helipod/index-key-codec": "workspace:*",
-    "@helipod/query-engine": "workspace:*",
-    "@helipod/sync": "workspace:*",
-    "@helipod/transactor": "workspace:*",
-    "@helipod/values": "workspace:*"
+    "@concile/component": "workspace:*",
+    "@concile/docstore": "workspace:*",
+    "@concile/docstore-d1": "workspace:*",
+    "@concile/errors": "workspace:*",
+    "@concile/executor": "workspace:*",
+    "@concile/id-codec": "workspace:*",
+    "@concile/index-key-codec": "workspace:*",
+    "@concile/query-engine": "workspace:*",
+    "@concile/sync": "workspace:*",
+    "@concile/transactor": "workspace:*",
+    "@concile/values": "workspace:*"
   },
   "devDependencies": {
-    "@helipod/docstore-sqlite": "workspace:*",
+    "@concile/docstore-sqlite": "workspace:*",
     "@types/better-sqlite3": "^7.6.12",
     "better-sqlite3": "^11.8.0",
     "tsup": "catalog:",
@@ -48,8 +48,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "packages/runtime-embedded"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

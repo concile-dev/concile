@@ -1,20 +1,20 @@
-# Helipod self-host — the generic engine image + your app's helipod/ bind-mounted.
+# Concile self-host — the generic engine image + your app's concile/ bind-mounted.
 services:
-  helipod:
+  concile:
     build:
       context: .
       target: runner
-    image: helipod:latest
+    image: concile:latest
     ports:
       - "3000:3000"
     environment:
-      HELIPOD_ADMIN_KEY: ${HELIPOD_ADMIN_KEY:?set HELIPOD_ADMIN_KEY in a .env file}
-      HELIPOD_DATA_DIR: /data
+      CONCILE_ADMIN_KEY: ${CONCILE_ADMIN_KEY:?set CONCILE_ADMIN_KEY in a .env file}
+      CONCILE_DATA_DIR: /data
     volumes:
-      - ./helipod:/app/helipod:ro
-      - helipod-data:/data
-    command: ["serve", "--dir", "/app/helipod", "--data", "/data/db.sqlite"]
+      - ./concile:/app/concile:ro
+      - concile-data:/data
+    command: ["serve", "--dir", "/app/concile", "--data", "/data/db.sqlite"]
     restart: unless-stopped
 
 volumes:
-  helipod-data:
+  concile-data:

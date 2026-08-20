@@ -1,5 +1,5 @@
 {
-  "name": "helipod-example-chat",
+  "name": "concile-example-chat",
   "version": "0.0.3",
   "private": true,
   "type": "module",
@@ -13,18 +13,18 @@
     "stress": "bun run scripts/stress.ts"
   },
   "dependencies": {
-    "@helipod/component": "workspace:*",
-    "@helipod/executor": "workspace:*",
-    "@helipod/triggers": "workspace:*",
-    "@helipod/values": "workspace:*"
+    "@concile/component": "workspace:*",
+    "@concile/executor": "workspace:*",
+    "@concile/triggers": "workspace:*",
+    "@concile/values": "workspace:*"
   },
   "devDependencies": {
-    "@helipod/cli": "workspace:*",
-    "@helipod/client": "workspace:*",
-    "@helipod/docstore-sqlite": "workspace:*",
-    "@helipod/id-codec": "workspace:*",
-    "@helipod/query-engine": "workspace:*",
-    "@helipod/runtime-embedded": "workspace:*",
+    "@concile/cli": "workspace:*",
+    "@concile/client": "workspace:*",
+    "@concile/docstore-sqlite": "workspace:*",
+    "@concile/id-codec": "workspace:*",
+    "@concile/query-engine": "workspace:*",
+    "@concile/runtime-embedded": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",

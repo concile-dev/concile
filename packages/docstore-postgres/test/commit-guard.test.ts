@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { newDocumentId, encodeStorageIndexId, type InternalDocumentId } from "@helipod/id-codec";
-import { encodeIndexKey } from "@helipod/index-key-codec";
-import type { DocumentLogEntry, IndexWrite } from "@helipod/docstore";
+import { newDocumentId, encodeStorageIndexId, type InternalDocumentId } from "@concile/id-codec";
+import { encodeIndexKey } from "@concile/index-key-codec";
+import type { DocumentLogEntry, IndexWrite } from "@concile/docstore";
 import { PostgresDocStore } from "../src/postgres-docstore";
 import type { PgClient, PgQuerier } from "../src/pg-client";
 import { PgliteClient } from "./pglite-client";

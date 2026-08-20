@@ -1,6 +1,6 @@
 /**
- * `@helipod/docstore` — the storage contract (the narrow seam) plus the timestamp
- * oracle. Implementations live in sibling packages (`@helipod/docstore-sqlite`, …).
+ * `@concile/docstore` — the storage contract (the narrow seam) plus the timestamp
+ * oracle. Implementations live in sibling packages (`@concile/docstore-sqlite`, …).
  */
 export type {
   InternalDocumentId,

@@ -5,8 +5,8 @@
  * spans many processes — with no change to app code. Each fan-out tags its `originId` so a
  * subscriber can ignore its own writes (avoiding a self-loop across processes).
  */
-import type { SerializedKeyRange } from "@helipod/index-key-codec";
-import type { OplogDelta, WriteFanout, WrittenDoc } from "@helipod/transactor";
+import type { SerializedKeyRange } from "@concile/index-key-codec";
+import type { OplogDelta, WriteFanout, WrittenDoc } from "@concile/transactor";
 
 export interface EmbeddedWriteFanoutPayload {
   commitTs: number;

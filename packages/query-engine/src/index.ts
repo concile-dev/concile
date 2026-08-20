@@ -1,5 +1,5 @@
 /**
- * `@helipod/query-engine` — turns Convex-style queries into index range scans that record
+ * `@concile/query-engine` — turns Convex-style queries into index range scans that record
  * read sets, with post-filters and stable cursor pagination. The read side that pairs with
  * the transactor's write side to close the reactive loop.
  */

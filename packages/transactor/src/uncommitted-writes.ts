@@ -4,8 +4,8 @@
  * transaction see their own pending writes (read-your-own-writes). `value === null` is a
  * staged delete (tombstone).
  */
-import { documentIdKey, type InternalDocumentId } from "@helipod/id-codec";
-import type { DocumentValue } from "@helipod/docstore";
+import { documentIdKey, type InternalDocumentId } from "@concile/id-codec";
+import type { DocumentValue } from "@concile/docstore";
 
 export interface LocalWrite {
   id: InternalDocumentId;

@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { createTestHelipod, type TestHelipod } from "../../src";
+import { createTestConcile, type TestConcile } from "../../src";
 import { schema, mod } from "../fixtures/conformance-app";
-import { mutation, query } from "@helipod/executor";
-import { defineSchema, defineTable, v } from "@helipod/values";
+import { mutation, query } from "@concile/executor";
+import { defineSchema, defineTable, v } from "@concile/values";
 
 describe("conformance — db CRUD", () => {
-  let t: TestHelipod;
+  let t: TestConcile;
 
   beforeEach(async () => {
-    t = await createTestHelipod({ modules: { "mod.ts": mod, "schema.ts": { default: schema } } });
+    t = await createTestConcile({ modules: { "mod.ts": mod, "schema.ts": { default: schema } } });
   });
 
   afterEach(async () => {
@@ -27,7 +27,7 @@ describe("conformance — db CRUD", () => {
     expect(doc).toMatchObject({ owner: "a", n: 1, tag: "x" });
   });
 
-  it("Helipod has no ctx.db.patch — partial update is read-merge-replace", async () => {
+  it("Concile has no ctx.db.patch — partial update is read-merge-replace", async () => {
     const id = await t.mutation<string>("mod:insert", { owner: "a", n: 1, tag: "x" });
     await t.mutation("mod:patchViaReplace", { id, patch: { n: 2 } });
     // unspecified fields (owner, tag) are retained — this is a MERGE, not an overwrite
@@ -115,10 +115,10 @@ const extMod = {
 };
 
 describe("conformance — db CRUD (extended)", () => {
-  let t: TestHelipod;
+  let t: TestConcile;
 
   beforeEach(async () => {
-    t = await createTestHelipod({ modules: { "mod.ts": extMod, "schema.ts": { default: extSchema } } });
+    t = await createTestConcile({ modules: { "mod.ts": extMod, "schema.ts": { default: extSchema } } });
   });
 
   afterEach(async () => {

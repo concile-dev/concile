@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 
 /**
  * The stateless shard-routing decision (M1) — pure, host-agnostic, unit-testable under plain Node.
@@ -9,7 +9,7 @@
  * ENVELOPE, Lunora's model, so routing is a pure Worker concern and the DO never parses a row to learn
  * its own name):
  *
- *   1. **Explicit** — an `X-Helipod-Shard: <value>` header or a `?shard=<value>` query param. This
+ *   1. **Explicit** — an `X-Concile-Shard: <value>` header or a `?shard=<value>` query param. This
  *      is the primary mechanism and the ONLY one that works for a WebSocket upgrade (which has no
  *      readable body) and for a query (which declares no `shardBy`). A room/tenant/user socket opens
  *      `…/api/sync?shard=<roomId>`; every op on it runs on that room's DO.
@@ -22,10 +22,10 @@
  *      Slice 3.
  *
  * Cross-shard is REFUSED, never fanned out (M1 non-goal, §2.1): an explicit fan-out flag
- * (`X-Helipod-Fanout: true` / `?fanout=1`) or a multi-valued shard key (a comma) is a typed
+ * (`X-Concile-Fanout: true` / `?fanout=1`) or a multi-valued shard key (a comma) is a typed
  * `CROSS_SHARD_UNSUPPORTED` 400. A `.shardBy` mutation whose args omit the key is `SHARD_KEY_REQUIRED`.
  */
-import type { LoadedProject } from "@helipod/cli/project";
+import type { LoadedProject } from "@concile/cli/project";
 import { shardDoName, DEFAULT_SHARD_DO_NAME, type ShardRoutingMode } from "./canonical";
 import {
   SHARD_KEY_REQUIRED,
@@ -39,8 +39,8 @@ import {
   type ShardRoutingErrorBody,
 } from "./errors";
 import { deriveLocationHint } from "./location";
-import { LOCATION_HINTS } from "@helipod/runtime-cloudflare";
-import { shardIdList } from "@helipod/id-codec";
+import { LOCATION_HINTS } from "@concile/runtime-cloudflare";
+import { shardIdList } from "@concile/id-codec";
 
 export interface ShardRoutingOptions {
   /** Routing mode: "key" (A, default — one DO per key) or "hash" (B — fixed-N jump-hash). §1.1. */
@@ -79,8 +79,8 @@ export type ShardResolution =
     }
   | { kind: "error"; status: number; body: ShardRoutingErrorBody };
 
-const SHARD_HEADER = "x-helipod-shard";
-const FANOUT_HEADER = "x-helipod-fanout";
+const SHARD_HEADER = "x-concile-shard";
+const FANOUT_HEADER = "x-concile-fanout";
 
 /** Truthy fan-out signal: header `true`/`1`, or `?fanout=true`/`1`. */
 function isFanoutRequested(url: URL, headers: Headers): boolean {
@@ -302,7 +302,7 @@ export async function resolveShard(request: Request, opts: ShardRoutingOptions =
             body: routingError(
               SHARD_KEY_REQUIRED,
               `mutation "${body.path}" is sharded but its arguments do not carry the shard key. ` +
-                "Include the shard-key field in the arguments, or pass it as an `X-Helipod-Shard` header.",
+                "Include the shard-key field in the arguments, or pass it as an `X-Concile-Shard` header.",
             ),
           };
         }

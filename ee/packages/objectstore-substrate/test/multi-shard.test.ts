@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * Task 4.3 — multi-shard composition + zero-cross-contention (design record §5, Tier 3 Slice 4). The
  * substrate is ALREADY per-shard (each `ObjectStoreDocStore` instance owns one `s{shard}/…` key
@@ -17,10 +17,10 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { newDocumentId, type InternalDocumentId } from "@helipod/id-codec";
-import type { DocumentLogEntry } from "@helipod/docstore";
-import { BunSqliteAdapter, NodeSqliteAdapter, SqliteDocStore } from "@helipod/docstore-sqlite";
-import { FsObjectStore } from "@helipod/objectstore-fs";
+import { newDocumentId, type InternalDocumentId } from "@concile/id-codec";
+import type { DocumentLogEntry } from "@concile/docstore";
+import { BunSqliteAdapter, NodeSqliteAdapter, SqliteDocStore } from "@concile/docstore-sqlite";
+import { FsObjectStore } from "@concile/objectstore-fs";
 import { ObjectStoreDocStore } from "../src/object-doc-store";
 import { readManifest } from "../src/manifest";
 import { ensureGlobals } from "../src/globals";

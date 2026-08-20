@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { encodeStorageIndexId, newDocumentId, shardIdForKeyValue } from "@helipod/id-codec";
-import { SimpleIndexCatalog, query, mutation, type RegisteredFunction } from "@helipod/executor";
-import type { Driver, DriverContext } from "@helipod/component";
-import type { IndexSpec } from "@helipod/query-engine";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { encodeStorageIndexId, newDocumentId, shardIdForKeyValue } from "@concile/id-codec";
+import { SimpleIndexCatalog, query, mutation, type RegisteredFunction } from "@concile/executor";
+import type { Driver, DriverContext } from "@concile/component";
+import type { IndexSpec } from "@concile/query-engine";
 import { createEmbeddedRuntime, type WriteRouter } from "../src/index";
 
 const MESSAGES = 10001;

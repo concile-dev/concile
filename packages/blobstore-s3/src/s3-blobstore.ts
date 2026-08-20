@@ -15,7 +15,7 @@ import type {
   ByteRange,
   CreateUploadTargetOpts,
   SignUrlOpts,
-} from "@helipod/blobstore";
+} from "@concile/blobstore";
 import { makeS3Client } from "./s3-config";
 
 export interface S3Config {

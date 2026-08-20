@@ -1,7 +1,7 @@
-import { defineSchema, defineTable, v } from "@helipod/values";
+import { defineSchema, defineTable, v } from "@concile/values";
 
 /**
- * The `@helipod/notifications` schema (namespaced `notifications/*` when composed). All additive:
+ * The `@concile/notifications` schema (namespaced `notifications/*` when composed). All additive:
  * a project without `defineNotifications` gets none of these tables.
  *
  * `status`: `queued → sending → sent`/`failed`. The `"sending"` intermediate (claim-before-send)

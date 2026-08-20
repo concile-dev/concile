@@ -25,24 +25,24 @@ describe("convexSource.analyze", () => {
   it("produces import edits, a package.json edit, a report, and a scheduler config scaffold", async () => {
     const plan = await convexSource.analyze(root, appDir);
 
-    // schema.ts import edit: convex/values → @helipod/values, convex/server(schema) → @helipod/values
+    // schema.ts import edit: convex/values → @concile/values, convex/server(schema) → @concile/values
     const schemaEdit = plan.edits.find((e) => e.path.endsWith("schema.ts"));
-    expect(schemaEdit?.newContent).toContain(`from "@helipod/values"`);
+    expect(schemaEdit?.newContent).toContain(`from "@concile/values"`);
     expect(schemaEdit?.newContent).not.toContain("convex/");
 
     // report flags the .withIndex divergence and the crons
     expect(plan.report.some((r) => r.what.includes("withIndex") && r.severity === "action-needed")).toBe(true);
     expect(plan.report.some((r) => r.what.toLowerCase().includes("cron"))).toBe(true);
 
-    // package.json edit drops convex, adds @helipod/*
+    // package.json edit drops convex, adds @concile/*
     const pkgEdit = plan.edits.find((e) => e.path.endsWith("package.json"));
     expect(pkgEdit).toBeDefined();
     const pkg = JSON.parse(pkgEdit!.newContent);
     expect(pkg.dependencies.convex).toBeUndefined();
-    expect(pkg.dependencies["@helipod/values"]).toBeDefined();
+    expect(pkg.dependencies["@concile/values"]).toBeDefined();
 
-    // crons.ts present → scaffold a helipod.config.ts composing defineScheduler
-    const config = plan.scaffold.find((f) => f.path.endsWith("helipod.config.ts"));
+    // crons.ts present → scaffold a concile.config.ts composing defineScheduler
+    const config = plan.scaffold.find((f) => f.path.endsWith("concile.config.ts"));
     expect(config?.content).toContain("defineScheduler");
   });
 });

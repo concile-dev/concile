@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * Task 5.3 — the slice's HEADLINE E2E (plan `2026-07-13-tier3-slice5-replicas-reactivity.md`, design
  * record §7/§8): a mutation committed on a WRITER node fans out reactively to a live subscription on
@@ -23,7 +23,7 @@
  *
  * Runs against `objectstore-fs` (always-on, no docker) AND, gated, against a real `minio/minio`
  * container — mirrors `bootstrap.e2e.test.ts`'s lifecycle. The default
- * `bun run --filter @helipod/objectstore-substrate test` must stay green with the MinIO variant
+ * `bun run --filter @concile/objectstore-substrate test` must stay green with the MinIO variant
  * skipped (no docker/env required).
  */
 import { spawnSync } from "node:child_process";
@@ -32,15 +32,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { CreateBucketCommand, S3Client } from "@aws-sdk/client-s3";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { v, defineSchema, defineTable } from "@helipod/values";
-import { SimpleIndexCatalog, query, mutation, type RegisteredFunction } from "@helipod/executor";
-import { decodeStorageIndexId, encodeStorageIndexId, encodeStorageTableId } from "@helipod/id-codec";
-import { keySuccessor, serializeKeyRange, indexKeyspaceId, tableKeyspaceId, type SerializedKeyRange } from "@helipod/index-key-codec";
-import { BunSqliteAdapter, NodeSqliteAdapter, SqliteDocStore } from "@helipod/docstore-sqlite";
-import type { ObjectStore } from "@helipod/objectstore";
-import { FsObjectStore } from "@helipod/objectstore-fs";
-import { S3ObjectStore } from "@helipod/objectstore-s3";
-import { createEmbeddedRuntime, type EmbeddedRuntime } from "@helipod/runtime-embedded";
+import { v, defineSchema, defineTable } from "@concile/values";
+import { SimpleIndexCatalog, query, mutation, type RegisteredFunction } from "@concile/executor";
+import { decodeStorageIndexId, encodeStorageIndexId, encodeStorageTableId } from "@concile/id-codec";
+import { keySuccessor, serializeKeyRange, indexKeyspaceId, tableKeyspaceId, type SerializedKeyRange } from "@concile/index-key-codec";
+import { BunSqliteAdapter, NodeSqliteAdapter, SqliteDocStore } from "@concile/docstore-sqlite";
+import type { ObjectStore } from "@concile/objectstore";
+import { FsObjectStore } from "@concile/objectstore-fs";
+import { S3ObjectStore } from "@concile/objectstore-s3";
+import { createEmbeddedRuntime, type EmbeddedRuntime } from "@concile/runtime-embedded";
 import { ObjectStoreDocStore } from "../src/object-doc-store";
 import { ObjectStoreReplicaTailer, type AppliedInvalidation } from "../src/replica-tailer";
 import { readGlobalFrontier } from "../src/frontier";
@@ -84,8 +84,8 @@ function freshLocal(): SqliteDocStore {
 
 // ── Point-range conversion — mirrors `ee/packages/fleet/src/ranges.ts`'s `keyToPointRange`/
 // `docKeyToPointRange` byte-for-byte (see that file's doc for the full rationale of the decode/
-// recompose step). Inlined here rather than imported from `@helipod/fleet`: the plan is explicit
-// that `objectstore-substrate` must not depend on `@helipod/fleet` even from its own tests — "the
+// recompose step). Inlined here rather than imported from `@concile/fleet`: the plan is explicit
+// that `objectstore-substrate` must not depend on `@concile/fleet` even from its own tests — "the
 // runtime wiring is the composer's job (the E2E, mirroring `invalidationSink`)". ─────────────────
 function keyToPointRange(indexId: string, key: Uint8Array): SerializedKeyRange {
   const { tableNumber, indexName } = decodeStorageIndexId(indexId);
@@ -99,7 +99,7 @@ function docKeyToPointRange(tableId: string, internalId: Uint8Array): Serialized
 }
 
 /** Structural read-only view of the server messages a loopback connection pushes (avoids importing
- *  `@helipod/sync` just for its message types — mirrors `writer-invalidation.test.ts`). */
+ *  `@concile/sync` just for its message types — mirrors `writer-invalidation.test.ts`). */
 type ServerMsg = { type: string; modifications?: Array<{ type: string; queryId?: number; value?: unknown }> };
 
 function latestQueryValue(msgs: ServerMsg[], queryId: number): unknown {
@@ -264,13 +264,13 @@ function dockerAvailable(): boolean {
   }
 }
 
-const RUN = dockerAvailable() && process.env.HELIPOD_OBJECTSTORE_S3 === "1";
+const RUN = dockerAvailable() && process.env.CONCILE_OBJECTSTORE_S3 === "1";
 const maybeDescribe = RUN ? describe : describe.skip;
 
 const MINIO_CONTAINER = `sb-minio-objectstore-substrate-crossnode-${process.pid}`;
 const MINIO_USER = "minioadmin";
 const MINIO_PASS = "minioadmin";
-const BUCKET = "helipod-objectstore-substrate-crossnode";
+const BUCKET = "concile-objectstore-substrate-crossnode";
 
 function runDocker(args: string[]): { status: number | null; stdout: string; stderr: string } {
   const r = spawnSync("docker", args, { encoding: "utf8" });

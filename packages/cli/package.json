@@ -1,10 +1,10 @@
 {
-  "name": "@helipod/cli",
+  "name": "@concile/cli",
   "version": "0.1.5",
   "type": "module",
   "license": "FSL-1.1-Apache-2.0",
   "bin": {
-    "helipod": "./dist/bin.js"
+    "concile": "./dist/bin.js"
   },
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -37,44 +37,44 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@helipod/admin": "workspace:*",
-    "@helipod/blobstore": "workspace:*",
-    "@helipod/blobstore-fs": "workspace:*",
-    "@helipod/blobstore-s3": "workspace:*",
-    "@helipod/codegen": "workspace:*",
-    "@helipod/component": "workspace:*",
-    "@helipod/deploy": "workspace:*",
-    "@helipod/docstore": "workspace:*",
-    "@helipod/docstore-postgres": "workspace:*",
-    "@helipod/docstore-sqlite": "workspace:*",
-    "@helipod/errors": "workspace:*",
-    "@helipod/executor": "workspace:*",
-    "@helipod/id-codec": "workspace:*",
-    "@helipod/objectstore": "workspace:*",
-    "@helipod/objectstore-fs": "workspace:*",
-    "@helipod/objectstore-s3": "workspace:*",
-    "@helipod/query-engine": "workspace:*",
-    "@helipod/receipts": "workspace:*",
-    "@helipod/runtime-embedded": "workspace:*",
-    "@helipod/storage": "workspace:*",
-    "@helipod/sync": "workspace:*",
-    "@helipod/values": "workspace:*",
+    "@concile/admin": "workspace:*",
+    "@concile/blobstore": "workspace:*",
+    "@concile/blobstore-fs": "workspace:*",
+    "@concile/blobstore-s3": "workspace:*",
+    "@concile/codegen": "workspace:*",
+    "@concile/component": "workspace:*",
+    "@concile/deploy": "workspace:*",
+    "@concile/docstore": "workspace:*",
+    "@concile/docstore-postgres": "workspace:*",
+    "@concile/docstore-sqlite": "workspace:*",
+    "@concile/errors": "workspace:*",
+    "@concile/executor": "workspace:*",
+    "@concile/id-codec": "workspace:*",
+    "@concile/objectstore": "workspace:*",
+    "@concile/objectstore-fs": "workspace:*",
+    "@concile/objectstore-s3": "workspace:*",
+    "@concile/query-engine": "workspace:*",
+    "@concile/receipts": "workspace:*",
+    "@concile/runtime-embedded": "workspace:*",
+    "@concile/storage": "workspace:*",
+    "@concile/sync": "workspace:*",
+    "@concile/values": "workspace:*",
     "esbuild": "^0.27.0",
     "ws": "^8.18.0",
-    "@helipod/dashboard": "workspace:*"
+    "@concile/dashboard": "workspace:*"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.2.17",
     "@levischuck/tiny-cbor": "0.2.11",
     "@simplewebauthn/server": "13.3.2",
-    "@helipod/auth": "workspace:*",
-    "@helipod/client": "workspace:*",
-    "@helipod/fleet": "workspace:*",
-    "@helipod/notifications": "workspace:*",
-    "@helipod/objectstore-substrate": "workspace:*",
-    "@helipod/scheduler": "workspace:*",
-    "@helipod/triggers": "workspace:*",
-    "@helipod/workflow": "workspace:*",
+    "@concile/auth": "workspace:*",
+    "@concile/client": "workspace:*",
+    "@concile/fleet": "workspace:*",
+    "@concile/notifications": "workspace:*",
+    "@concile/objectstore-substrate": "workspace:*",
+    "@concile/scheduler": "workspace:*",
+    "@concile/triggers": "workspace:*",
+    "@concile/workflow": "workspace:*",
     "@types/node": "catalog:",
     "@types/ws": "^8.5.13",
     "fake-indexeddb": "^6.0.0",
@@ -82,15 +82,15 @@
     "tsup": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
-    "@helipod/tui": "workspace:*"
+    "@concile/tui": "workspace:*"
   },
   "publishConfig": {
     "access": "public"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "packages/cli"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

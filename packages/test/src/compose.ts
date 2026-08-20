@@ -1,13 +1,13 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import type { DocStore } from "@helipod/docstore";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { composeComponents, type ComponentDefinition } from "@helipod/component";
-import { EmbeddedRuntime } from "@helipod/runtime-embedded";
-import type { SchedulerDriver } from "@helipod/scheduler";
-import { defineSchema, type SchemaDefinition, type SchemaDefinitionJSON } from "@helipod/values";
-import { mutation, matchRoute, type RegisteredFunction, type RouteEntry } from "@helipod/executor";
+import type { DocStore } from "@concile/docstore";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { composeComponents, type ComponentDefinition } from "@concile/component";
+import { EmbeddedRuntime } from "@concile/runtime-embedded";
+import type { SchedulerDriver } from "@concile/scheduler";
+import { defineSchema, type SchemaDefinition, type SchemaDefinitionJSON } from "@concile/values";
+import { mutation, matchRoute, type RegisteredFunction, type RouteEntry } from "@concile/executor";
 import {
   STORAGE_TABLE,
   STORAGE_TABLE_NUMBER,
@@ -15,8 +15,8 @@ import {
   storageModules,
   storageContextProvider,
   storageReaper,
-} from "@helipod/storage";
-import { FsBlobStore } from "@helipod/blobstore-fs";
+} from "@concile/storage";
+import { FsBlobStore } from "@concile/blobstore-fs";
 import { flattenModules } from "./flatten";
 import { createReactivity, type Reactivity } from "./reactivity";
 
@@ -34,11 +34,11 @@ export interface CreateTestOptions {
   store?: DocStore;
   /**
    * The leading path segment `import.meta.glob`-sourced `modules` keys are prefixed with (e.g.
-   * `import.meta.glob("./helipod/**\/*.ts")` yields keys like `./helipod/messages.ts`) —
+   * `import.meta.glob("./concile/**\/*.ts")` yields keys like `./concile/messages.ts`) —
    * stripped so a glob-sourced module registers under the same `messages:send`-style path an
    * explicit `{ "messages.ts": messages }` map would. Defaults to the same value as
-   * `DEFAULT_FUNCTIONS_DIR` in `@helipod/cli`. Only needed if `modules` came from a glob AND the
-   * project's `helipod.config.ts` sets a non-default `functionsDir` — an explicit `{ "messages.ts":
+   * `DEFAULT_FUNCTIONS_DIR` in `@concile/cli`. Only needed if `modules` came from a glob AND the
+   * project's `concile.config.ts` sets a non-default `functionsDir` — an explicit `{ "messages.ts":
    * ... }` map (no path prefix to strip) is unaffected either way.
    */
   functionsRoot?: string;
@@ -65,7 +65,7 @@ export interface BuiltRuntime {
   takeRunResult: () => unknown;
   /**
    * Routes a raw `Request` through the app's `http.ts` router (if any), the same way the real
-   * `helipod dev`/`serve` HTTP handler dispatches to an `httpAction` — see
+   * `concile dev`/`serve` HTTP handler dispatches to an `httpAction` — see
    * `packages/cli/src/http-handler.ts`. Returns a plain `Response("Not Found", { status: 404 })`
    * for an unmatched method+path, never throws for that case. `identity` (if non-null) wins over
    * the request's own `Authorization` header, which is used as a fallback and Bearer-stripped
@@ -76,7 +76,7 @@ export interface BuiltRuntime {
   dispatchHttp: (request: Request, identity: string | null) => Promise<Response>;
   /**
    * The harness-shared reactive-subscription surface (`t.subscribe`), built lazily on first use
-   * over a real loopback connection to `runtime` — see `./reactivity.ts`. Its `HelipodClient`
+   * over a real loopback connection to `runtime` — see `./reactivity.ts`. Its `ConcileClient`
    * is closed in `cleanup` BEFORE `runtime.stopDrivers()`, so no loopback session outlives the
    * runtime it's connected to.
    */
@@ -95,7 +95,7 @@ export interface BuiltRuntime {
    */
   advanceClock: (ms: number) => void;
   /**
-   * Finds `@helipod/scheduler`'s driver among the composed drivers (by `name === "scheduler"`),
+   * Finds `@concile/scheduler`'s driver among the composed drivers (by `name === "scheduler"`),
    * if `defineScheduler()` was included in `opts.components` — `undefined` otherwise. Used by
    * `./scheduler.ts` to drive `__tick()`.
    */
@@ -176,7 +176,7 @@ export async function buildRuntime(opts: CreateTestOptions): Promise<BuiltRuntim
 
   // `create` can throw before `cleanup` is returned (a driver's `start()`, a boot step, or schema
   // setup failing) — in that case nothing would ever remove the temp dir. Remove it on failure so a
-  // failed `createTestHelipod` never orphans a `sb-test-*` dir in the OS temp dir, then rethrow.
+  // failed `createTestConcile` never orphans a `sb-test-*` dir in the OS temp dir, then rethrow.
   // The store is captured (not constructed inline) so both the success path's `cleanup` and this
   // catch block can close its underlying SQLite handle — otherwise an in-memory db handle (and, on
   // `create`-throws, the process-visible file descriptor it holds) leaks for the life of the process.
@@ -193,7 +193,7 @@ export async function buildRuntime(opts: CreateTestOptions): Promise<BuiltRuntim
       systemModules,
       componentNames: composed.componentNames,
       contextProviders: [
-        storageContextProvider(blobStore, { signingKey: "helipod-test-signing-key" }),
+        storageContextProvider(blobStore, { signingKey: "concile-test-signing-key" }),
         ...composed.contextProviders,
       ],
       policyRegistry: composed.policyRegistry,
@@ -254,7 +254,7 @@ export async function buildRuntime(opts: CreateTestOptions): Promise<BuiltRuntim
       if (!ownsClock) {
         throw new Error(
           "advanceClock/advanceTimers/finishScheduledFunctions require the harness-owned virtual clock — " +
-            "createTestHelipod() was given a custom `now`, so the harness has no clock to advance. " +
+            "createTestConcile() was given a custom `now`, so the harness has no clock to advance. " +
             "Omit `opts.now` to use scheduler time control.",
         );
       }

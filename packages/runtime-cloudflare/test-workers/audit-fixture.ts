@@ -8,10 +8,10 @@
  *
  * NOT product code. Safe to delete with the audit branch.
  */
-import { query, mutation, action, httpAction, httpRouter } from "@helipod/executor";
-import { v, defineSchema, defineTable } from "@helipod/values";
-import type { LoadedProject } from "@helipod/cli/project";
-import { HelipodDurableObject, type DurableObjectAppConfig } from "@helipod/runtime-cloudflare";
+import { query, mutation, action, httpAction, httpRouter } from "@concile/executor";
+import { v, defineSchema, defineTable } from "@concile/values";
+import type { LoadedProject } from "@concile/cli/project";
+import { ConcileDurableObject, type DurableObjectAppConfig } from "@concile/runtime-cloudflare";
 
 const schema = defineSchema({
   notes: defineTable({ topic: v.string(), body: v.string() }).index("by_topic", ["topic"]),
@@ -50,7 +50,7 @@ const http = { default: httpRt };
 
 const loaded: LoadedProject = { schema, modules: { notes, http } };
 
-export class AuditDO extends HelipodDurableObject {
+export class AuditDO extends ConcileDurableObject {
   protected appConfig(): DurableObjectAppConfig {
     return { loaded, adminKey: "audit-admin-key" };
   }

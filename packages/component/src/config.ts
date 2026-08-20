@@ -10,23 +10,23 @@ export interface TargetConfig {
 }
 
 export interface DeployConfig {
-  /** Used when --target is omitted. Effective default is "serve" (resolved in @helipod/deploy). */
+  /** Used when --target is omitted. Effective default is "serve" (resolved in @concile/deploy). */
   defaultTarget?: string;
   /** Keyed by target name (the --target value). */
   targets?: Record<string, TargetConfig>;
 }
 
-export interface HelipodConfig {
+export interface ConcileConfig {
   components: ComponentDefinition[];
   deploy?: DeployConfig;
   /**
-   * Backend functions directory, relative to the project root. Defaults to "helipod".
+   * Backend functions directory, relative to the project root. Defaults to "concile".
    * A `--dir` flag on any command wins over this value.
    */
   functionsDir?: string;
 }
 
-export function defineConfig(config: HelipodConfig): HelipodConfig {
+export function defineConfig(config: ConcileConfig): ConcileConfig {
   return config;
 }
 

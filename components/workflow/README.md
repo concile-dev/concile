@@ -1,24 +1,24 @@
-# @helipod/workflow
+# @concile/workflow
 
-Durable multi-step workflows for helipod: write a plain async handler that calls steps, and the engine journals every step's outcome and replays deterministically, so a run survives crashes, restarts, and deploys without re-running completed work.
+Durable multi-step workflows for concile: write a plain async handler that calls steps, and the engine journals every step's outcome and replays deterministically, so a run survives crashes, restarts, and deploys without re-running completed work.
 
 ## Install
 
 ```sh
-bun add @helipod/workflow @helipod/scheduler
+bun add @concile/workflow @concile/scheduler
 ```
 
-`@helipod/workflow` requires the scheduler component — every step dispatches through the scheduler's job queue and inherits its retries, backoff, and cascading cancel.
+`@concile/workflow` requires the scheduler component — every step dispatches through the scheduler's job queue and inherits its retries, backoff, and cascading cancel.
 
 ## Enable
 
-Define workflows with `workflow.define` and compose the component alongside `defineScheduler()` in `helipod.config.ts` (composing `defineWorkflow` without the scheduler throws at compose time):
+Define workflows with `workflow.define` and compose the component alongside `defineScheduler()` in `concile.config.ts` (composing `defineWorkflow` without the scheduler throws at compose time):
 
 ```ts
-// helipod.config.ts
-import { defineConfig } from "@helipod/component";
-import { defineScheduler } from "@helipod/scheduler";
-import { defineWorkflow, workflow } from "@helipod/workflow";
+// concile.config.ts
+import { defineConfig } from "@concile/component";
+import { defineScheduler } from "@concile/scheduler";
+import { defineWorkflow, workflow } from "@concile/workflow";
 
 const fulfillOrder = workflow.define({
   handler: async (step, { orderId }: { orderId: string }) => {
@@ -60,6 +60,6 @@ export const placeOrder = mutation({
 - A live `workflow:status` query for observing runs reactively.
 - Handlers must be deterministic: no `fetch`, `Math.random()`, or `Date.now()` in the handler body — put non-deterministic work inside a `step.runAction`.
 
-Part of [Helipod](https://github.com/helipod-sh/helipod) — docs at https://helipod-six.vercel.app/docs
+Part of [Concile](https://github.com/concile-dev/concile) — docs at https://concile-six.vercel.app/docs
 
 License: FSL-1.1-Apache-2.0

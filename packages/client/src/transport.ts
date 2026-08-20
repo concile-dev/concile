@@ -1,9 +1,9 @@
 /**
  * Transports carry the sync protocol between the client and the engine. The client logic is
  * transport-agnostic; pick `loopbackTransport` (in-process / embedded) or `webSocketTransport`
- * (over the network) — the same `HelipodClient` runs on either.
+ * (over the network) — the same `ConcileClient` runs on either.
  */
-import type { ClientMessage, ServerMessage } from "@helipod/sync";
+import type { ClientMessage, ServerMessage } from "@concile/sync";
 
 export interface ClientTransport {
   send(message: ClientMessage): void;

@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/docstore-postgres",
+  "name": "@concile/docstore-postgres",
   "version": "0.1.5",
   "type": "module",
   "license": "FSL-1.1-Apache-2.0",
@@ -27,16 +27,16 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@helipod/docstore": "workspace:*",
-    "@helipod/id-codec": "workspace:*",
-    "@helipod/index-key-codec": "workspace:*",
-    "@helipod/values": "workspace:*",
+    "@concile/docstore": "workspace:*",
+    "@concile/id-codec": "workspace:*",
+    "@concile/index-key-codec": "workspace:*",
+    "@concile/values": "workspace:*",
     "pg": "^8.13.1",
     "pg-cursor": "^2.21.0"
   },
   "devDependencies": {
-    "@helipod/test": "workspace:*",
-    "@helipod/executor": "workspace:*",
+    "@concile/test": "workspace:*",
+    "@concile/executor": "workspace:*",
     "@electric-sql/pglite": "^0.2.17",
     "embedded-postgres": "16.14.0-beta.17",
     "@types/pg": "^8.11.10",
@@ -51,8 +51,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "packages/docstore-postgres"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

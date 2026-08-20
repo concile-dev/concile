@@ -38,7 +38,7 @@ export interface PersistedSub {
 /** Per-socket durable state. `connectionId` is the stable session id minted at upgrade; `identity`
  *  is the verified bearer to replay to `handler.setAuth` on revival; `subs` is keyed by the client's
  *  subscription id. */
-export interface HelipodSocketAttachment {
+export interface ConcileSocketAttachment {
   connectionId: string;
   identity: string | null;
   subs: Record<string, PersistedSub>;
@@ -54,15 +54,15 @@ export interface HelipodSocketAttachment {
 export const MAX_SUBSCRIPTIONS_PER_SOCKET = 128;
 
 /** A fresh attachment for a just-upgraded socket. */
-export function newAttachment(connectionId: string): HelipodSocketAttachment {
+export function newAttachment(connectionId: string): ConcileSocketAttachment {
   return { connectionId, identity: null, subs: {} };
 }
 
 /** Read a socket's attachment back after (a possible) hibernation, tolerating an absent/garbled one
  *  (returns `null` — the caller loud-logs and treats the socket as un-rehydratable, closing it). */
-export function readAttachment(raw: unknown): HelipodSocketAttachment | null {
+export function readAttachment(raw: unknown): ConcileSocketAttachment | null {
   if (raw === null || typeof raw !== "object") return null;
-  const a = raw as Partial<HelipodSocketAttachment>;
+  const a = raw as Partial<ConcileSocketAttachment>;
   if (typeof a.connectionId !== "string") return null;
   return {
     connectionId: a.connectionId,
@@ -84,7 +84,7 @@ export class TooManySubscriptionsError extends Error {
 }
 
 /** True if adding one more sub would exceed the cap (an existing subId re-subscribe is not new). */
-export function wouldExceedCap(att: HelipodSocketAttachment, subId: string): boolean {
+export function wouldExceedCap(att: ConcileSocketAttachment, subId: string): boolean {
   if (subId in att.subs) return false;
   return Object.keys(att.subs).length >= MAX_SUBSCRIPTIONS_PER_SOCKET;
 }

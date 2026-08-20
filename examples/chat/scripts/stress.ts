@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Load generator for the chat example — drives sustained, overlapping traffic at
- * the running `helipod dev` server so the terminal dashboard's live numbers,
+ * the running `concile dev` server so the terminal dashboard's live numbers,
  * concurrency chart, and reactive activity feed actually move.
  *
  * Run it in a SECOND terminal while `bun run dev` is up in the first:
@@ -66,7 +66,7 @@ async function preflight(): Promise<void> {
     const res = await fetch(`${args.url.replace(/\/$/, "")}/api/health`, { signal: AbortSignal.timeout(3000) });
     if (!res.ok) throw new Error(String(res.status));
   } catch {
-    console.error(`✗ no helipod server at ${args.url} — start one with \`bun run dev\` first.`);
+    console.error(`✗ no concile server at ${args.url} — start one with \`bun run dev\` first.`);
     process.exit(1);
   }
 }

@@ -1,6 +1,6 @@
 /**
  * End-to-end gate for Slice 5 (data migration) through the REAL `startServe` server + the REAL
- * `helipod migrate export`/`import` CLI clients — the "test through the shipped entrypoint" pattern.
+ * `concile migrate export`/`import` CLI clients — the "test through the shipped entrypoint" pattern.
  *
  * The flagship round-trip: an app created on the portable SQLite path, seeded with real data across
  * TWO tables (with an index), EXPORTS to a dump, IMPORTS onto a FRESH deployment, and a query returns
@@ -19,10 +19,10 @@ import { startServe } from "../src/serve";
 import { migrateExportCommand, migrateImportCommand } from "../src/migrate/data";
 import { loadFunctionsDir } from "../src/load-modules";
 import { push } from "../src/push-pipeline";
-import { writeGenerated } from "@helipod/codegen";
+import { writeGenerated } from "@concile/codegen";
 
 function fixtureFunctionsDir(name: string): string {
-  return resolve(new URL(".", import.meta.url).pathname, "fixtures", name, "helipod");
+  return resolve(new URL(".", import.meta.url).pathname, "fixtures", name, "concile");
 }
 
 async function regenerate(functionsDir: string): Promise<void> {
@@ -46,7 +46,7 @@ async function run(url: string, path: string, args: unknown = {}): Promise<unkno
   return body.value;
 }
 
-describe("helipod migrate export/import — end-to-end through the real serve server", () => {
+describe("concile migrate export/import — end-to-end through the real serve server", () => {
   it("SQLite → dump → fresh SQLite reproduces identical rows/ids/_creationTime; guard rejects a clash", async () => {
     const dir = fixtureFunctionsDir("migrate-data");
     await regenerate(dir);
@@ -79,7 +79,7 @@ describe("helipod migrate export/import — end-to-end through the real serve se
         documents: unknown[];
         tableNumbers: Record<string, number>;
       };
-      expect(dump.format).toBe("helipod-migration-dump");
+      expect(dump.format).toBe("concile-migration-dump");
       // 5 docs total (3 messages + 2 users), plus the dump carries table numbers.
       expect(dump.documents.length).toBe(5);
       expect(dump.tableNumbers.messages).toBeGreaterThan(0);

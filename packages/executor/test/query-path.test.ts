@@ -10,11 +10,11 @@
  * misrouted call surfaces as visibly wrong DATA, not just a call-count assertion on a stub.
  */
 import { describe, it, expect, beforeEach } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { MonotonicTimestampOracle } from "@helipod/docstore";
-import { SingleWriterTransactor } from "@helipod/transactor";
-import { QueryRuntime, type IndexSpec } from "@helipod/query-engine";
-import { encodeStorageIndexId } from "@helipod/id-codec";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { MonotonicTimestampOracle } from "@concile/docstore";
+import { SingleWriterTransactor } from "@concile/transactor";
+import { QueryRuntime, type IndexSpec } from "@concile/query-engine";
+import { encodeStorageIndexId } from "@concile/id-codec";
 import { InlineUdfExecutor, SimpleIndexCatalog, mutation, query } from "../src/index";
 
 const MESSAGES = 10001;

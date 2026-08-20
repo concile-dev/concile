@@ -20,8 +20,8 @@ function convexApp(): string {
   return root;
 }
 
-describe("helipod migrate renames the functions directory", () => {
-  it("moves convex/ to helipod/ and leaves no convex/ behind", async () => {
+describe("concile migrate renames the functions directory", () => {
+  it("moves convex/ to concile/ and leaves no convex/ behind", async () => {
     const root = convexApp();
     const prevCwd = process.cwd();
     try {
@@ -31,14 +31,14 @@ describe("helipod migrate renames the functions directory", () => {
     } finally {
       process.chdir(prevCwd);
     }
-    expect(existsSync(join(root, "helipod", "schema.ts"))).toBe(true);
-    expect(existsSync(join(root, "helipod", "notes.ts"))).toBe(true);
+    expect(existsSync(join(root, "concile", "schema.ts"))).toBe(true);
+    expect(existsSync(join(root, "concile", "notes.ts"))).toBe(true);
     expect(existsSync(join(root, "convex"))).toBe(false);
   });
 
-  it("refuses when a helipod/ directory already exists", async () => {
+  it("refuses when a concile/ directory already exists", async () => {
     const root = convexApp();
-    mkdirSync(join(root, "helipod"));
+    mkdirSync(join(root, "concile"));
     const errors: string[] = [];
     const original = process.stderr.write.bind(process.stderr);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -57,7 +57,7 @@ describe("helipod migrate renames the functions directory", () => {
     expect(existsSync(join(root, "convex", "schema.ts"))).toBe(true);
   });
 
-  it("--dry-run leaves convex/ untouched and does not create helipod/", async () => {
+  it("--dry-run leaves convex/ untouched and does not create concile/", async () => {
     const root = convexApp();
     const prevCwd = process.cwd();
     try {
@@ -70,14 +70,14 @@ describe("helipod migrate renames the functions directory", () => {
     expect(existsSync(join(root, "convex"))).toBe(true);
     expect(existsSync(join(root, "convex", "schema.ts"))).toBe(true);
     expect(existsSync(join(root, "convex", "notes.ts"))).toBe(true);
-    expect(existsSync(join(root, "helipod"))).toBe(false);
+    expect(existsSync(join(root, "concile"))).toBe(false);
   });
 
   it("preview-then-commit: --dry-run followed by a real run completes the rename", async () => {
     // This is the exact workflow the dry-run-mutates-the-tree bug broke: a user previews with
     // --dry-run, likes what they see, then re-runs the identical command without the flag. If the
-    // dry run had already renamed convex/ -> helipod/, this second call would fail with
-    // "helipod already exists" (functionsDir still resolves to convex, which the dry run left
+    // dry run had already renamed convex/ -> concile/, this second call would fail with
+    // "concile already exists" (functionsDir still resolves to convex, which the dry run left
     // behind as a stale/incomplete copy).
     const root = convexApp();
     const prevCwd = process.cwd();
@@ -86,22 +86,22 @@ describe("helipod migrate renames the functions directory", () => {
       const dryCode = await migrateCommand(["--dir", join(root, "convex"), "--dry-run", "--force"]);
       expect(dryCode).toBe(0);
       expect(existsSync(join(root, "convex"))).toBe(true);
-      expect(existsSync(join(root, "helipod"))).toBe(false);
+      expect(existsSync(join(root, "concile"))).toBe(false);
 
       const realCode = await migrateCommand(["--dir", join(root, "convex"), "--force"]);
       expect(realCode).toBe(0);
     } finally {
       process.chdir(prevCwd);
     }
-    expect(existsSync(join(root, "helipod", "schema.ts"))).toBe(true);
-    expect(existsSync(join(root, "helipod", "notes.ts"))).toBe(true);
+    expect(existsSync(join(root, "concile", "schema.ts"))).toBe(true);
+    expect(existsSync(join(root, "concile", "notes.ts"))).toBe(true);
     expect(existsSync(join(root, "convex"))).toBe(false);
   });
 
   it("renames to the project's configured functionsDir instead of the default", async () => {
     const root = convexApp();
     writeFileSync(
-      join(root, "helipod.config.ts"),
+      join(root, "concile.config.ts"),
       `export default { components: [], functionsDir: "backend" };\n`,
     );
     const prevCwd = process.cwd();
@@ -114,6 +114,6 @@ describe("helipod migrate renames the functions directory", () => {
     }
     expect(existsSync(join(root, "backend", "schema.ts"))).toBe(true);
     expect(existsSync(join(root, "convex"))).toBe(false);
-    expect(existsSync(join(root, "helipod"))).toBe(false);
+    expect(existsSync(join(root, "concile"))).toBe(false);
   });
 });

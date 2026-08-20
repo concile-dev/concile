@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { createHash } from "node:crypto";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { composeComponents } from "@helipod/component";
-import { EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { defineSchema } from "@helipod/values";
-import { decodeDocumentId } from "@helipod/id-codec";
-import { query, mutation, action, type RegisteredFunction } from "@helipod/executor";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { composeComponents } from "@concile/component";
+import { EmbeddedRuntime } from "@concile/runtime-embedded";
+import { defineSchema } from "@concile/values";
+import { decodeDocumentId } from "@concile/id-codec";
+import { query, mutation, action, type RegisteredFunction } from "@concile/executor";
 import type {
   BlobStore,
   UploadTarget,
@@ -13,14 +13,14 @@ import type {
   ByteRange,
   CreateUploadTargetOpts,
   SignUrlOpts,
-} from "@helipod/blobstore";
+} from "@concile/blobstore";
 import { STORAGE_TABLE, STORAGE_TABLE_NUMBER, storageTableDefinition } from "../src/system-table";
 import { storageModules } from "../src/modules";
 import { storageContextProvider, signUploadToken, storageEndpointPath } from "../src/context";
 import { verifyStorageToken } from "../src/token";
 
 /**
- * A minimal in-file `BlobStore` fake (the real `MemoryBlobStore` in `@helipod/blobstore`'s
+ * A minimal in-file `BlobStore` fake (the real `MemoryBlobStore` in `@concile/blobstore`'s
  * test-support isn't a published export). `store` hashes the bytes so the metadata round-trip is
  * exercised; `createUploadTarget` returns a `proxied` target the way the real memory store does.
  */

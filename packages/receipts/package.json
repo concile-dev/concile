@@ -1,5 +1,5 @@
 {
-  "name": "@helipod/receipts",
+  "name": "@concile/receipts",
   "version": "0.1.5",
   "type": "module",
   "license": "FSL-1.1-Apache-2.0",
@@ -23,12 +23,12 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@helipod/component": "workspace:*",
-    "@helipod/docstore": "workspace:*"
+    "@concile/component": "workspace:*",
+    "@concile/docstore": "workspace:*"
   },
   "devDependencies": {
-    "@helipod/docstore-postgres": "workspace:*",
-    "@helipod/docstore-sqlite": "workspace:*",
+    "@concile/docstore-postgres": "workspace:*",
+    "@concile/docstore-sqlite": "workspace:*",
     "@types/node": "catalog:",
     "tsup": "catalog:",
     "typescript": "catalog:",
@@ -39,8 +39,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/helipod-sh/helipod.git",
+    "url": "git+https://github.com/concile-dev/concile.git",
     "directory": "packages/receipts"
   },
-  "homepage": "https://github.com/helipod-sh/helipod"
+  "homepage": "https://github.com/concile-dev/concile"
 }

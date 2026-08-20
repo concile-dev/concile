@@ -1,18 +1,18 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { MonotonicTimestampOracle } from "@helipod/docstore";
-import { SingleWriterTransactor } from "@helipod/transactor";
-import { QueryRuntime, type IndexSpec } from "@helipod/query-engine";
-import { encodeStorageIndexId } from "@helipod/id-codec";
-import { writtenTablesFromRanges, serializeKeyRange } from "@helipod/index-key-codec";
-import { jsonToConvex, type JSONValue, type Value } from "@helipod/values";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { MonotonicTimestampOracle } from "@concile/docstore";
+import { SingleWriterTransactor } from "@concile/transactor";
+import { QueryRuntime, type IndexSpec } from "@concile/query-engine";
+import { encodeStorageIndexId } from "@concile/id-codec";
+import { writtenTablesFromRanges, serializeKeyRange } from "@concile/index-key-codec";
+import { jsonToConvex, type JSONValue, type Value } from "@concile/values";
 import {
   InlineUdfExecutor,
   SimpleIndexCatalog,
   query,
   mutation,
   type RegisteredFunction,
-} from "@helipod/executor";
+} from "@concile/executor";
 import {
   SyncProtocolHandler,
   createClientState,

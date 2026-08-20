@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { httpAction, httpRouter } from "@helipod/executor";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { createEmbeddedRuntime } from "@helipod/runtime-embedded";
+import { httpAction, httpRouter } from "@concile/executor";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { createEmbeddedRuntime } from "@concile/runtime-embedded";
 import { loadProject } from "../src/project";
 import { handleHttpRequest, type ServerInfo } from "../src/http-handler";
-import { defineSchema } from "@helipod/values";
+import { defineSchema } from "@concile/values";
 
 function makeLoaded() {
   const ping = httpAction(async () => new Response("pong"));

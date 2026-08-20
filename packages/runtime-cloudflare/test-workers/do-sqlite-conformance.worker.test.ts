@@ -18,11 +18,11 @@
  */
 import { describe, it, expect } from "vitest";
 import { env, runInDurableObject } from "cloudflare:test";
-import { SqliteDocStore } from "@helipod/docstore-sqlite";
-import { DoSqliteAdapter, isDatabaseFullError } from "@helipod/docstore-do-sqlite";
-import type { DocStore, DocumentLogEntry, InternalDocumentId } from "@helipod/docstore";
-import { newDocumentId, encodeStorageTableId, encodeStorageIndexId } from "@helipod/id-codec";
-import { encodeIndexKey } from "@helipod/index-key-codec";
+import { SqliteDocStore } from "@concile/docstore-sqlite";
+import { DoSqliteAdapter, isDatabaseFullError } from "@concile/docstore-do-sqlite";
+import type { DocStore, DocumentLogEntry, InternalDocumentId } from "@concile/docstore";
+import { newDocumentId, encodeStorageTableId, encodeStorageIndexId } from "@concile/id-codec";
+import { encodeIndexKey } from "@concile/index-key-codec";
 
 const TABLE = 10001;
 const TABLE_ID = encodeStorageTableId(TABLE);

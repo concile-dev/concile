@@ -1,19 +1,19 @@
 import { describe, it, expect } from "vitest";
-import { helipod } from "../src/index";
+import { concile } from "../src/index";
 import { isEnginePath } from "../src/embed";
 
-describe("helipod() mode switch", () => {
+describe("concile() mode switch", () => {
   it("mode:'embed' returns the embed plugin — a configureServer hook and NO proxy config hook", () => {
-    const p = helipod({ mode: "embed" });
-    expect(p.name).toBe("helipod:embed");
+    const p = concile({ mode: "embed" });
+    expect(p.name).toBe("concile:embed");
     expect(p.configureServer).toBeTypeOf("function");
     // No `config` hook at all — embed serves the engine in-process, so there's no origin to proxy.
     expect(p.config).toBeUndefined();
   });
 
-  it("default and mode:'proxy' are the unchanged Phase-1 plugin (name 'helipod', has a config hook)", () => {
-    for (const p of [helipod(), helipod({ mode: "proxy" })]) {
-      expect(p.name).toBe("helipod");
+  it("default and mode:'proxy' are the unchanged Phase-1 plugin (name 'concile', has a config hook)", () => {
+    for (const p of [concile(), concile({ mode: "proxy" })]) {
+      expect(p.name).toBe("concile");
       expect(p.config).toBeTypeOf("function");
       expect(p.configureServer).toBeTypeOf("function");
     }

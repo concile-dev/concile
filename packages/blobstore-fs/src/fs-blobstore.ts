@@ -10,7 +10,7 @@ import type {
   ByteRange,
   CreateUploadTargetOpts,
   SignUrlOpts,
-} from "@helipod/blobstore";
+} from "@concile/blobstore";
 
 export class FsBlobStore implements BlobStore {
   private readonly root: string;

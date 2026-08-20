@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sha256Hex } from "@helipod/deploy";
+import { sha256Hex } from "@concile/deploy";
 import { reconstructFiles } from "../src/deploy-apply";
 
 const cur = new Map([

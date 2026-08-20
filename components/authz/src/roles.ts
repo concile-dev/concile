@@ -1,4 +1,4 @@
-import type { TablePolicy } from "@helipod/executor";
+import type { TablePolicy } from "@concile/executor";
 
 export interface RoleDef { inherits?: string | string[]; [resource: string]: string[] | string | string[] | undefined }
 export interface AuthzConfig {

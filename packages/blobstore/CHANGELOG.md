@@ -1,4 +1,4 @@
-# @helipod/blobstore
+# @concile/blobstore
 
 ## 0.1.5
 

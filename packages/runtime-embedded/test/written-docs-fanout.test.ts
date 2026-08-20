@@ -6,11 +6,11 @@
  * nothing consumes `writtenDocs` yet, so this test only proves it arrives, populated and correct.
  */
 import { describe, it, expect, vi } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { encodeStorageIndexId } from "@helipod/id-codec";
-import { SimpleIndexCatalog, query, mutation, type RegisteredFunction } from "@helipod/executor";
-import type { IndexSpec } from "@helipod/query-engine";
-import type { ServerMessage, WriteInvalidation } from "@helipod/sync";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { encodeStorageIndexId } from "@concile/id-codec";
+import { SimpleIndexCatalog, query, mutation, type RegisteredFunction } from "@concile/executor";
+import type { IndexSpec } from "@concile/query-engine";
+import type { ServerMessage, WriteInvalidation } from "@concile/sync";
 import { createEmbeddedRuntime } from "../src/index";
 
 const NOTES = 10001;

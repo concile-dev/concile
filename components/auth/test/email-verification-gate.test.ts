@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { composeComponents } from "@helipod/component";
-import { EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { defineSchema } from "@helipod/values";
-import { query, type QueryCtx } from "@helipod/executor";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { composeComponents } from "@concile/component";
+import { EmbeddedRuntime } from "@concile/runtime-embedded";
+import { defineSchema } from "@concile/values";
+import { query, type QueryCtx } from "@concile/executor";
 import { defineAuth } from "../src/component";
 import type { AuthOptions, EmailMessage, EmailProvider, MintResult, NeedsVerification } from "../src";
 

@@ -1,6 +1,6 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
-import { query, mutation } from "@helipod/executor";
-import { v } from "@helipod/values";
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
+import { query, mutation } from "@concile/executor";
+import { v } from "@concile/values";
 
 // `shardBy: "roomId"` — the router routes each send to the DO owning that room's shard.
 export const send = mutation({

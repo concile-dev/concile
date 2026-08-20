@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 
 /**
  * The REAL-workerd test project (§ gate) — runs the multi-shard router + shard-DOs inside genuine

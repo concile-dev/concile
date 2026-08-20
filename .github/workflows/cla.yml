@@ -22,6 +22,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           path-to-signatures: ".cla-signatures/v1.json"
-          path-to-document: "https://github.com/helipod-sh/helipod/blob/main/CLA.md"
+          path-to-document: "https://github.com/concile-dev/concile/blob/main/CLA.md"
           branch: "cla-signatures"
           allowlist: "dbjpanda,dependabot[bot],github-actions[bot]"

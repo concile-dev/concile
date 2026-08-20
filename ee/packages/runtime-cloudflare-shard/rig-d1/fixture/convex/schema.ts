@@ -1,5 +1,5 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
-import { v, defineSchema, defineTable } from "@helipod/values";
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
+import { v, defineSchema, defineTable } from "@concile/values";
 
 // A COMBINED app: a SHARDED table AND a GLOBAL table, in one deployment.
 //   - `messages` is `.shardKey("roomId")`: one DO per room (per-shard DO-SQLite MVCC store).

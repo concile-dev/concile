@@ -5,7 +5,7 @@
  * client's `resync()` echoes each answered subscription's last hash back as `resultHash` on its
  * `ModifyQuerySet` add entry; a fresh-run hash match replies `{type:"QueryUnchanged", queryId}`
  * instead of resending the full value. This file drives that mechanism through a REAL
- * `HelipodClient` over a REAL WebSocket against a REAL `helipod dev` server (the
+ * `ConcileClient` over a REAL WebSocket against a REAL `concile dev` server (the
  * `outbox-fs-e2e.test.ts` / `optimistic-e2e.test.ts` harness pattern), asserting at the WIRE FRAME
  * level — a wrapping transport records every parsed `ServerMessage` in arrival order, and each
  * scenario counts `QueryUnchanged` vs `QueryUpdated` inside the resume `Transition` directly.
@@ -24,7 +24,7 @@
  *       (nothing has committed yet), the drain then commits the backlog, and the backlog's own
  *       write arrives afterward via the reactive push path (never `QueryUnchanged` — see protocol.ts)
  *       with `pendingMutations()` emptying.
- *   (4) old-client compat — a raw (no `HelipodClient`) `ws` client that sends `ModifyQuerySet`
+ *   (4) old-client compat — a raw (no `ConcileClient`) `ws` client that sends `ModifyQuerySet`
  *       without ever echoing `resultHash`, even on a second subscribe AFTER already having received
  *       hashed `QueryUpdated`s, never receives `QueryUnchanged` — full sends only, byte-compatible
  *       degradation for a peer that predates this feature.
@@ -43,14 +43,14 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import WebSocket from "ws";
-import { v, defineSchema, defineTable } from "@helipod/values";
-import type { Value } from "@helipod/values";
-import { query, mutation } from "@helipod/executor";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { createEmbeddedRuntime, type EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { HelipodClient, webSocketTransport, anyApi, type ClientTransport } from "@helipod/client";
-import { fsOutbox } from "@helipod/client/outbox-fs";
-import type { ClientMessage, ServerMessage, QueryRequest } from "@helipod/sync";
+import { v, defineSchema, defineTable } from "@concile/values";
+import type { Value } from "@concile/values";
+import { query, mutation } from "@concile/executor";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { createEmbeddedRuntime, type EmbeddedRuntime } from "@concile/runtime-embedded";
+import { ConcileClient, webSocketTransport, anyApi, type ClientTransport } from "@concile/client";
+import { fsOutbox } from "@concile/client/outbox-fs";
+import type { ClientMessage, ServerMessage, QueryRequest } from "@concile/sync";
 import { loadProject, startDevServer, type DevServer } from "../src/index";
 
 /* -------------------------------------------------------------------------- */
@@ -278,7 +278,7 @@ describe("resume E2E (1) — all-unchanged resume", () => {
     const proxy = await tcpProxy(server.port);
     const wsUrl = `ws://127.0.0.1:${proxy.port}/api/sync`;
     const recorded = recordingTransport(nodeWsTransport(wsUrl));
-    const client = new HelipodClient(recorded.transport);
+    const client = new ConcileClient(recorded.transport);
     try {
       const framesA: unknown[][] = [];
       const framesB: unknown[][] = [];
@@ -325,8 +325,8 @@ describe("resume E2E (2) — one query changed while disconnected", () => {
     const wsUrl = `ws://127.0.0.1:${proxy.port}/api/sync`;
     const directUrl = `ws://127.0.0.1:${server.port}/api/sync`;
     const recorded = recordingTransport(nodeWsTransport(wsUrl));
-    const client = new HelipodClient(recorded.transport);
-    const other = new HelipodClient(webSocketTransport(directUrl, { reconnect: false }));
+    const client = new ConcileClient(recorded.transport);
+    const other = new ConcileClient(webSocketTransport(directUrl, { reconnect: false }));
     try {
       const framesA: unknown[][] = [];
       const framesB: unknown[][] = [];
@@ -401,7 +401,7 @@ describe("resume E2E (3) — outbox composition: resume Unchanged + backlog drai
     const transport = nodeWsTransport(wsUrl);
     const recorded = recordingTransport(transport);
     const outbox = fsOutbox({ dir });
-    const client = new HelipodClient(recorded.transport, { outbox, outboxLocks: null, outboxDrainIntervalMs: 0 });
+    const client = new ConcileClient(recorded.transport, { outbox, outboxLocks: null, outboxDrainIntervalMs: 0 });
     try {
       const framesA: unknown[][] = [];
       const framesB: unknown[][] = [];

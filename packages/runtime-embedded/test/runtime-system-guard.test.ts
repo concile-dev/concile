@@ -1,10 +1,10 @@
 // packages/runtime-embedded/test/runtime-system-guard.test.ts
 // Regression test: _system:* functions must NOT be reachable via the public `run()` or sync surface.
 import { describe, it, expect } from "vitest";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { encodeStorageIndexId } from "@helipod/id-codec";
-import { SimpleIndexCatalog, InMemoryLogSink, mutation, query, type RegisteredFunction } from "@helipod/executor";
-import { DocumentNotFoundError } from "@helipod/errors";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { encodeStorageIndexId } from "@concile/id-codec";
+import { SimpleIndexCatalog, InMemoryLogSink, mutation, query, type RegisteredFunction } from "@concile/executor";
+import { DocumentNotFoundError } from "@concile/errors";
 import { EmbeddedRuntime } from "../src/index";
 
 const TABLE_NUM = 20001;

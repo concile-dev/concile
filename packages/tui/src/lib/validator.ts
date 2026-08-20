@@ -1,5 +1,5 @@
 /**
- * Renders a `ValidatorJSON` (helipod's schema/argument type representation) as the
+ * Renders a `ValidatorJSON` (concile's schema/argument type representation) as the
  * source-like string a developer wrote — `v.string()`, `v.id("users")`,
  * `v.array(v.object({…}))`. Used by the Schema screen and the function runner so
  * both speak the same language as the user's `schema.ts`.

@@ -1,4 +1,4 @@
-/* Helipod Enterprise. Licensed under the Helipod Commercial License — see ee/LICENSE. */
+/* Concile Enterprise. Licensed under the Concile Commercial License — see ee/LICENSE. */
 /**
  * Thrown when this node's epoch has been superseded by another writer (Fenced Frontier B1, D2/D3).
  * Two sources:

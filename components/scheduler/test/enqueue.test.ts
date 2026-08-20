@@ -1,6 +1,6 @@
 // components/scheduler/test/enqueue.test.ts
 import { describe, it, expect } from "vitest";
-import { mutation } from "@helipod/executor";
+import { mutation } from "@concile/executor";
 import { makeRuntimeWithScheduler, readTable } from "./helpers";
 
 describe("ctx.scheduler — transactional enqueue", () => {

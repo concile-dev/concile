@@ -1,10 +1,10 @@
 import { it, expect } from "vitest";
-import { createTestHelipod } from "../../src";
+import { createTestConcile } from "../../src";
 import { me, identityProbe } from "../fixtures/whoami";
-import { defineSchema } from "@helipod/values";
+import { defineSchema } from "@concile/values";
 
 it("withIdentity sets the ambient identity token on the same backend (via a context provider — the real path)", async () => {
-  const t = await createTestHelipod({
+  const t = await createTestConcile({
     modules: { "whoami.ts": { me }, "schema.ts": { default: defineSchema({}) } },
     components: [identityProbe],
   });

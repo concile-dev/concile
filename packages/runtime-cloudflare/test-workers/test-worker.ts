@@ -3,13 +3,13 @@
  * classes:
  *   - `SqlProbeDO` — a bare DO used to reach the REAL `ctx.storage.sql` / `transactionSync` for the
  *     `DoSqliteAdapter` conformance (`runInDurableObject`).
- *   - `FixtureHelipodDO` — the real DO host booting the minimal fixture app, for the serve →
+ *   - `FixtureConcileDO` — the real DO host booting the minimal fixture app, for the serve →
  *     subscribe → commit → push proof inside workerd.
  */
-import { query, mutation } from "@helipod/executor";
-import { v, defineSchema, defineTable } from "@helipod/values";
-import type { LoadedProject } from "@helipod/cli/project";
-import { HelipodDurableObject, type DurableObjectAppConfig } from "@helipod/runtime-cloudflare";
+import { query, mutation } from "@concile/executor";
+import { v, defineSchema, defineTable } from "@concile/values";
+import type { LoadedProject } from "@concile/cli/project";
+import { ConcileDurableObject, type DurableObjectAppConfig } from "@concile/runtime-cloudflare";
 
 /** A bare DO exposing its storage — the test reaches `state.storage.sql` via `runInDurableObject`. */
 export class SqlProbeDO {
@@ -39,7 +39,7 @@ const messages = {
 };
 const loaded: LoadedProject = { schema, modules: { messages } };
 
-export class FixtureHelipodDO extends HelipodDurableObject {
+export class FixtureConcileDO extends ConcileDurableObject {
   protected appConfig(): DurableObjectAppConfig {
     return { loaded, adminKey: "workerd-test-admin-key" };
   }
@@ -65,6 +65,6 @@ export { GlobalReactivityDO } from "./global-reactivity-fixture";
 // A Worker needs a default handler even when tests drive the DOs directly.
 export default {
   async fetch(): Promise<Response> {
-    return new Response("helipod do test worker");
+    return new Response("concile do test worker");
   },
 };

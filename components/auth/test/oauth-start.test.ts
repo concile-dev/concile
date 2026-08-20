@@ -1,9 +1,9 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { defineSchema } from "@helipod/values";
-import { composeComponents } from "@helipod/component";
-import { EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { SqliteDocStore, NodeSqliteAdapter } from "@helipod/docstore-sqlite";
-import { query, type QueryCtx } from "@helipod/executor";
+import { defineSchema } from "@concile/values";
+import { composeComponents } from "@concile/component";
+import { EmbeddedRuntime } from "@concile/runtime-embedded";
+import { SqliteDocStore, NodeSqliteAdapter } from "@concile/docstore-sqlite";
+import { query, type QueryCtx } from "@concile/executor";
 import { defineAuth } from "../src/component";
 import { oauthProvider, githubProvider } from "../src/oauth";
 import { sha256base64url } from "../src/crypto";

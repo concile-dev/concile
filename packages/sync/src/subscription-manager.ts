@@ -6,8 +6,8 @@
  * matching via the `byTable` index. Read ranges are deserialized ONCE at registration, never per
  * write. Semantics are identical to the retired linear scan (proven by the differential oracle test).
  */
-import type { JSONValue } from "@helipod/values";
-import { deserializeKeyRange, IntervalIndex, type KeyRange, type SerializedKeyRange } from "@helipod/index-key-codec";
+import type { JSONValue } from "@concile/values";
+import { deserializeKeyRange, IntervalIndex, type KeyRange, type SerializedKeyRange } from "@concile/index-key-codec";
 
 export type MatchMode = "table" | "range";
 

@@ -1,10 +1,10 @@
 /**
- * Boot a Helipod `EmbeddedRuntime` INSIDE a Durable Object, over the DO's own SQLite.
+ * Boot a Concile `EmbeddedRuntime` INSIDE a Durable Object, over the DO's own SQLite.
  *
  * This is the DO-shaped counterpart to the CLI's `bootLoaded` — but deliberately lean and
  * workerd-safe: it uses NONE of `bootLoaded`'s node/fs machinery (no `NodeSqliteAdapter`, no
  * blobstore-fs, no object-store/fleet/replica). It reuses the SHIPPED PURE pieces:
- *   - `loadProject` (via `@helipod/cli/project`, the subpath that does NOT pull `node:http`) to
+ *   - `loadProject` (via `@concile/cli/project`, the subpath that does NOT pull `node:http`) to
  *     compose the statically-bundled `{ schema, modules }` + components into catalog/moduleMap/
  *     tableNumbers/contextProviders/drivers/bootSteps/routes (§4.2 — bundling replaces the dir scan);
  *   - `new SqliteDocStore(new DoSqliteAdapter({ sql, transactionSync }))` for storage (Slice 2);
@@ -12,7 +12,7 @@
  *   - `AdminApi` for the `/_admin/*` + dashboard-browse routes.
  *
  * FILE STORAGE (`ctx.storage`) is wired HERE when a `blobStore` is injected (an R2-backed
- * `@helipod/blobstore-r2` on the DO — the engine stays blob-store-neutral, same story as the
+ * `@concile/blobstore-r2` on the DO — the engine stays blob-store-neutral, same story as the
  * `DocStore`). The `_storage` TABLE always exists (loadProject injects it) so schemas that reference
  * `Id<"_storage">` compile regardless; with a `blobStore`, the byte-moving provider (`ctx.storage`),
  * the orphan reaper (riding the wake seam), and the `/api/storage/*` serve routes are all composed —
@@ -22,16 +22,16 @@
  * Byte I/O never runs in the transactor turn: the provider's writes are metadata-only, and the actual
  * `blobStore.store`/`read` happens in the DO's `fetch` handler serving `/api/storage/*` (§8.9's rule).
  */
-import { SqliteDocStore } from "@helipod/docstore-sqlite";
-import { DoSqliteAdapter, type SqlStorageLike, type TransactionSyncFn } from "@helipod/docstore-do-sqlite";
-import { D1DocStore, type D1Client } from "@helipod/docstore-d1";
-import { createEmbeddedRuntime, type EmbeddedRuntime } from "@helipod/runtime-embedded";
-import { InMemoryLogSink } from "@helipod/executor";
-import { AdminApi, systemModules, browseTableModule, verifyAdminKey } from "@helipod/admin";
-import { loadProject, type LoadedProject, type ProjectArtifacts } from "@helipod/cli/project";
-import type { ComponentDefinition, WakeHost } from "@helipod/component";
-import type { BlobStore } from "@helipod/blobstore";
-import type { JSONValue, SchemaDefinitionJSON } from "@helipod/values";
+import { SqliteDocStore } from "@concile/docstore-sqlite";
+import { DoSqliteAdapter, type SqlStorageLike, type TransactionSyncFn } from "@concile/docstore-do-sqlite";
+import { D1DocStore, type D1Client } from "@concile/docstore-d1";
+import { createEmbeddedRuntime, type EmbeddedRuntime } from "@concile/runtime-embedded";
+import { InMemoryLogSink } from "@concile/executor";
+import { AdminApi, systemModules, browseTableModule, verifyAdminKey } from "@concile/admin";
+import { loadProject, type LoadedProject, type ProjectArtifacts } from "@concile/cli/project";
+import type { ComponentDefinition, WakeHost } from "@concile/component";
+import type { BlobStore } from "@concile/blobstore";
+import type { JSONValue, SchemaDefinitionJSON } from "@concile/values";
 import {
   storageContextProvider,
   storageReaper,
@@ -39,13 +39,13 @@ import {
   storageRoutes,
   type StorageRoute,
   type StorageRouteDeps,
-} from "@helipod/storage";
+} from "@concile/storage";
 import { globalReactivityPollerDriver } from "./global-reactivity-driver";
 
 export interface DurableObjectBootInput {
   /** The statically-bundled app: its schema default-export + `path:name → module` map (§4.2). */
   loaded: LoadedProject;
-  /** Composed components (`@helipod/scheduler`/`workflow`/`triggers` …), from `helipod.config.ts`.
+  /** Composed components (`@concile/scheduler`/`workflow`/`triggers` …), from `concile.config.ts`.
    *  Fixed at build time on a DO — adding/removing components needs a redeploy (like the single binary). */
   components?: ComponentDefinition[];
   /** `ctx.storage.sql`. */
@@ -56,7 +56,7 @@ export interface DurableObjectBootInput {
    *  capability-token signing key (same as the container path — see `storageContextProvider`). */
   adminKey: string;
   /** The R2-backed (or any) `BlobStore` for file storage. Injected by the DO host (`env.R2` →
-   *  `@helipod/blobstore-r2`), never imported — the engine stays blob-store-neutral. Absent → file
+   *  `@concile/blobstore-r2`), never imported — the engine stays blob-store-neutral. Absent → file
    *  storage is inert (no `ctx.storage` provider, no reaper, no `/api/storage/*` routes). */
   blobStore?: BlobStore;
   /** M2b: the Cloudflare D1 binding (`env.DB`) for `.global()` tables, wired here into a `D1DocStore`
