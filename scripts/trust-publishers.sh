@@ -48,13 +48,15 @@ fi
 echo "found ${#PKGS[@]} publishable packages"
 
 # --- the command we run per package ------------------------------------------
-# `npm trust github <pkg> --repo <owner/repo> --file <workflow> --allow-publish --yes`
-# ships in npm >= 11.15. If your npm names a flag differently, adjust here after
-# checking `command npm trust --help` — the dry run prints exactly what will run.
+# Verified against `npm trust github --help` (npm 11.11):
+#   npm trust github <pkg> --file <workflow> --repository <owner/repo> --yes
+# NOTE: `npm trust` needs a real `npm login` session — a publish/automation token
+# that bypasses 2FA is REFUSED (403 "may not perform this action"). Run
+# `command npm login` (web + 2FA) before `--apply`.
 trust_cmd() {
   local pkg="$1"
-  printf 'command npm trust github %q --repo %q --file %q --allow-publish --yes' \
-    "$pkg" "$REPO" "$WORKFLOW"
+  printf 'command npm trust github %q --file %q --repository %q --yes' \
+    "$pkg" "$WORKFLOW" "$REPO"
 }
 
 if [[ $APPLY -eq 0 ]]; then
@@ -71,28 +73,33 @@ fi
 
 # --- preflight (only when actually applying) ---------------------------------
 NPM_VER="$(command npm --version 2>/dev/null || echo 0.0.0)"
-# require >= 11.15.0
-if [[ "$(printf '%s\n11.15.0\n' "$NPM_VER" | sort -V | head -1)" != "11.15.0" ]]; then
-  echo "npm $NPM_VER is too old for 'npm trust' — need >= 11.15.0." >&2
-  echo "Run:  npm install -g npm@latest" >&2
+# `npm trust` exists from npm 11.11; feature-detect instead of pinning a version.
+if ! command npm trust --help >/dev/null 2>&1; then
+  echo "this npm ($NPM_VER) has no 'npm trust' command — upgrade npm." >&2
   exit 1
 fi
+# Must be a real login session, NOT a token: a granular/automation token that
+# bypasses 2FA is refused (403). `npm login` (web + 2FA) is required.
 if ! command npm whoami >/dev/null 2>&1; then
-  echo "not logged in to npm — run 'command npm login' first." >&2
+  echo "not logged in to npm — run 'command npm login' first (a publish token will NOT work)." >&2
   exit 1
 fi
 echo "npm $NPM_VER, logged in as $(command npm whoami). configuring ${#PKGS[@]} packages…"
+echo "The FIRST call opens a browser to authenticate — check \"skip 2FA for the"
+echo "next 5 minutes\" so the remaining packages configure without prompting."
 echo
 
 # --- apply, skipping (not stranding) any that fail ---------------------------
+# stderr is NOT suppressed: npm prints the 2FA/web-auth URL there, and you need
+# to see and act on it for the first package.
 ok=0; failed=()
 for pkg in "${PKGS[@]}"; do
-  printf '  %-34s ' "$pkg"
-  if eval "$(trust_cmd "$pkg")" >/dev/null 2>&1; then
-    echo "trusted"
+  echo "→ $pkg"
+  if eval "$(trust_cmd "$pkg")" >/dev/null; then
+    echo "  ✓ trusted"
     ok=$((ok + 1))
   else
-    echo "FAILED"
+    echo "  ✗ FAILED"
     failed+=("$pkg")
   fi
   sleep 2   # stay under npm's write rate limit
