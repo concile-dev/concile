@@ -1,5 +1,5 @@
 <div align="center">
-  <img src=".github/assets/hero.svg" alt="Concile — the backend that keeps your data alive" width="100%" />
+  <img src=".github/assets/hero.svg" alt="Concile, the backend that keeps your data alive" width="100%" />
 </div>
 
 <div align="center">
@@ -12,31 +12,33 @@
 
 **Write a function. Watch your whole app come alive.**
 
-Concile is the open-source backend where your data updates itself — no servers to wire, no APIs to glue, no refresh button to press.
+Concile is the open-source backend where your data updates itself. No servers to wire. No APIs to glue. No refresh button to press.
 
 </div>
 
 ---
 
-## We build backends the hard way — so let us stop
+## Building a backend is too hard. Let us fix that.
 
-For sixty years, software has asked the same toll at the same gate. You arrive with an idea. Between that idea and a living app stands a wall: a database to run, a server to keep breathing, an API to design, a socket to open, a cache to invalidate, and a thousand lines of glue that rot the moment you look away.
+You have an idea. Between that idea and a real app stands a wall.
 
-Most of the work was never the idea. It was the plumbing.
+A database to run. A server to keep alive. An API to design. A socket to open. A cache to clear. And a thousand lines of glue that break the moment you look away.
 
-**Concile tears down the wall.**
+Most of that work was never your idea. It was plumbing.
 
-You write one ordinary function — plain TypeScript. Concile runs it on the server, safely, inside a transaction. And the moment the data behind it changes — a new message, a new order, a new *anything* — every screen watching that data redraws itself, instantly, over a live connection.
+**Concile removes the plumbing.**
 
-No polling. No refresh. No glue. Your app is simply, always, **alive**.
+You write one function in plain TypeScript. Concile runs it on the server, safely, inside a transaction. When the data behind it changes, every screen watching that data updates on its own. A new message. A new order. Anything.
 
-> Ask not how much you must build to serve your data — ask what your data can do the instant it changes.
+No polling. No refresh. No glue. Your app is simply, always, alive.
+
+> Do not ask how much you must build to serve your data. Ask what your data can do the instant it changes.
 
 ---
 
 ## See the magic in ten lines
 
-**On the server** — one file, plain functions:
+On the server. One file, plain functions:
 
 ```ts
 // concile/tasks.ts
@@ -44,20 +46,22 @@ import { query, mutation } from "./_generated/server";
 
 export const list = query(async (ctx) => ctx.db.query("tasks").collect());
 
-export const add  = mutation(async (ctx, { text }) => {
+export const add = mutation(async (ctx, { text }) => {
   await ctx.db.insert("tasks", { text, done: false });
 });
 ```
 
-**In the browser** — one hook, and it's *live forever*:
+In the browser. One hook, and it stays live:
 
 ```tsx
 // App.tsx
-const tasks = useQuery(api.tasks.list);   // ← call add() from any device, on Earth,
-                                          //   and this list re-renders here. Instantly.
+const tasks = useQuery(api.tasks.list);
+// Call add() from any device on Earth. This list re-renders here. Instantly.
 ```
 
-That's it. There is no step three. You never wrote a socket, an endpoint, a poller, or a cache — and yet every browser, on every device, stays in perfect sync. That is the whole promise of Concile, and it is real today.
+That is it. There is no step three.
+
+You never wrote a socket. You never wrote an endpoint. You never wrote a poller or a cache. Yet every browser, on every device, stays in perfect sync. That is the whole promise of Concile. And it is real today.
 
 ---
 
@@ -65,53 +69,63 @@ That's it. There is no step three. You never wrote a socket, an endpoint, a poll
 
 ```bash
 npm i concile        # or: bun add concile
-npx concile dev      # watches your functions, serves live sync + a dashboard
+npx concile dev      # watches your functions, serves live sync and a dashboard
 ```
 
-Open the dashboard, add a row, and watch it appear in your app before your finger leaves the key. When you're ready for the world:
+Open the dashboard. Add a row. Watch it appear in your app before your finger leaves the key.
+
+Ready for the world?
 
 ```bash
-docker compose up    # your whole backend — one container, one volume, zero config
+docker compose up    # one container, one volume, zero config
 ```
 
 ---
 
 ## What you get
 
-- ⚡ **Reactivity that isn't polling.** A write only re-runs the queries whose exact data it touched — range-precise, not "refetch everything." Milliseconds, not seconds.
-- 🧠 **Just TypeScript.** Queries, mutations, `action`s for side effects, and `httpAction` routes for webhooks. No YAML, no ORM, no REST boilerplate. Fully typed end to end, generated for you.
-- 🗄️ **A database that comes in the box.** Embedded SQLite by default — zero config. Point at **Postgres** with one flag when you outgrow it. Same code, no migrations.
-- 📦 **Files, auth, jobs — built in.** File storage (filesystem or S3/R2), plus opt-in components for **auth**, **authz**, a durable **scheduler** (cron + retries), and **workflows** (durable multi-step with saga/compensation).
-- 🖥️ **A live dashboard.** Browse data as it changes, tail logs, and run functions by hand — shipped, not sold.
-- 🏠 **Yours to host.** `docker compose up`, or compile the entire app into **a single binary**. Runs on a $5 VPS.
+- ⚡ **Real reactivity, not polling.** A write only re-runs the queries whose data it actually touched. You get milliseconds, not seconds.
+- 🧠 **Just TypeScript.** Queries, mutations, actions for side effects, and HTTP routes for webhooks. No YAML. No ORM. No REST boilerplate. Fully typed, end to end.
+- 🗄️ **A database in the box.** Embedded SQLite by default, zero config. Switch to Postgres with one flag when you grow. Same code, no migrations.
+- 📦 **Files, auth, and jobs built in.** File storage on disk or S3/R2. Opt-in components for auth, authorization, a durable scheduler (cron and retries), and durable workflows.
+- 🖥️ **A live dashboard.** Browse your data as it changes. Tail your logs. Run functions by hand. It ships in the box.
+- 🏠 **Yours to host.** Run `docker compose up`, or compile the whole app into a single binary. It runs on a $5 server.
 
 ---
 
-## Blazing fast — and we can prove it
+## It is fast, and we can prove it
 
-We don't ask you to take performance on faith. A single **1-vCPU / 512 MB container serves 2,000 live subscribers at ~12% CPU** — ~102 ms hot-push median, ~21 KB of memory per connection — measured by a benchmark suite that boots this repo's own Docker image under enforced budgets. Nodes scale out horizontally with proven isolation and ~15 ms cross-node propagation. [See the numbers →](benchmarks/docs/docker-fleet-findings.md)
+We do not ask you to trust us on speed.
+
+One container with 1 vCPU and 512 MB serves 2,000 live subscribers at about 12% CPU. Hot pushes land in about 102 ms. Each connection costs about 21 KB of memory.
+
+These numbers are measured, not guessed. A benchmark suite boots this repo's own Docker image under strict limits. Nodes also scale out sideways, with proven isolation and about 15 ms between them. [See the numbers.](benchmarks/docs/docker-fleet-findings.md)
 
 ---
 
 ## Coming from Convex?
 
-Concile speaks Convex's dialect — the same value system, validators, and `query`/`mutation`/`action` shape — so your instincts carry over and much of your app moves with a codemod. But make no mistake: **Concile is its own project, with its own roadmap and its own home.** Compatibility is a door we hold open, not the house we live in.
+Concile speaks Convex's dialect. Same value system. Same validators. The same query, mutation, and action shape. Your instincts carry over, and a codemod moves most of your app.
+
+But Concile is its own project. Its own roadmap. Its own home. We keep the door open for you. We do not live in that house.
 
 ---
 
 ## Your data. Your server. Forever.
 
-Concile is **[FSL-1.1-Apache-2.0](LICENSE)**: free to use, modify, and self-host — including commercially — with one rule (you can't resell Concile itself as a hosted service). Every release turns into full **Apache 2.0 after two years**. Single-node self-hosting and deploy-anywhere are free, always. No vendor. No lock-in. No rug to pull.
+Concile uses the [FSL-1.1-Apache-2.0](LICENSE) license. You can use it, change it, and self-host it, including for commercial work. There is one rule: you cannot resell Concile itself as a hosted service. Every release turns into full Apache 2.0 after two years. Self-hosting on a single node is free, always. No vendor. No lock-in. No rug to pull.
 
 ---
 
-## The invitation
+## Join us
 
-Concile is **pre-1.0, and working end to end** — the reactive engine and production tooling are built and tested on both Node and Bun today. The distributed tier and search are on the horizon.
+Concile is pre-1.0, and it works today, end to end. The reactive engine and the production tooling are built and tested on both Node and Bun. The distributed tier and search come next.
 
-We are building the backend we always wished existed: powerful for the veteran, and gentle enough that someone who has never heard the word "backend" can ship a living app this afternoon. If that is a future you want to live in, there is one thing you can do right now.
+We are building the backend we always wished existed. Strong enough for the expert. Simple enough that someone who has never heard the word "backend" can ship a living app this afternoon.
 
-**⭐ Star the repo — plant your flag — and [build something alive](https://concile.dev).**
+If you want that future, there is one thing you can do right now.
+
+**⭐ Star the repo. Plant your flag. [Build something alive.](https://concile.dev)**
 
 <div align="center">
 

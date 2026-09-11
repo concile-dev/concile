@@ -1,7 +1,7 @@
 {
   "name": "@concile/tui",
   "version": "0.1.5",
-  "description": "The concile terminal dashboard — OpenTUI-rendered, vendored termcn components, concile dark theme.",
+  "description": "The concile terminal dashboard. OpenTUI-rendered, with vendored termcn components and a concile dark theme.",
   "type": "module",
   "license": "FSL-1.1-Apache-2.0",
   "exports": {

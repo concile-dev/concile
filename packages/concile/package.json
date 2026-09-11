@@ -1,7 +1,7 @@
 {
   "name": "concile",
   "version": "0.1.5",
-  "description": "The reactive backend you self-host — one package: server functions, typed client, React hooks, and the concile CLI.",
+  "description": "The reactive backend you self-host, in one package: server functions, a typed client, React hooks, and the concile CLI.",
   "type": "module",
   "license": "FSL-1.1-Apache-2.0",
   "bin": {
