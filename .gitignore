@@ -43,5 +43,11 @@ concile-chat-working.png
 
 # local-only (excluded from public repo)
 /benchmarks/
-/docs_old/
+/.intent/
 .gstack/
+
+# AI-agent tooling — kept local, not shipped to the public repo
+/CLAUDE.md
+/AGENTS.md
+/.agents/
+/skills-lock.json

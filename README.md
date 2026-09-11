@@ -1,8 +1,8 @@
 # Concile
 
-A Convex-compatible, self-hostable reactive backend. Write TypeScript query/mutation functions, run them server-side and transactionally, and get **reactive** results — when the underlying data changes, subscribed clients are pushed updates over a WebSocket. **Lightweight by default, scalable on demand** — the same app code runs as a single binary on a $5 VPS or (eventually) as a distributed fleet (see [docs/dev/architecture/scalability-spectrum.md](docs/dev/architecture/scalability-spectrum.md)).
+A Convex-compatible, self-hostable reactive backend. Write TypeScript query/mutation functions, run them server-side and transactionally, and get **reactive** results — when the underlying data changes, subscribed clients are pushed updates over a WebSocket. **Lightweight by default, scalable on demand** — the same app code runs as a single binary on a $5 VPS or (eventually) as a distributed fleet (see [system design](website/content/docs/contributing/architecture/system-design.mdx)).
 
-> Status: **pre-1.0, but working end-to-end.** The reactive engine and Tier 0 production tooling are built and tested on both Node and Bun. Distributed Tier 2 and search/vector remain deferred. Architecture lives in [docs/dev/architecture/](docs/dev/architecture/); this is a clean-room implementation (see [CLAUDE.md](CLAUDE.md)).
+> Status: **pre-1.0, but working end-to-end.** The reactive engine and Tier 0 production tooling are built and tested on both Node and Bun. Distributed Tier 2 and search/vector remain deferred. Architecture lives in [website/content/docs/contributing/architecture/](website/content/docs/contributing/architecture/); this is a clean-room implementation.
 
 ## What works today
 

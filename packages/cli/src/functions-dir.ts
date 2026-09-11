@@ -20,7 +20,7 @@ export interface ResolvedFunctionsDir {
  *
  * There is deliberately NO implicit fallback to `convex/`: a Convex layout is
  * converted by `concile migrate`, never adopted silently. See
- * docs_old/superpowers/specs/2026-06-06-functions-dir-rename-design.md.
+ * .intent/superpowers/specs/2026-06-06-functions-dir-rename-design.md.
  *
  * With an explicit flag the project root is that path's parent, so a caller can point at a
  * functions directory anywhere. Without one the root is the cwd, which is what makes it safe
