@@ -20,13 +20,19 @@ Concile is the open-source backend where your data updates itself. No servers to
 
 ## Building a backend is too hard. Let us fix that.
 
-You have an idea. Between that idea and a real app stands a wall.
-
-A database to run. A server to keep alive. An API to design. A socket to open. A cache to clear. And a thousand lines of glue that break the moment you look away.
-
-Most of that work was never your idea. It was plumbing.
+You have an idea. Between that idea and a real app stands a wall. Most of that wall was never your idea. It was plumbing.
 
 **Concile removes the plumbing.**
+
+| The old way 😩 | With Concile ✨ |
+| :-- | :-- |
+| Run and babysit a database | An embedded database, already running |
+| Keep a server alive | One command: `npx concile dev` |
+| Design and version an API | Call your function by name, fully typed |
+| Open a socket for live updates | Every screen updates on its own |
+| Add a cache, then clear it | Nothing to cache, nothing to invalidate |
+| Write a thousand lines of glue | Write one function in plain TypeScript |
+| It breaks the moment you look away | Change a function, everything stays in sync |
 
 You write one function in plain TypeScript. Concile runs it on the server, safely, inside a transaction. When the data behind it changes, every screen watching that data updates on its own. A new message. A new order. Anything.
 
