@@ -1,131 +1,120 @@
-# Concile
+<div align="center">
+  <img src=".github/assets/hero.svg" alt="Concile — the backend that keeps your data alive" width="100%" />
+</div>
 
-A Convex-compatible, self-hostable reactive backend. Write TypeScript query/mutation functions, run them server-side and transactionally, and get **reactive** results — when the underlying data changes, subscribed clients are pushed updates over a WebSocket. **Lightweight by default, scalable on demand** — the same app code runs as a single binary on a $5 VPS or (eventually) as a distributed fleet (see [system design](website/content/docs/contributing/architecture/system-design.mdx)).
+<div align="center">
 
-> Status: **pre-1.0, but working end-to-end.** The reactive engine and Tier 0 production tooling are built and tested on both Node and Bun. Distributed Tier 2 and search/vector remain deferred. Architecture lives in [website/content/docs/contributing/architecture/](website/content/docs/contributing/architecture/); this is a clean-room implementation.
+[![npm](https://img.shields.io/npm/v/concile?color=22d3ee&label=concile&logo=npm)](https://www.npmjs.com/package/concile)
+[![license](https://img.shields.io/badge/license-FSL--1.1--Apache--2.0-6366f1)](LICENSE)
+[![build](https://img.shields.io/github/actions/workflow/status/concile-dev/concile/ci.yml?branch=main&label=CI)](https://github.com/concile-dev/concile/actions)
+[![stars](https://img.shields.io/github/stars/concile-dev/concile?style=flat&color=eab308)](https://github.com/concile-dev/concile/stargazers)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-22c55e)](CONTRIBUTING.md)
 
-## What works today
+**Write a function. Watch your whole app come alive.**
 
-- **Reactive core** — MVCC document-log storage, a single-writer OCC transactor, a query engine with cursor pagination, and range-precise subscription invalidation: a write only re-runs the subscriptions whose read-set it intersects. No polling.
-- **Pluggable storage** — everything rides a narrow `DocStore` seam. Ships **embedded SQLite** (zero-config, single-file, the default) and **Postgres** (single-node, opt-in via a connection string, no app-schema migrations). The engine never learns which database it's on.
-- **The `concile` CLI** — `dev` (watch + hot-reload + serve sync/HTTP), `serve` (production entrypoint), `deploy` (live hot-swap onto a running server), `build` (compile the app to a single self-contained binary), and typed `codegen`.
-- **Client SDK** — framework-agnostic client + `useQuery`/`useMutation`/`useAction` React hooks over the WebSocket sync protocol, plus a fully typed `api` from codegen.
-- **Dashboard** ([apps/dashboard](apps/dashboard)) — a live data browser (reactive via admin subscriptions, cursor pagination, structured filters), a logs viewer, and a function runner.
-- **Functions beyond queries/mutations** — `action`s (side-effect escape hatch that runs outside the transaction: `fetch`, clock, `ctx.runQuery`/`runMutation`/`runAction`), `httpAction` + an `httpRouter()` for webhooks/custom HTTP endpoints.
-- **Pluggable components** ([components/](components/)) — opt-in per project via `concile.config.ts`: **auth**, **authz**, **scheduler** (`ctx.scheduler.runAfter`/`runAt`, crons, retries/backoff), and **workflow** (durable multi-step workflows with deterministic replay, `waitForEvent`, and saga/compensation).
-- **File storage** — always-on (not opt-in): a `_storage` system table + `Id<"_storage">` + `ctx.storage`, on a pluggable `BlobStore` seam (**embedded filesystem**, zero-config default, or **S3-compatible object storage** for scale). Two-phase uploads (proxied through the engine on FS, presigned direct-to-bucket on S3), private-by-default bearer-token serving, and a background reaper that reclaims abandoned/deleted blobs. See [docs/enduser/files.md](docs/enduser/files.md).
-- **Self-host** — `docker compose up` brings up the engine + dashboard on a persistent volume; a single-binary build embeds everything but the database file.
+Concile is the open-source backend where your data updates itself — no servers to wire, no APIs to glue, no refresh button to press.
 
-## Measured performance
+</div>
 
-A single **1-vCPU / 512MB container of the shipped image serves 2,000 live reactive subscribers at ~12% CPU** (~102ms hot-push p50, ~21KB RSS per connection, disconnect-storm recovery in the reconnect window), and fleet nodes add horizontally with proven cgroup isolation (hammering one node moves its neighbors by −0.7%) and 15–16ms cross-node propagation. Measured, not estimated — the numbers come from a committed benchmark suite that boots the repo's own `Dockerfile` image under enforced cpu/memory budgets, and each finding documents its own limits (the capacity run hit Docker Desktop's port-forward ceiling before the node's; all containers shared one host — no multi-machine claim is made).
+---
 
-- [benchmarks/docs/docker-fleet-findings.md](benchmarks/docs/docker-fleet-findings.md) — the budget capacity table, isolation proof, and WAN-latency multipliers
-- [benchmarks/docs/connections-findings.md](benchmarks/docs/connections-findings.md) — single-node connection scale (10,000 subscribers/node measured clean)
-- [benchmarks/docs/fleet-connections-findings.md](benchmarks/docs/fleet-connections-findings.md) — multi-node fleet behavior: cross-node latency, failover, parallelization
+## We build backends the hard way — so let us stop
 
-Reproduce with `bun run bench:dockerfleet` (requires Docker); baselines are committed under [benchmarks/baselines/](benchmarks/baselines/).
+For sixty years, software has asked the same toll at the same gate. You arrive with an idea. Between that idea and a living app stands a wall: a database to run, a server to keep breathing, an API to design, a socket to open, a cache to invalidate, and a thousand lines of glue that rot the moment you look away.
 
-## Repository layout
+Most of the work was never the idea. It was the plumbing.
 
-```
-packages/            # the engine, in dependency order (see design §3)
-  values/            # Convex-compatible value system, validators, schema
-  errors/            # structured engine error hierarchy
-  id-codec/          # document/index id + storage-id encoding
-  index-key-codec/   # order-preserving index-key encoding
-  docstore/          # the storage seam (async DocStore contract)
-  docstore-sqlite/   # SQLite adapter — embedded, zero-config default
-  docstore-postgres/ # Postgres adapter — single-node, opt-in via --database-url
-  transactor/        # single-writer OCC transaction manager
-  query-engine/      # query execution + cursor pagination
-  executor/          # isolate-safe syscall executor
-  sync/              # reactive subscription tier (subscribe → write → push)
-  runtime-embedded/  # embedded runtime + loopback/WebSocket transports
-  component/         # component composition (namespaced tables, driver seam)
-  blobstore/         # the byte-storage seam (async BlobStore contract)
-  blobstore-fs/      # filesystem blob adapter — embedded, zero-config default
-  blobstore-s3/      # S3-compatible blob adapter — any bucket, opt-in via --storage-bucket
-  storage/           # _storage system table + ctx.storage facade + upload/serve HTTP routes + orphan reaper
-  codegen/           # typed Doc/Id/api generation
-  admin/             # admin API (data browser, deploy)
-  client/            # framework-agnostic client + React hooks
-  cli/               # the concile CLI (dev / serve / deploy / build / codegen)
-components/          # pluggable, opt-in via concile.config.ts
-  auth/  authz/  scheduler/  workflow/
-apps/
-  dashboard/         # live data browser, logs, function runner
-examples/
-  chat/  auth-demo/  # runnable sample apps that double as integration tests
-docs/
-  enduser/           # public product docs (the eventual docs site)
-  dev/               # engineering: architecture, research, clean-room internals
-  superpowers/       # design specs + implementation plans
+**Concile tears down the wall.**
+
+You write one ordinary function — plain TypeScript. Concile runs it on the server, safely, inside a transaction. And the moment the data behind it changes — a new message, a new order, a new *anything* — every screen watching that data redraws itself, instantly, over a live connection.
+
+No polling. No refresh. No glue. Your app is simply, always, **alive**.
+
+> Ask not how much you must build to serve your data — ask what your data can do the instant it changes.
+
+---
+
+## See the magic in ten lines
+
+**On the server** — one file, plain functions:
+
+```ts
+// concile/tasks.ts
+import { query, mutation } from "./_generated/server";
+
+export const list = query(async (ctx) => ctx.db.query("tasks").collect());
+
+export const add  = mutation(async (ctx, { text }) => {
+  await ctx.db.insert("tasks", { text, done: false });
+});
 ```
 
-## Develop
+**In the browser** — one hook, and it's *live forever*:
 
-Requires **[Bun](https://bun.com) ≥ 1.2** (the package manager + runtime). Node ≥ 22 is a fully-supported *target*, but the dev workflow runs on Bun.
+```tsx
+// App.tsx
+const tasks = useQuery(api.tasks.list);   // ← call add() from any device, on Earth,
+                                          //   and this list re-renders here. Instantly.
+```
+
+That's it. There is no step three. You never wrote a socket, an endpoint, a poller, or a cache — and yet every browser, on every device, stays in perfect sync. That is the whole promise of Concile, and it is real today.
+
+---
+
+## Start in one minute
 
 ```bash
-bun install         # bootstrap the workspace
-bun run build       # build every package (Turborepo, topological)
-bun run test        # run all tests (vitest, under Node)
-bun run typecheck   # tsc --noEmit across packages
-bun run dev         # watch mode
+npm i concile        # or: bun add concile
+npx concile dev      # watches your functions, serves live sync + a dashboard
 ```
 
-Single package, e.g. just the value system:
+Open the dashboard, add a row, and watch it appear in your app before your finger leaves the key. When you're ready for the world:
 
 ```bash
-bun run --filter @concile/values test
-bun run --filter @concile/values test compare   # one test name/file filter
+docker compose up    # your whole backend — one container, one volume, zero config
 ```
 
-## The `concile` CLI
+---
 
-```bash
-concile dev        # local: watch functions, hot-reload, serve sync + HTTP + dashboard
-concile serve      # production: requires CONCILE_ADMIN_KEY, binds 0.0.0.0, graceful shutdown
-concile deploy     # hot-swap functions + additive schema onto a running `serve` (opt-in)
-concile build      # compile the app to a single self-contained binary
-concile codegen    # regenerate the typed api / Doc / Id types
-```
+## What you get
 
-## Run (Tier 0)
+- ⚡ **Reactivity that isn't polling.** A write only re-runs the queries whose exact data it touched — range-precise, not "refetch everything." Milliseconds, not seconds.
+- 🧠 **Just TypeScript.** Queries, mutations, `action`s for side effects, and `httpAction` routes for webhooks. No YAML, no ORM, no REST boilerplate. Fully typed end to end, generated for you.
+- 🗄️ **A database that comes in the box.** Embedded SQLite by default — zero config. Point at **Postgres** with one flag when you outgrow it. Same code, no migrations.
+- 📦 **Files, auth, jobs — built in.** File storage (filesystem or S3/R2), plus opt-in components for **auth**, **authz**, a durable **scheduler** (cron + retries), and **workflows** (durable multi-step with saga/compensation).
+- 🖥️ **A live dashboard.** Browse data as it changes, tail logs, and run functions by hand — shipped, not sold.
+- 🏠 **Yours to host.** `docker compose up`, or compile the entire app into **a single binary**. Runs on a $5 VPS.
 
-```bash
-docker compose up        # one container, one volume — embedded SQLite (zero config)
-```
+---
 
-`concile serve` is the production entrypoint (requires `CONCILE_ADMIN_KEY`); `docker compose up` runs it against a bind-mounted `convex/` with a persistent SQLite volume.
+## Blazing fast — and we can prove it
 
-### Storage: SQLite (default) or Postgres
+We don't ask you to take performance on faith. A single **1-vCPU / 512 MB container serves 2,000 live subscribers at ~12% CPU** — ~102 ms hot-push median, ~21 KB of memory per connection — measured by a benchmark suite that boots this repo's own Docker image under enforced budgets. Nodes scale out horizontally with proven isolation and ~15 ms cross-node propagation. [See the numbers →](benchmarks/docs/docker-fleet-findings.md)
 
-SQLite is the zero-config default and needs nothing. To use **Postgres** instead — same app code, no schema migrations — point the server at a connection string:
+---
 
-```bash
-concile serve --database-url postgres://user:pass@host:5432/db
-# or
-CONCILE_DATABASE_URL=postgres://user:pass@host:5432/db concile serve
-```
+## Coming from Convex?
 
-Postgres is a **single-node** backend (one engine per database — a second fails fast on a single-writer advisory lock); it is durable networked storage, not clustering. See [docs/enduser/self-hosting.md](docs/enduser/self-hosting.md) for a `docker compose` Postgres service, the persistence model, and known limitations.
+Concile speaks Convex's dialect — the same value system, validators, and `query`/`mutation`/`action` shape — so your instincts carry over and much of your app moves with a codemod. But make no mistake: **Concile is its own project, with its own roadmap and its own home.** Compatibility is a door we hold open, not the house we live in.
 
-### File storage: filesystem (default) or S3/R2
+---
 
-File storage is always on — no opt-in needed. The filesystem backend is the zero-config default (`<data-dir>/storage`); point at an S3-compatible bucket instead — same `ctx.storage` app code either way — via flag or env var:
+## Your data. Your server. Forever.
 
-```bash
-concile serve --storage-bucket my-app-uploads --storage-endpoint https://s3.us-east-1.amazonaws.com
-# or
-CONCILE_STORAGE_BUCKET=my-app-uploads concile serve
-```
+Concile is **[FSL-1.1-Apache-2.0](LICENSE)**: free to use, modify, and self-host — including commercially — with one rule (you can't resell Concile itself as a hosted service). Every release turns into full **Apache 2.0 after two years**. Single-node self-hosting and deploy-anywhere are free, always. No vendor. No lock-in. No rug to pull.
 
-`CONCILE_STORAGE_ENDPOINT`/`CONCILE_STORAGE_REGION`/`CONCILE_STORAGE_PUBLIC_URL` plus the standard `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` round out the S3 config (flags win over env, same convention as `--database-url`). See [docs/enduser/files.md](docs/enduser/files.md) for the full guide, including the upload flow and the private-by-default access model.
+---
 
-## License
+## The invitation
 
-[**FSL-1.1-Apache-2.0**](LICENSE) (the Functional Source License, the same license Convex uses): free to use, modify, and self-host — including commercially — but you may not offer Concile itself as a competing hosted service. Each release automatically converts to **Apache 2.0 two years** after it ships. Single-node self-hosting and deploy-anywhere are free forever.
+Concile is **pre-1.0, and working end to end** — the reactive engine and production tooling are built and tested on both Node and Bun today. The distributed tier and search are on the horizon.
 
-The one exception is the [`ee/`](ee/) directory (scale/enterprise modules), which is source-available under a separate [commercial license](ee/LICENSE) and does not convert. See [docs/dev/business-model-and-licensing.md](docs/dev/business-model-and-licensing.md) for the full model.
+We are building the backend we always wished existed: powerful for the veteran, and gentle enough that someone who has never heard the word "backend" can ship a living app this afternoon. If that is a future you want to live in, there is one thing you can do right now.
+
+**⭐ Star the repo — plant your flag — and [build something alive](https://concile.dev).**
+
+<div align="center">
+
+**[Documentation](https://concile.dev/docs)** · **[Quickstart](https://concile.dev/docs/get-started)** · **[Contributing](CONTRIBUTING.md)** · **[Architecture](website/content/docs/contributing/architecture/)**
+
+</div>
