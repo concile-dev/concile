@@ -126,8 +126,8 @@ describe("schedulerDriver — event-driven dispatch", () => {
   });
 
   it("a kind:'action' job dispatches and runs (the driver's action guard was removed)", async () => {
-    // Actions now execute (CLAUDE.md build-order #5's action runtime — see @concile/executor's
-    // action branch, Task 1 of the action-runtime slice), so the driver no longer special-cases
+    // Actions now execute (the action runtime — see @concile/executor's
+    // action branch), so the driver no longer special-cases
     // `kind:"action"` jobs into an automatic "unsupported" failure — it dispatches them through
     // the SAME `runFunction(claimed.fnPath, claimed.args)` path a mutation job uses. There's no
     // public API yet to schedule a `kind:"action"` job directly (`ctx.scheduler`'s `kindOf()` still

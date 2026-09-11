@@ -3,6 +3,7 @@
   "icon": "FolderTree",
   "pages": [
     "monorepo",
-    "development"
+    "development",
+    "publishing"
   ]
 }

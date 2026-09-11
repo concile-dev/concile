@@ -14,7 +14,7 @@ const cliBin = join(here, "..", "..", "cli", "dist", "bin.js");
 // but `concile dev`'s codegen emits extensionless relative imports (`./_generated/server`,
 // matching Convex's own convention) that only Bun's/bundler-style module resolution can follow;
 // plain Node's ESM resolver has no automatic extension search for relative specifiers and 404s.
-// Bun is this project's documented primary runtime for `concile dev` (see CLAUDE.md), so this
+// Bun is this project's documented primary runtime for `concile dev`, so this
 // spawns the CLI the way a real Bun+Vite project actually would.
 const cliRunner = "bun";
 

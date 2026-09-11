@@ -148,7 +148,7 @@ export function schedulerDriver(): SchedulerDriver {
 
         // Mutations and actions dispatch through the identical path: `ctx.runFunction` routes to
         // the runtime, which routes to the executor's action branch for a `kind:"action"` fnPath
-        // (CLAUDE.md build-order #5's action runtime — see @concile/executor) — the driver
+        // (the action runtime — see @concile/executor) — the driver
         // itself doesn't need to know which kind it claimed. At-most-once for actions is NOT this
         // try/catch's job: it's already guaranteed by `_claim` committing `state:"inProgress"`
         // BEFORE this call runs, so a crash mid-action leaves the job for `_reclaim`'s lease sweep

@@ -6,7 +6,6 @@ on:
     paths-ignore:
       - "**.md"
       - "website/**"
-      - ".agents/**"
       - ".changeset/**"
   workflow_dispatch:
 

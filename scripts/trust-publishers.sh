@@ -110,6 +110,6 @@ echo "done: $ok trusted, ${#failed[@]} failed"
 if [[ ${#failed[@]} -gt 0 ]]; then
   echo "failed: ${failed[*]}" >&2
   echo "(a brand-new package can't be trusted until it exists on the registry —" >&2
-  echo " publish it once first; see docs/dev/publishing.md)" >&2
+  echo " publish it once first; see contributing docs → Publishing & releases)" >&2
   exit 1
 fi

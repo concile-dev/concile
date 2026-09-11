@@ -119,7 +119,7 @@ describe("@concile/triggers — driver loop", () => {
 
   it("sequential per trigger: a slow handler on one trigger does not block a second trigger's progress", async () => {
     // The slow handler is an ACTION, deliberately: this engine's mutations serialize through a
-    // single-writer transactor (the whole architecture — see CLAUDE.md's reactivity model), so a
+    // single-writer transactor (the whole architecture — see the reactivity/transactions architecture docs), so a
     // hanging MUTATION handler would block every other mutation in the runtime, not just its own
     // trigger — that's a property of the engine, not something a driver could route around.
     // Actions run OUTSIDE the transaction (no `ctx.db`, no writer lock — see `@concile/executor`'s

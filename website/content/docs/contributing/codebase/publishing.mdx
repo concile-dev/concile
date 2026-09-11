@@ -1,0 +1,88 @@
+---
+title: "Publishing & releases"
+description: "How Concile's packages reach npm — OIDC-first trusted publishing, the token fallback that bootstraps a brand-new package, and the lockstep versioning model."
+---
+
+{/* diataxis: how-to */}
+
+Concile ships ~44 npm packages. Releases are automated and **tokenless by
+default** — read this before adding a package to `packages/`, `components/`, or
+`ee/packages/`.
+
+## The model: OIDC first, token only as a bootstrap
+
+Every package is published by CI (`.github/workflows/release.yml` →
+`scripts/release.mjs`) using **npm trusted publishing (OIDC)**: npm knows
+"GitHub Actions in `concile-dev/concile` running `release.yml` may publish this
+package," so CI authenticates by identity — no long-lived token, provenance
+attested. Every currently-published `@concile/*` package (and the `concile`
+umbrella) already has a trusted publisher configured, so normal releases need
+no secret at all.
+
+`release.mjs` publishes each workspace package whose current version isn't yet
+on the registry, in dependency order. It is **re-runnable** (already-published
+versions are skipped) and **does not strand** the packages after a failure. The
+published set comes from **`scripts/list-publishable.mjs`** — the single source
+of truth shared with the trust-setup script, so "what we publish" and "what we've
+configured OIDC for" can never drift.
+
+## Adding a brand-new package
+
+npm **cannot** configure a trusted publisher for a package that doesn't exist on
+the registry yet (there's no "pending publisher"). So a genuinely new package
+can't be OIDC-published on its very first release — chicken and egg. The token
+fallback closes that gap automatically:
+
+- The workflow passes the **`NPM_TOKEN`** repo secret to `release.mjs` as
+  **`CONCILE_NPM_FALLBACK_TOKEN`** (a private var name, *not* `NPM_TOKEN` —
+  setting `NPM_TOKEN` would make the changesets action switch every package to
+  token auth and defeat OIDC). `release.mjs` tries OIDC first for each package
+  and, only if that fails, retries **that one package** with the token written
+  to a temporary userconfig. Existing packages stay tokenless; a brand-new one
+  self-publishes on merge with **no human step**.
+
+- After the new package exists on the registry, give it a trusted publisher so
+  future releases are tokenless too — either on its npmjs.com **package →
+  Settings → Trusted Publisher** page (GitHub Actions · repo `concile-dev/concile`
+  · workflow `release.yml` · allow `npm publish`), or in bulk with
+  `scripts/trust-publishers.sh` (needs npm ≥ 11.15 and an interactive
+  `npm login` — configuring trusted publishers requires real 2FA and cannot be
+  done with a token).
+
+> The token is a **bootstrap crutch, not a dependency.** All existing packages
+> publish via OIDC; the token matters only for the first release of a new one.
+> If the `NPM_TOKEN` secret is absent, existing releases still work — only a
+> brand-new package's first publish would fail until the secret is set or the
+> package is published once manually.
+
+## Folder layout is irrelevant to publishing
+
+npm sees package **names and the `@concile` scope**, never your directory tree.
+Moving packages into `core/`, `adapters/`, etc. changes nothing about publish
+count or OIDC config. Don't reorganize folders to solve a publishing concern.
+
+## Versioning: lockstep vs independent
+
+Core packages are a **`fixed` (lockstep)** group in `.changeset/config.json` —
+bump one, bump all, so `concile@x` always pairs with `@concile/*@x` (the
+Babel/Jest model). That's why one release publishes many packages; it's a
+deliberate coherence choice, not overhead — the publishes are automated and free,
+and the umbrella `concile` package pins exact versions so end users never see the
+churn. Move a package to independent versioning only if spurious bumps start
+hurting *users*, which they don't while everything hides behind the umbrella.
+
+> **Known discrepancy (decide when convenient):** the `components/` packages
+> (`@concile/auth`, `authz`, `notifications`, `scheduler`, `triggers`,
+> `workflow`) are **published** by `release.mjs` but are **not** in the `fixed`
+> lockstep group, so they version independently of the core. That may be
+> intentional (components are opt-in) — but if you want them lockstepped, add
+> them to the `fixed` array in `.changeset/config.json`.
+
+## How a release actually happens
+
+1. A change that affects a published package adds a changeset (`bunx changeset`).
+2. On merge to `main`, the changesets bot opens (or updates) a **"Version
+   Packages"** PR that applies the version bumps and changelogs.
+3. Merging *that* PR triggers the publish: `release.mjs` runs, publishes every
+   package whose new version isn't on the registry (OIDC, with the token as the
+   new-package fallback), and tags the release. Never run a manual `npm publish`.

@@ -61,7 +61,7 @@ const schema = defineSchema({
 // Module-level, bumped ONLY by the query handlers that legitimately re-run — never by the
 // `execCount`/`listExecCount` readers, so reading them never perturbs what's being measured. Safe as
 // plain closures: the inline (non-isolated) executor runs handlers in-process against the same module
-// instance for the lifetime of the test (see CLAUDE.md's "true V8-isolate sandboxing" deferred note).
+// instance for the lifetime of the test (true V8-isolate sandboxing is deferred).
 let countExecs = 0;
 let listExecs = 0;
 
