@@ -1,0 +1,235 @@
+/* Hero colours map onto the shared theme tokens, so the hero follows the same
+   light/dark toggle as the rest of the site (previously hardcoded dark).
+   `--hx-emerald*` keep their historical names but now mean "steady accent";
+   `--hx-lime` is the pulse colour used only at the moment data changes. */
+/* Defined at the root, not just on .hx: several hero classes (.hx-card,
+   .hx-feed, .hx-btn, .hx-live, .hx-avatar...) are reused by the demo and the
+   editor showcase outside the hero, where .hx-scoped aliases would be
+   undefined and colours would fall through to the page background. */
+:root,
+.hx {
+  --hx-bg: var(--background);
+  --hx-panel: var(--card);
+  --hx-border: var(--border);
+  --hx-ink: var(--foreground);
+  --hx-muted: var(--muted-foreground);
+  --hx-emerald: var(--primary);
+  --hx-emerald-2: var(--primary);
+  --hx-lime: var(--accent-foreground);
+  --hx-line: color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.hx {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--hx-bg);
+  color: var(--hx-ink);
+  padding: clamp(5.5rem, 13vh, 9.5rem) 1.5rem clamp(4rem, 9vh, 7rem);
+}
+
+/* ---------- animated backdrop (Aceternity-style aurora + spotlight + grid) ---------- */
+.hx-bg { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
+
+/* One big, soft, slow mesh. Bleeds well off-canvas and is heavily blurred so it
+   reads as light in a room, not colored blobs. Grain (page-wide) hides any banding. */
+.hx-aurora {
+  position: absolute;
+  inset: -60%;
+  background:
+    radial-gradient(38% 44% at 22% 28%, color-mix(in srgb, var(--primary) 30%, transparent), transparent 72%),
+    radial-gradient(32% 38% at 78% 22%, color-mix(in srgb, var(--primary) 22%, transparent), transparent 72%),
+    radial-gradient(40% 46% at 64% 82%, color-mix(in srgb, var(--accent-foreground) 12%, transparent), transparent 74%);
+  filter: blur(90px) saturate(120%);
+  animation: hx-drift 32s ease-in-out infinite alternate;
+}
+@keyframes hx-drift {
+  0% { transform: translate3d(-3%, -1%, 0) scale(1); }
+  50% { transform: translate3d(2%, 1%, 0) scale(1.06); }
+  100% { transform: translate3d(3%, -2%, 0) scale(1.03); }
+}
+
+.hx-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--hx-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hx-line) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: radial-gradient(120% 82% at 50% 0%, #000 30%, transparent 78%);
+  -webkit-mask-image: radial-gradient(120% 82% at 50% 0%, #000 30%, transparent 78%);
+  opacity: 0.5;
+}
+
+/* ---------- layout ---------- */
+.hx-inner {
+  max-width: 1140px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: center;
+}
+@media (max-width: 900px) { .hx-inner { grid-template-columns: 1fr; } }
+
+/* ---------- copy ---------- */
+.hx-kicker {
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  font-family: var(--font-jetbrains-mono, ui-monospace, monospace);
+  font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--hx-muted);
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--hx-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--foreground) 2%, transparent);
+  margin: 0 0 1.5rem;
+}
+.hx-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--hx-emerald-2);
+  box-shadow: 0 0 12px 2px color-mix(in srgb, var(--primary) 75%, transparent);
+}
+.hx-title {
+  margin: 0;
+  font-size: clamp(2.5rem, 5.6vw, 4.1rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  max-width: 15ch;
+}
+/* In Slate Mono the headline is near-white, so the accent word is the one lime
+   spark (lime = the "alive / change" color). */
+.hx-em { color: var(--hx-lime); }
+.hx-lede {
+  margin: 1.5rem 0 0;
+  max-width: 34rem;
+  font-size: 1.075rem; line-height: 1.65;
+  color: var(--hx-muted);
+}
+.hx-cta { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 2rem; }
+.hx-btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.72rem 1.25rem; border-radius: 0.7rem;
+  font-size: 0.95rem; font-weight: 600; text-decoration: none;
+  transition: transform 0.18s ease, box-shadow 0.25s ease, border-color 0.2s ease;
+}
+.hx-btn--primary {
+  /* Use the theme tokens directly, not the .hx-scoped aliases: this button is
+     also reused outside the hero (e.g. the demo's Commit button), where those
+     aliases are undefined and the background would fall through to the page. */
+  color: var(--primary-foreground);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--primary) 92%, white),
+    var(--primary)
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 30%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--background) 22%, transparent),
+    0 1px 2px color-mix(in srgb, var(--foreground) 18%, transparent),
+    0 8px 26px -8px color-mix(in srgb, var(--primary) 55%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+.hx-btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 35%, transparent),
+    0 14px 40px -10px color-mix(in srgb, var(--primary) 75%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary) 45%, transparent);
+}
+.hx-btn:active { transform: translateY(0) scale(0.985); transition-duration: 90ms; }
+.hx-arrow { transition: transform 0.2s ease; }
+.hx-btn--primary:hover .hx-arrow { transform: translateX(4px); }
+.hx-btn--ghost {
+  color: var(--hx-ink);
+  border: 1px solid var(--hx-border);
+  background: color-mix(in srgb, var(--foreground) 2%, transparent);
+}
+.hx-btn--ghost:hover { border-color: color-mix(in srgb, var(--primary) 45%, transparent); transform: translateY(-2px); }
+.hx-install {
+  margin: 1.6rem 0 0;
+  font-family: var(--font-jetbrains-mono, ui-monospace, monospace);
+  font-size: 0.86rem; color: var(--hx-muted);
+}
+.hx-install code {
+  padding: 0.35rem 0.7rem; border-radius: 0.5rem;
+  border: 1px solid var(--hx-border); background: color-mix(in srgb, var(--foreground) 3%, transparent);
+}
+.hx-install code::before { content: '$ '; color: var(--hx-emerald-2); }
+
+/* ---------- live panel ---------- */
+.hx-panel { display: flex; flex-direction: column; gap: 1rem; }
+.hx-card {
+  border: 1px solid var(--hx-border);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 5%, transparent), var(--hx-panel));
+  overflow: hidden;
+  box-shadow: 0 24px 60px -36px color-mix(in srgb, var(--foreground) 35%, transparent);
+}
+.hx-card-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--hx-border);
+  font-family: var(--font-jetbrains-mono, ui-monospace, monospace);
+  font-size: 0.72rem; color: var(--hx-muted);
+}
+.hx-tag {
+  color: var(--hx-emerald-2);
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  border-radius: 999px; padding: 0.1rem 0.55rem;
+}
+.hx-code {
+  margin: 0; padding: 1rem 1.1rem;
+  font-family: var(--font-jetbrains-mono, ui-monospace, monospace);
+  font-size: 0.78rem; line-height: 1.7; color: var(--foreground); overflow-x: auto;
+}
+.hx-code .c { color: var(--muted-foreground); }
+.hx-code .k { color: var(--primary); }
+.hx-code .f { color: var(--accent-foreground); }
+.hx-code .s { color: var(--accent-foreground); }
+.hx-code .p { color: var(--muted-foreground); }
+
+.hx-live { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--hx-emerald-2); }
+.hx-live-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--hx-emerald-2);
+  animation: hx-ping 2.2s ease-out;
+}
+@keyframes hx-ping {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-foreground) 60%, transparent); }
+  100% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent-foreground) 0%, transparent); }
+}
+.hx-feed { list-style: none; margin: 0; padding: 0.5rem; min-height: 128px; }
+.hx-feed li {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.6rem 0.7rem; margin-bottom: 0.35rem;
+  border-radius: 0.6rem; font-size: 0.86rem; color: var(--foreground);
+}
+.hx-feed li.is-new { color: var(--foreground); font-weight: 500; }
+.hx-avatar {
+  width: 22px; height: 22px; border-radius: 50%; flex: none;
+  background: var(--hx-emerald);
+  opacity: 0.85;
+}
+
+/* the propagation wire between the code card and the live client */
+.hx-conn { position: relative; height: 40px; }
+.hx-wire {
+  position: absolute; left: 50%; top: 0; bottom: 0; width: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--primary) 4%, transparent), color-mix(in srgb, var(--primary) 35%, transparent), color-mix(in srgb, var(--primary) 4%, transparent));
+}
+.hx-comet {
+  position: absolute; left: 50%; width: 8px; height: 8px; margin-left: -4px;
+  border-radius: 50%; background: var(--hx-lime);
+  box-shadow: 0 0 10px 2px var(--hx-lime);
+}
+.hx-conn-cap {
+  position: absolute; left: calc(50% + 14px); top: 50%; transform: translateY(-50%);
+  font-family: var(--font-jetbrains-mono, ui-monospace, monospace);
+  font-size: 0.7rem; color: var(--hx-muted); white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hx-aurora, .hx-live-dot, .hx-comet { animation: none; }
+}

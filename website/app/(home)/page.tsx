@@ -1,33 +1,115 @@
 import Link from 'next/link';
 import './landing.css';
+import { STACK_LOGOS } from './stack-logos';
+import { Hero } from './Hero';
+import { Reveal } from './Reveal';
+import { SpotlightGrid } from './SpotlightGrid';
+import { StatNumber } from './StatNumber';
+import { BeamDiagram } from './BeamDiagram';
+import { CodeTabs } from './CodeTabs';
+import { FeatureCards } from './FeatureCards';
+import { CopyCommand } from './CopyCommand';
+import { EditorShowcase } from './EditorShowcase';
 
 export default function HomePage() {
   return (
     <div className="lp">
+      {/* ---------------- HERO (animated, full-bleed) ---------------- */}
+      <Hero />
+
+      {/* ---------------- WORKS-WITH STRIP ---------------- */}
+      <section className="strip">
+        <div className="wrap">
+          <span className="strip-label">Works with the stack you already use</span>
+          <div className="strip-mask">
+            <div className="strip-track">
+              {STACK_LOGOS.concat(STACK_LOGOS).map((logo, i) => (
+                <span
+                  className="strip-pill"
+                  key={`${logo.name}-${i}`}
+                  /* the second copy exists only to make the marquee loop seamlessly */
+                  aria-hidden={i >= STACK_LOGOS.length}
+                >
+                  {/* decorative: the visible label already names the tech, so the
+                      mark is hidden from assistive tech to avoid a double read */}
+                  <svg
+                    className={`strip-logo${logo.needsLight ? ' is-dark-mark' : ''}`}
+                    style={{ ['--logo' as string]: logo.hex }}
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path d={logo.path} fill="currentColor" />
+                  </svg>
+                  {logo.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <div className="wrap">
-        {/* ---------------- HERO (centered, fixed height) ---------------- */}
-        <section className="hero">
-          <p className="kicker">
-            Open source <b>·</b> self-hosted
-          </p>
-          <h1>The reactive backend you run yourself.</h1>
-          <p className="lede">
-            Write your backend as TypeScript queries and mutations. Subscribe once, and concile{' '}
-            <b>pushes fresh results to every client</b> the moment the data changes. No polling, no
-            refetching.
-          </p>
-          <div className="cta-row">
-            <Link className="btn btn--primary" href="/docs/get-started/quickstart">
-              Read the quickstart →
-            </Link>
-            <Link className="btn btn--ghost" href="/docs/get-started/what-is-concile">
-              How it works
+        {/* ---------------- FEATURE + TABBED CODE ---------------- */}
+        <Reveal className="feat">
+          <div className="feat-copy">
+            <span className="k">just typescript</span>
+            <h3>Define it, subscribe to it, ship it</h3>
+            <p>
+              One language for the whole backend. Write a mutation, read it with a query, and the
+              same code stays live in every client. When you are ready, ship it as a single binary
+              or a container.
+            </p>
+            <Link className="tlink" href="/docs/get-started/quickstart">
+              Read the quickstart
             </Link>
           </div>
-        </section>
+          <CodeTabs />
+        </Reveal>
+
+        {/* ---------------- EDITOR SHOWCASE (VSCode-style mockup) ---------------- */}
+        <Reveal className="fc-section">
+          <div className="fc-head">
+            <span className="k">the dev loop</span>
+            <h2>Write, run, and watch it go live, in one window</h2>
+            <p>
+              Run one command. Edit a function. The dashboard and every client update themselves,
+              no restart, no refresh.
+            </p>
+          </div>
+          <EditorShowcase />
+        </Reveal>
+
+        {/* ---------------- REACTIVITY DIAGRAM ---------------- */}
+        <Reveal className="demo">
+          <div className="demo-head">
+            <span className="k">see it live</span>
+            <h3>One write. Every client. At once.</h3>
+            <p>
+              Your functions talk to one engine. Every subscriber reads the same query, so a single
+              commit reaches all of them. No refresh, no polling, no glue.
+            </p>
+          </div>
+          <BeamDiagram />
+        </Reveal>
+
+        {/* ---------------- CAPABILITIES (live mini-visuals) ---------------- */}
+        <Reveal className="fc-section">
+          <div className="fc-head">
+            <span className="k">everything in the box</span>
+            <h2>A whole backend, and you can watch each piece work</h2>
+            <p>
+              Reactivity, auth, scheduling, file storage, and a live dashboard. Opt in to what you
+              need. Every card below is a small live view of the real thing.
+            </p>
+          </div>
+          <FeatureCards />
+        </Reveal>
 
         {/* ---------------- BENTO GRID ---------------- */}
-        <section className="bento">
+        <Reveal>
+        <SpotlightGrid className="bento">
           {/* code tile — the reactive read */}
           <article className="cell cell--code s4" aria-hidden="true">
             <div className="code-head">
@@ -234,34 +316,66 @@ export default function HomePage() {
             </ul>
           </article>
 
-          {/* final CTA tile (full width) */}
-          <article className="cell cell--cta s6">
-            <span className="kicker">Get started</span>
-            <h2>Write your first reactive function in a few minutes.</h2>
-            <p>The quickstart takes you from an empty folder to a live, reactive app.</p>
-            <Link className="btn btn--primary" href="/docs/get-started/quickstart">
-              Start building →
-            </Link>
-          </article>
-        </section>
+        </SpotlightGrid>
+        </Reveal>
+
+        {/* ---------------- STATS BAND ---------------- */}
+        <Reveal className="stats">
+          <div className="stat-item">
+            <span className="stat-n">
+              <StatNumber value={2000} />
+            </span>
+            <span className="stat-l">live subscribers on one core</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-n">
+              <StatNumber value={102} suffix=" ms" />
+            </span>
+            <span className="stat-l">median hot-push latency</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-n">
+              <StatNumber value={8.6} decimals={1} suffix=" ms" />
+            </span>
+            <span className="stat-l">reactive propagation, p50</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-n">
+              <StatNumber value={12} suffix=" %" />
+            </span>
+            <span className="stat-l">CPU at that load</span>
+          </div>
+        </Reveal>
       </div>
 
+      {/* ---------------- FINAL CTA (glow) ---------------- */}
+      <section className="cta2">
+        <div className="cta2-glow" aria-hidden="true" />
+        <Reveal className="cta2-inner">
+          <span className="kicker">Get started</span>
+          <h2>Write your first reactive function in a few minutes.</h2>
+          <p>The quickstart takes you from an empty folder to a live, reactive app.</p>
+          <div className="cta2-row">
+            <Link className="hx-btn hx-btn--primary" href="/docs/get-started/quickstart">
+              Start building
+              <span className="hx-arrow">→</span>
+            </Link>
+            <a
+              className="hx-btn hx-btn--ghost"
+              href="https://github.com/concile-dev/concile"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Star on GitHub
+            </a>
+          </div>
+          <div className="cta2-cmd">
+            <CopyCommand command="npx concile dev" />
+          </div>
+        </Reveal>
+      </section>
+
       {/* ---------------- FOOTER — Ft2 Inline ---------------- */}
-      <footer className="foot">
-        <div className="wrap foot-row">
-          <p className="foot-brand">
-            concile <span>the reactive backend you self-host</span>
-          </p>
-          <nav className="foot-links" aria-label="Footer">
-            <Link href="/docs">Docs</Link>
-            <Link href="/docs/get-started/quickstart">Quickstart</Link>
-            <Link href="/docs/core-concepts/reactivity">Reactivity</Link>
-            <Link href="/docs/deploy/self-hosting">Self-hosting</Link>
-            <Link href="/docs/reference/faq">FAQ</Link>
-          </nav>
-          <span className="foot-license">FSL-1.1-Apache-2.0</span>
-        </div>
-      </footer>
     </div>
   );
 }

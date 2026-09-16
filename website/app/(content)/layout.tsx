@@ -3,9 +3,9 @@ import { JetBrains_Mono, Inter } from 'next/font/google';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 
-// Marketing chrome: our own Navbar/Footer rather than fumadocs' HomeLayout, so
-// the same shell can be reused by other marketing route groups. Theme comes
-// from the single RootProvider in the root layout, shared with the docs.
+// Non-docs content pages (blog, pricing, comparisons...) share the marketing
+// chrome with (home). Same pattern, different route group, so these pages can
+// have their own structure without touching the landing page.
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   weight: ['400', '500', '600'],

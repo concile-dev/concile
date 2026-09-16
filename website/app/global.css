@@ -1,46 +1,100 @@
 @import 'tailwindcss';
-@import 'fumadocs-ui/css/ruby.css';
+@import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
+@plugin 'tailwindcss-animate';
 
-/* Brand palette for the docs UI — matches the landing page's warm paper + crimson
-   accent, so the docs and the home page read as one product. Ruby is the crimson
-   base preset; these overrides warm its neutrals to the landing's exact tokens. */
+@custom-variant dark (&:is(.dark *));
+@custom-variant light (&:is(.light *));
+@custom-variant system (&:is(.system *));
+
+/* ============================================================
+   Concile theme — "Copper": warm metallic accent on warm neutrals.
+   Two token layers, both defined on :root (light) and .dark:
+     1. shadcn-style tokens (--background, --primary, ...) for our
+        own components.
+     2. fumadocs tokens (--color-fd-*) so the docs UI matches.
+   Accent: copper #E0975A (steady), highlight #F3BE8C (pulse).
+   ============================================================ */
 :root {
-  --color-fd-background: oklch(98.2% 0.006 66);
-  --color-fd-foreground: oklch(23% 0.012 50);
-  --color-fd-card: oklch(99.3% 0.004 66);
-  --color-fd-card-foreground: oklch(23% 0.012 50);
-  --color-fd-popover: oklch(99.3% 0.004 66);
-  --color-fd-popover-foreground: oklch(23% 0.012 50);
-  --color-fd-muted: oklch(96.4% 0.008 64);
-  --color-fd-muted-foreground: oklch(52% 0.013 54);
-  --color-fd-secondary: oklch(96.4% 0.008 64);
-  --color-fd-secondary-foreground: oklch(28% 0.012 50);
-  --color-fd-border: oklch(90% 0.008 62);
-  --color-fd-primary: oklch(52% 0.19 12);
-  --color-fd-primary-foreground: oklch(99% 0.01 20);
-  --color-fd-ring: oklch(52% 0.19 12);
-  --color-fd-accent: oklch(95% 0.03 14);
-  --color-fd-accent-foreground: oklch(40% 0.12 12);
+  --radius: 0.625rem;
+
+  /* shadcn layer — light */
+  --background: oklch(98.5% 0.006 70);
+  --foreground: oklch(22% 0.014 55);
+  --card: oklch(99.4% 0.004 70);
+  --card-foreground: oklch(22% 0.014 55);
+  --popover: oklch(99.4% 0.004 70);
+  --popover-foreground: oklch(22% 0.014 55);
+  --primary: oklch(68% 0.11 58);
+  --primary-foreground: oklch(20% 0.02 55);
+  --secondary: oklch(96% 0.01 70);
+  --secondary-foreground: oklch(28% 0.014 55);
+  --muted: oklch(96% 0.01 70);
+  --muted-foreground: oklch(52% 0.016 58);
+  --accent: oklch(94% 0.03 62);
+  --accent-foreground: oklch(38% 0.07 55);
+  --destructive: oklch(58% 0.21 25);
+  --border: oklch(90% 0.01 66);
+  --input: oklch(90% 0.01 66);
+  --ring: oklch(68% 0.11 58);
+
+  /* fumadocs layer — light */
+  --color-fd-background: oklch(98.5% 0.006 70);
+  --color-fd-foreground: oklch(22% 0.014 55);
+  --color-fd-card: oklch(99.4% 0.004 70);
+  --color-fd-card-foreground: oklch(22% 0.014 55);
+  --color-fd-popover: oklch(99.4% 0.004 70);
+  --color-fd-popover-foreground: oklch(22% 0.014 55);
+  --color-fd-muted: oklch(96% 0.01 70);
+  --color-fd-muted-foreground: oklch(52% 0.016 58);
+  --color-fd-secondary: oklch(96% 0.01 70);
+  --color-fd-secondary-foreground: oklch(28% 0.014 55);
+  --color-fd-border: oklch(90% 0.01 66);
+  --color-fd-primary: oklch(62% 0.11 58);
+  --color-fd-primary-foreground: oklch(99% 0.006 70);
+  --color-fd-ring: oklch(68% 0.11 58);
+  --color-fd-accent: oklch(94% 0.03 62);
+  --color-fd-accent-foreground: oklch(38% 0.07 55);
 }
 
 .dark {
-  --color-fd-background: oklch(18% 0.008 58);
-  --color-fd-foreground: oklch(95% 0.008 70);
-  --color-fd-card: oklch(21% 0.01 56);
-  --color-fd-card-foreground: oklch(95% 0.008 70);
-  --color-fd-popover: oklch(20% 0.01 56);
-  --color-fd-popover-foreground: oklch(95% 0.008 70);
-  --color-fd-muted: oklch(23% 0.01 56);
-  --color-fd-muted-foreground: oklch(64% 0.013 58);
-  --color-fd-secondary: oklch(23% 0.01 56);
-  --color-fd-secondary-foreground: oklch(90% 0.008 70);
-  --color-fd-border: oklch(32% 0.012 56);
-  --color-fd-primary: oklch(56% 0.2 14);
-  --color-fd-primary-foreground: oklch(99% 0.01 20);
-  --color-fd-ring: oklch(56% 0.2 14);
-  --color-fd-accent: oklch(26% 0.04 14);
-  --color-fd-accent-foreground: oklch(85% 0.1 14);
+  /* shadcn layer — dark */
+  --background: oklch(15% 0.008 60);
+  --foreground: oklch(95% 0.01 72);
+  --card: oklch(18.5% 0.01 60);
+  --card-foreground: oklch(95% 0.01 72);
+  --popover: oklch(18.5% 0.01 60);
+  --popover-foreground: oklch(95% 0.01 72);
+  --primary: oklch(75% 0.11 58);
+  --primary-foreground: oklch(16% 0.014 58);
+  --secondary: oklch(23% 0.012 60);
+  --secondary-foreground: oklch(92% 0.01 72);
+  --muted: oklch(23% 0.012 60);
+  --muted-foreground: oklch(67% 0.016 62);
+  --accent: oklch(28% 0.04 58);
+  --accent-foreground: oklch(88% 0.07 62);
+  --destructive: oklch(70% 0.19 22);
+  --border: oklch(30% 0.014 60);
+  --input: oklch(30% 0.014 60);
+  --ring: oklch(75% 0.11 58);
+
+  /* fumadocs layer — dark */
+  --color-fd-background: oklch(15% 0.008 60);
+  --color-fd-foreground: oklch(95% 0.01 72);
+  --color-fd-card: oklch(18.5% 0.01 60);
+  --color-fd-card-foreground: oklch(95% 0.01 72);
+  --color-fd-popover: oklch(18.5% 0.01 60);
+  --color-fd-popover-foreground: oklch(95% 0.01 72);
+  --color-fd-muted: oklch(23% 0.012 60);
+  --color-fd-muted-foreground: oklch(67% 0.016 62);
+  --color-fd-secondary: oklch(23% 0.012 60);
+  --color-fd-secondary-foreground: oklch(92% 0.01 72);
+  --color-fd-border: oklch(30% 0.014 60);
+  --color-fd-primary: oklch(75% 0.11 58);
+  --color-fd-primary-foreground: oklch(16% 0.014 58);
+  --color-fd-ring: oklch(75% 0.11 58);
+  --color-fd-accent: oklch(28% 0.04 58);
+  --color-fd-accent-foreground: oklch(88% 0.07 62);
 }
 
 html {
@@ -56,4 +110,210 @@ body {
 html > body[data-scroll-locked] {
   margin-right: 0px !important;
   --removed-body-scroll-bar-size: 0px !important;
+}
+
+/* ============================================================
+   Bridge the token layer into Tailwind so `bg-background`,
+   `text-primary`, `border-border` etc. exist as utilities and
+   follow light/dark automatically.
+   ============================================================ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --font-family-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular,
+    'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+  /* Marquee: speed and direction set per instance via CSS vars. */
+  --animate-scroll: scroll var(--animation-duration, 40s)
+    var(--animation-direction, forwards) linear infinite;
+
+  @keyframes scroll {
+    to {
+      transform: translate(calc(-50% - 0.5rem));
+    }
+  }
+}
+
+/* --- small semantic layout utilities --- */
+@utility col {
+  @apply flex flex-col;
+}
+@utility row {
+  @apply flex flex-row;
+}
+@utility center-center {
+  @apply flex items-center justify-center text-center;
+}
+/* break a section out of the container for a full-bleed effect */
+@utility pulled {
+  @apply -mx-2 md:-mx-6 lg:-mx-10 xl:-mx-20;
+}
+@utility scrollbar-hidden {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* --- structural column hairlines; the rule bleeds past the section so the
+       line reads as a continuous column through the page --- */
+.line-before,
+.line-after {
+  position: relative;
+  padding: 16px;
+}
+.line-before::before,
+.line-after::after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: -8rem;
+  bottom: -8rem;
+  width: 1px;
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+.line-before::before { left: 0; }
+.line-after::after { right: 0; }
+
+/* ============================================================
+   Shared marketing chrome (Navbar + Footer).
+   Uses fumadocs' --color-fd-* tokens so it follows the same
+   light/dark toggle as the docs.
+   ============================================================ */
+.nb {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid var(--color-fd-border);
+  background: color-mix(in srgb, var(--color-fd-background) 82%, transparent);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+}
+.nb-inner {
+  max-width: 76rem;
+  margin-inline: auto;
+  padding: 0.75rem clamp(1.25rem, 5vw, 3rem);
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+.nb-brand {
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  color: var(--color-fd-foreground);
+  text-decoration: none;
+}
+.nb-links { display: flex; gap: 1.1rem; margin-left: 0.5rem; }
+.nb-link {
+  font-size: 0.9rem;
+  color: var(--color-fd-muted-foreground);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.nb-link:hover, .nb-link.is-active { color: var(--color-fd-foreground); }
+.nb-right { margin-left: auto; display: flex; align-items: center; gap: 0.6rem; }
+.nb-icon, .nb-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--color-fd-border);
+  border-radius: 8px;
+  background: none;
+  color: var(--color-fd-muted-foreground);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.nb-icon:hover, .nb-stars:hover {
+  color: var(--color-fd-foreground);
+  border-color: var(--color-fd-foreground);
+}
+.nb-stars span::before { content: "★ "; color: var(--color-fd-primary); }
+.nb-cta {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--color-fd-primary-foreground);
+  background: var(--color-fd-primary);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.nb-cta:hover { opacity: 0.9; transform: translateY(-1px); }
+@media (max-width: 640px) {
+  .nb-links { display: none; }
+}
+
+.ft {
+  border-top: 1px solid var(--color-fd-border);
+  background: var(--color-fd-background);
+  padding: 3rem 0 1.5rem;
+}
+.ft-inner, .ft-bottom {
+  max-width: 76rem;
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 5vw, 3rem);
+}
+.ft-inner {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 2rem;
+}
+.ft-brand { font-size: 1.2rem; font-weight: 700; margin: 0; color: var(--color-fd-foreground); }
+.ft-tag { color: var(--color-fd-muted-foreground); font-size: 0.88rem; margin: 0.35rem 0 0.75rem; }
+.ft-license { font-size: 0.75rem; color: var(--color-fd-muted-foreground); }
+.ft-col { display: flex; flex-direction: column; gap: 0.5rem; }
+.ft-h {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-fd-foreground);
+  margin-bottom: 0.2rem;
+}
+.ft-col a {
+  color: var(--color-fd-muted-foreground);
+  text-decoration: none;
+  font-size: 0.88rem;
+  transition: color 0.15s ease;
+}
+.ft-col a:hover { color: var(--color-fd-primary); }
+.ft-bottom {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-fd-border);
+  font-size: 0.75rem;
+  color: var(--color-fd-muted-foreground);
+}
+@media (max-width: 720px) {
+  .ft-inner { grid-template-columns: 1fr 1fr; }
+  .ft-brand-col { grid-column: 1 / -1; }
+  .ft-bottom { flex-direction: column; gap: 0.4rem; }
 }
