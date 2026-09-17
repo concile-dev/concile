@@ -835,112 +835,6 @@
 
 .lp .cta2-cmd { margin-top: 1.1rem; display: flex; justify-content: center; }
 
-/* ---------------- Editor showcase (VSCode-style mockup) ---------------- */
-.lp .ed {
-  border: 1px solid var(--color-rule);
-  border-radius: var(--radius-md);
-  background: var(--card);
-  overflow: hidden;
-  box-shadow: 0 40px 100px -50px color-mix(in srgb, var(--foreground) 90%, transparent);
-  position: relative;
-}
-.lp .ed-bar {
-  display: flex; align-items: center; gap: 0.6rem;
-  padding: 0.55rem 0.9rem; border-bottom: 1px solid var(--color-rule);
-  background: var(--card);
-}
-.lp .ed-dots { display: inline-flex; gap: 0.4rem; }
-.lp .ed-dots i { width: 11px; height: 11px; border-radius: 50%; background: var(--border); }
-.lp .ed-dots i:first-child { background: var(--border); }
-.lp .ed-title {
-  flex: 1; text-align: center; font-family: var(--font-mono);
-  font-size: 0.72rem; color: var(--color-muted);
-}
-.lp .ed-bar-spacer { width: 33px; }
-
-.lp .ed-body { display: grid; grid-template-columns: 190px 1fr 260px; min-height: 380px; }
-@media (max-width: 900px) {
-  .lp .ed-body { grid-template-columns: 1fr; }
-  .lp .ed-side { display: none; }
-}
-
-/* sidebar */
-.lp .ed-side { border-right: 1px solid var(--color-rule); padding: 0.6rem 0; background: var(--card); }
-.lp .ed-side-h { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.1em; color: var(--color-muted); padding: 0.3rem 0.9rem 0.5rem; }
-.lp .ed-file { font-family: var(--font-mono); font-size: 0.74rem; color: var(--color-ink-2); padding: 0.22rem 0.9rem; cursor: default; }
-.lp .ed-folder { color: var(--color-muted); }
-.lp .ed-in { padding-left: 1.6rem; }
-.lp .ed-file.ed-active { background: color-mix(in srgb, var(--primary) 8%, transparent); color: var(--foreground); box-shadow: inset 2px 0 0 var(--color-accent); }
-
-/* main */
-.lp .ed-main { display: flex; flex-direction: column; min-width: 0; }
-.lp .ed-tabs { display: flex; border-bottom: 1px solid var(--color-rule); background: var(--card); }
-.lp .ed-tab { font-family: var(--font-mono); font-size: 0.72rem; color: var(--color-muted); padding: 0.5rem 0.95rem; border-right: 1px solid var(--color-rule); }
-.lp .ed-tab.ed-active { color: var(--foreground); background: var(--card); border-top: 1px solid var(--color-accent); }
-.lp .ed-code { margin: 0; padding: 0.7rem 0; flex: 1; overflow-x: auto; }
-.lp .ed-row { display: flex; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.75; }
-.lp .ed-gutter { width: 2.4rem; flex: none; text-align: right; padding-right: 0.9rem; color: var(--muted-foreground); user-select: none; }
-.lp .ed-line { white-space: pre; color: var(--foreground); }
-.lp .ed-code .k { color: var(--color-accent); }
-.lp .ed-code .f { color: var(--tok-str); }
-.lp .ed-code .s { color: var(--accent-foreground); }
-.lp .ed-code .p { color: var(--color-muted); }
-.lp .ed-code .c { color: var(--tok-comment); }
-
-/* terminal */
-.lp .ed-term { border-top: 1px solid var(--color-rule); background: var(--card); }
-.lp .ed-term-bar { display: flex; gap: 1rem; padding: 0.45rem 0.9rem; border-bottom: 1px solid var(--color-rule); font-family: var(--font-mono); font-size: 0.68rem; color: var(--color-muted); }
-.lp .ed-term-bar .ed-active { color: var(--foreground); }
-.lp .ed-term-body { padding: 0.7rem 0.9rem; font-family: var(--font-mono); font-size: 0.74rem; line-height: 1.7; min-height: 116px; }
-.lp .ed-cmd { color: var(--foreground); }
-.lp .ed-dim { color: var(--color-muted); }
-.lp .ed-ok { color: var(--color-accent); }
-.lp .ed-liveline { color: var(--tok-str); }
-.lp .ed-cursor { display: inline-block; width: 7px; height: 1em; margin-left: 2px; background: var(--color-accent); vertical-align: text-bottom; animation: ed-blink 1s step-end infinite; }
-@keyframes ed-blink { 50% { opacity: 0; } }
-
-/* preview */
-.lp .ed-preview { border-left: 1px solid var(--color-rule); display: flex; flex-direction: column; background: var(--card); }
-.lp .ed-prev-bar { display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--color-rule); font-family: var(--font-mono); font-size: 0.7rem; color: var(--color-muted); }
-.lp .ed-preview .hx-feed { flex: 1; }
-.lp .ed-prev-cap { padding: 0.6rem 0.8rem; border-top: 1px solid var(--color-rule); font-family: var(--font-mono); font-size: 0.66rem; color: var(--color-muted); }
-
-/* ---------------- Editor showcase: interactive bits ---------------- */
-.lp .ed-run {
-  margin-left: auto; align-self: center; margin-right: 0.5rem;
-  cursor: pointer; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 600;
-  color: var(--background); background: var(--color-accent); border: none; border-radius: 6px;
-  padding: 0.28rem 0.75rem;
-  transition: background var(--dur-snap) var(--ease-snap), transform var(--dur-snap) var(--ease-snap);
-}
-.lp .ed-run:hover:not(:disabled) { background: var(--color-accent-hover); }
-.lp .ed-run:active:not(:disabled) { transform: scale(0.96); }
-.lp .ed-run:disabled { opacity: 0.4; cursor: default; }
-.lp .ed-strq { color: var(--accent-foreground); }
-.lp .ed-input {
-  font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-foreground);
-  background: color-mix(in srgb, var(--accent-foreground) 8%, transparent);
-  border: none; border-bottom: 1px dashed color-mix(in srgb, var(--accent-foreground) 55%, transparent);
-  padding: 0 2px; outline: none; min-width: 5ch;
-  transition: background var(--dur-snap) var(--ease-snap);
-}
-.lp .ed-input:focus { background: color-mix(in srgb, var(--accent-foreground) 18%, transparent); }
-
-/* ---------------- Editor: clickable files + tabs (button resets) ---------------- */
-.lp .ed-tab {
-  appearance: none; border: none; border-right: 1px solid var(--color-rule);
-  background: var(--card); cursor: pointer;
-}
-.lp .ed-filebtn {
-  appearance: none; background: none; border: none; width: 100%;
-  text-align: left; cursor: pointer; display: block;
-}
-.lp .ed-filebtn:hover { color: var(--foreground); background: color-mix(in srgb, var(--foreground) 3%, transparent); }
-
-/* feature-card icons */
-.lp .fc-ic { width: 26px; height: 26px; color: var(--color-accent); margin-bottom: 0.45rem; }
-.lp .fc-ic svg { width: 100%; height: 100%; display: block; }
-
 /* ---------------- Beam diagram (fan-in / fan-out topology) ---------------- */
 .lp .bd {
   position: relative;
@@ -1009,3 +903,412 @@
   .lp .bd-wires circle { display: none; }
 }
 
+
+/* ---------------- MacBook frame around the editor showcase ---------------- */
+/* --open runs 0 (leaned back) to 1 (upright) and is written by MacbookScroll.tsx.
+   It defaults to 1 on purpose: with no JS the machine renders upright and the
+   section reads normally. */
+.lp .mbk-stage {
+  --open: 1;
+  max-width: 72rem;
+  margin-inline: auto;
+  perspective: 2400px;
+}
+.lp .mbk {
+  position: relative;
+  transform-origin: center bottom;
+  transform:
+    rotateX(calc((1 - var(--open)) * 15deg))
+    scale(calc(0.94 + 0.06 * var(--open)));
+  will-change: transform;
+}
+.lp .mbk-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* the screen fill sits behind the editor, so match it */
+  color: var(--card);
+  filter: drop-shadow(0 40px 60px color-mix(in srgb, var(--foreground) 32%, transparent));
+}
+
+/* Aluminium and bezel. A real machine stays metal in both themes, so these only
+   shift from silver to space grey rather than inverting. */
+.lp .mbk-stage {
+  --mbk-edge: #a4a5a7;
+  --mbk-case: #222;
+  --mbk-bezel: #000;
+  --mbk-hinge: #1d1d1d;
+  --mbk-notch: #000;
+  --mbk-cam: #080d4c;
+  --mbk-base: #acadaf;
+  --mbk-foot: #b9b9bb;
+  --mbk-foot-2: #292929;
+  --mbk-grip: #8f9091;
+}
+.dark .lp .mbk-stage {
+  --mbk-edge: #6e6f72;
+  --mbk-case: #2a2a2d;
+  --mbk-bezel: #050505;
+  --mbk-hinge: #141416;
+  --mbk-base: #6b6c6f;
+  --mbk-foot: #7a7b7e;
+  --mbk-foot-2: #1c1c1e;
+  --mbk-grip: #5c5d60;
+}
+
+/* The dashboard, laid over the screen cutout. It fills its box and lays itself
+   out, so the screen only has to clip it to the bezel's rounding. */
+.lp .mbk-screen {
+  position: absolute;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp .mbk { transform: none; }
+}
+/* At phone width the frame would crush the dashboard. Drop the machine, keep
+   the screen. */
+@media (max-width: 900px) {
+  .lp .mbk-stage { perspective: none; }
+  .lp .mbk { transform: none; }
+  .lp .mbk-svg { display: none; }
+  .lp .mbk-screen {
+    position: static;
+    width: auto !important;
+    height: auto !important;
+    border-radius: var(--radius-md);
+  }
+  .lp .mbk-screen > .bw {
+    height: auto;
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .lp .mbk-screen .db { grid-template-columns: minmax(0, 1fr); }
+  /* A hidden sidebar would make every tab unreachable, so at this width it
+     becomes a scrollable row of chips above the pane instead. */
+  .lp .mbk-screen .db-side {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    overflow-x: auto;
+    padding: 0.5rem 0.6rem;
+    border-right: none;
+    border-bottom: 1px solid var(--color-rule);
+    scrollbar-width: none;
+  }
+  .lp .mbk-screen .db-side::-webkit-scrollbar { display: none; }
+  .lp .mbk-screen .db-brand,
+  .lp .mbk-screen .db-sec,
+  .lp .mbk-screen .db-badge { display: none; }
+  .lp .mbk-screen .db-nav {
+    width: auto;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    padding: 0.24rem 0.62rem;
+    border: 1px solid var(--color-rule);
+  }
+  .lp .mbk-screen .db-kpis { grid-template-columns: repeat(2, 1fr); }
+  /* Mobile Safari drops the back/forward and tool glyphs and gives the bar to the
+     address pill. Without that the URL here truncates to "localhost:30…". */
+  .lp .mbk-screen .bw-nav,
+  .lp .mbk-screen .bw-tools { display: none; }
+
+  /* The data row asks for 406px of fixed columns inside a ~300px pane, which
+     collapses the text column to nothing and clips the rest. Drop _id and the
+     row actions here and keep the three columns that carry the point: what was
+     written, by whom, when. `--fn` rows already fit, so they keep all four. */
+  .lp .mbk-screen .db-tr:not(.db-tr--fn) {
+    /* 70px is the `_creationTime` header's own width: a narrower track would be
+       overrun by it, since a header cell has no ellipsis to fall back on. */
+    grid-template-columns: minmax(0, 1fr) 58px 70px;
+    gap: 0.45rem;
+  }
+  .lp .mbk-screen .db-tr:not(.db-tr--fn) > :nth-child(3),
+  .lp .mbk-screen .db-tr:not(.db-tr--fn) > :nth-child(5) { display: none; }
+}
+
+/* ---------------- Concile dashboard (shown on the laptop screen) ---------------- */
+/* Mirrors apps/dashboard: sidebar from src/main.tsx, data browser from
+   src/features/data-browser.tsx. */
+.lp .db {
+  display: grid;
+  grid-template-columns: 196px 1fr;
+  height: 100%;
+  background: var(--background);
+  font-size: 0.78rem;
+}
+
+/* --- sidebar --- */
+.lp .db-side {
+  border-right: 1px solid var(--color-rule);
+  background: var(--card);
+  padding: 0.85rem 0.7rem;
+  overflow: hidden;
+}
+.lp .db-brand { font-weight: 700; font-size: 0.86rem; margin-bottom: 0.9rem; }
+.lp .db-bolt { color: var(--color-accent); }
+.lp .db-sec {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+  margin: 0.9rem 0 0.35rem;
+}
+.lp .db-nav {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  color: var(--color-ink-2);
+}
+.lp .db-nav--on { background: var(--color-accent); color: var(--color-accent-ink); }
+.lp .db-badge {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  color: var(--color-muted);
+  padding: 0 0.4rem;
+  font-size: 0.62rem;
+  font-variant-numeric: tabular-nums;
+}
+.lp .db-nav--on .db-badge {
+  background: color-mix(in srgb, var(--color-accent-ink) 22%, transparent);
+  color: var(--color-accent-ink);
+}
+
+/* --- main pane --- */
+.lp .db-main { padding: 0.95rem 1.1rem; display: flex; flex-direction: column; min-width: 0; }
+.lp .db-head { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.7rem; }
+.lp .db-title { font-size: 0.95rem; font-weight: 600; margin: 0; }
+.lp .db-live { margin-left: auto; display: inline-flex; align-items: center; gap: 0.35rem; font-family: var(--font-mono); font-size: 0.66rem; color: var(--color-accent); }
+.lp .db-live i { width: 6px; height: 6px; border-radius: 50%; background: var(--color-accent); }
+
+.lp .db-btn {
+  display: inline-flex; align-items: center;
+  border-radius: 6px;
+  padding: 0.18rem 0.5rem;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+.lp .db-btn--primary { background: var(--color-accent); color: var(--color-accent-ink); }
+.lp .db-btn--sec { background: color-mix(in srgb, var(--foreground) 8%, transparent); color: var(--color-ink-2); }
+.lp .db-btn--del { background: color-mix(in srgb, #c0503c 16%, transparent); color: #c0503c; }
+.lp .db-btn.is-off { opacity: 0.4; }
+.lp .db-x { padding-inline: 0.36rem; }
+
+/* --- filter row --- */
+.lp .db-filter { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.7rem; }
+.lp .db-select,
+.lp .db-value {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  padding: 0.18rem 0.45rem;
+  font-size: 0.68rem;
+  color: var(--color-ink-2);
+}
+.lp .db-value { color: var(--color-muted); min-width: 92px; }
+
+/* --- table --- */
+.lp .db-table { border: 1px solid var(--color-rule); border-radius: 8px; overflow: hidden; }
+.lp .db-tr {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 76px 104px 84px 84px;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.38rem 0.6rem;
+  border-bottom: 1px solid var(--color-rule);
+}
+.lp .db-tr:last-child { border-bottom: none; }
+.lp .db-tr--head {
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--color-muted);
+}
+.lp .db-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp .db-mono { font-family: var(--font-mono); font-size: 0.66rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp .db-dim { color: var(--color-muted); }
+.lp .db-acts { display: flex; justify-content: flex-end; gap: 0.3rem; }
+
+/* A row that just arrived over the live subscription. */
+.lp .db-tr.is-fresh { animation: db-land 1.4s ease-out; }
+@keyframes db-land {
+  0% { background: color-mix(in srgb, var(--color-accent) 26%, transparent); }
+  100% { background: transparent; }
+}
+
+.lp .db-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 0.7rem;
+  font-size: 0.68rem;
+  color: var(--color-muted);
+}
+.lp .db-page { display: flex; gap: 0.3rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp .db-tr.is-fresh { animation: none; }
+}
+
+/* ---------------- Browser chrome around the dashboard ---------------- */
+.lp .bw { height: 100%; display: flex; flex-direction: column; background: var(--card); }
+.lp .bw-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0 0.75rem;
+  height: 38px;
+  border-bottom: 1px solid var(--color-rule);
+  background: color-mix(in srgb, var(--foreground) 4%, var(--card));
+  color: var(--color-muted);
+}
+.lp .bw-dots { display: inline-flex; gap: 0.35rem; }
+.lp .bw-dots i { width: 10px; height: 10px; border-radius: 50%; }
+.lp .bw-dots .is-red { background: #ed6a5e; }
+.lp .bw-dots .is-amber { background: #f4bf4f; }
+.lp .bw-dots .is-green { background: #61c554; }
+
+.lp .bw-nav,
+.lp .bw-tools { display: inline-flex; align-items: center; gap: 0.6rem; opacity: 0.75; }
+.lp .bw-bar svg { flex: none; }
+.lp .bw-tools { margin-left: 0.2rem; }
+
+/* the address pill, centred like Safari's */
+.lp .bw-url {
+  flex: 1;
+  /* A flex item defaults to min-width:auto, so the pill refuses to shrink past
+     its text and pushes the toolbar icons off the bar on a narrow screen. */
+  min-width: 0;
+  max-width: 320px;
+  margin-inline: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  height: 23px;
+  /* Room for the reload glyph, which is positioned over the pill's right edge. */
+  padding-inline: 1.5rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+  font-size: 0.68rem;
+  position: relative;
+}
+/* Safari truncates a long URL rather than widening the bar. So does this. */
+.lp .bw-host {
+  color: var(--color-ink-2);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lp .bw-reload { position: absolute; right: 0.4rem; opacity: 0.7; }
+
+.lp .bw-view { flex: 1; min-height: 0; }
+
+/* ---------------- Dashboard: nav buttons, panes, charts ---------------- */
+/* Chart-only series colour. Deliberately not --primary: that measures 2.93:1 on
+   the light surface and sits at lightness 0.75 in dark, outside the 0.48-0.67
+   band. Both steps below were validated against their own surface. */
+.lp .db { --db-series: #c16e2d; }
+.dark .lp .db { --db-series: #cc7c37; }
+
+/* the nav items are real controls now */
+.lp .db-nav {
+  width: 100%;
+  font: inherit;
+  font-size: 0.78rem;
+  text-align: left;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+}
+/* restate the active state: the reset above shares its specificity and comes
+   later, so `background: transparent` would otherwise win and leave the active
+   item's light ink on a light surface, i.e. invisible */
+.lp .db-nav--on,
+.lp .db-nav--on:hover { background: var(--color-accent); color: var(--color-accent-ink); }
+.lp .db-nav:hover { background: color-mix(in srgb, var(--foreground) 6%, transparent); }
+.lp .db-nav--on:hover { background: var(--color-accent); }
+.lp .db-nav:focus-visible { outline: 2px solid var(--db-series); outline-offset: 1px; }
+.lp .db-cap { text-transform: capitalize; }
+
+/* --- KPI row --- */
+.lp .db-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 0.8rem; }
+.lp .db-kpi {
+  border: 1px solid var(--color-rule);
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.lp .db-kpi-l { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-muted); }
+.lp .db-kpi-v { font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.lp .db-kpi-d { font-size: 0.62rem; color: var(--db-series); font-variant-numeric: tabular-nums; }
+
+/* --- charts --- */
+.lp .ch { margin: 0 0 0.75rem; }
+.lp .ch-cap {
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-size: 0.68rem; color: var(--color-muted); margin-bottom: 0.3rem;
+}
+.lp .ch-now { font-size: 0.8rem; color: var(--foreground); font-variant-numeric: tabular-nums; }
+.lp .ch-now span { font-size: 0.62rem; color: var(--color-muted); font-weight: 400; }
+
+.lp .ch-plot { position: relative; }
+.lp .ch-svg { display: block; width: 100%; height: 132px; overflow: visible; }
+.lp .ch-grid { stroke: var(--color-rule); stroke-width: 1; }
+.lp .ch-line { stroke: var(--db-series); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.lp .ch-cross { stroke: var(--color-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.lp .ch-dot {
+  position: absolute; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--db-series);
+  /* 2px surface ring so the marker stays legible over the fill */
+  box-shadow: 0 0 0 2px var(--card);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.lp .ch-tip {
+  position: absolute; top: -4px; transform: translate(-50%, -100%);
+  background: var(--foreground); color: var(--background);
+  border-radius: 5px; padding: 0.12rem 0.4rem;
+  font-size: 0.62rem; white-space: nowrap; pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.lp .ch-bars { display: flex; align-items: flex-end; gap: 3px; }
+.lp .ch-bar {
+  flex: 1;
+  min-height: 2px;
+  /* 4px rounded data-end, anchored to the baseline */
+  border-radius: 4px 4px 0 0;
+  background: color-mix(in srgb, var(--db-series) 55%, transparent);
+  transition: background 0.12s;
+}
+.lp .ch-bar:hover,
+.lp .ch-bar.is-on { background: var(--db-series); }
+.lp .ch-axis { display: flex; justify-content: space-between; font-size: 0.58rem; color: var(--color-muted); margin-top: 0.2rem; }
+
+/* --- functions pane --- */
+.lp .db-tr--fn { grid-template-columns: minmax(0, 1fr) 84px 64px 60px; }
+.lp .db-kind {
+  border-radius: 4px; padding: 0.06rem 0.34rem; font-size: 0.6rem;
+  font-family: var(--font-mono);
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  color: var(--color-muted);
+}
+.lp .db-kind.is-mutation { background: color-mix(in srgb, var(--db-series) 18%, transparent); color: var(--db-series); }
+
+/* --- logs pane --- */
+.lp .db-logs {
+  border: 1px solid var(--color-rule); border-radius: 8px;
+  padding: 0.5rem 0.6rem; font-family: var(--font-mono); font-size: 0.66rem;
+  color: var(--color-ink-2); overflow: hidden;
+}
+.lp .db-logline { padding: 0.12rem 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp .ch-bar { transition: none; }
+}

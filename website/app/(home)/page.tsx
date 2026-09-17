@@ -9,7 +9,9 @@ import { BeamDiagram } from './BeamDiagram';
 import { CodeTabs } from './CodeTabs';
 import { FeatureCards } from './FeatureCards';
 import { CopyCommand } from './CopyCommand';
-import { EditorShowcase } from './EditorShowcase';
+import { DashboardShowcase } from './DashboardShowcase';
+import { BrowserFrame } from './BrowserFrame';
+import { MacbookScroll } from './MacbookScroll';
 
 export default function HomePage() {
   return (
@@ -68,17 +70,22 @@ export default function HomePage() {
           <CodeTabs />
         </Reveal>
 
-        {/* ---------------- EDITOR SHOWCASE (VSCode-style mockup) ---------------- */}
+        {/* ---------------- DASHBOARD SHOWCASE (on the laptop screen) ---------------- */}
         <Reveal className="fc-section">
           <div className="fc-head">
-            <span className="k">the dev loop</span>
-            <h2>Write, run, and watch it go live, in one window</h2>
+            <span className="k">the dashboard</span>
+            <h2>Watch your data change as you write it</h2>
             <p>
-              Run one command. Edit a function. The dashboard and every client update themselves,
-              no restart, no refresh.
+              Concile ships a dashboard with every project. It reads through a live subscription, so
+              writes land in the table as they happen. There is no refresh button, because there is
+              nothing to refresh.
             </p>
           </div>
-          <EditorShowcase />
+          <MacbookScroll>
+            <BrowserFrame url="localhost:3000/_dashboard">
+              <DashboardShowcase />
+            </BrowserFrame>
+          </MacbookScroll>
         </Reveal>
 
         {/* ---------------- REACTIVITY DIAGRAM ---------------- */}
