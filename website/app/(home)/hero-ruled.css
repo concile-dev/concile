@@ -1,0 +1,279 @@
+/* ---------------------------------------------------------------------------
+   Ruled hero.
+
+   The structural idea is a drawn grid: thin rules divide the hero into cells,
+   and content sits inside them. Actions are full-width rows in that grid rather
+   than pills floating on a background, so the page reads as a technical drawing
+   instead of as a landing page.
+
+   Every colour is a token, so the same rules serve light and dark.
+   --------------------------------------------------------------------------- */
+.hr {
+  --hr-rule: color-mix(in srgb, var(--foreground) 14%, transparent);
+  --hr-cell-hover: color-mix(in srgb, var(--foreground) 4%, transparent);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--background);
+  color: var(--foreground);
+  min-height: 100dvh;
+  display: flex;
+  align-items: stretch;
+}
+
+/* Full-bleed rule directly under the navbar, the top edge of the drawing. */
+.hr::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: var(--hr-rule);
+  z-index: 2;
+}
+
+/* Warm wash so the near-black does not read as a flat void. Sits behind
+   everything and moves far below reading speed. */
+.hr-glow {
+  position: absolute;
+  inset: -40%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(34% 40% at 24% 30%, color-mix(in srgb, var(--primary) 22%, transparent), transparent 70%),
+    radial-gradient(40% 44% at 78% 62%, color-mix(in srgb, var(--accent-foreground) 14%, transparent), transparent 72%);
+  filter: blur(80px) saturate(115%);
+}
+
+.hr-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  display: grid;
+  /* minmax(0, ...) not a bare fr: the panel column holds an unbreakable code
+     block, and a bare fr floors the track at its min-content width. */
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  align-items: stretch;
+}
+
+/* ---------- copy column ---------- */
+
+/* The two vertical rules of the drawing. They run the full height of the hero
+   because the column does, which is what makes the grid read as structure
+   rather than as a box drawn around the text. */
+.hr-copy {
+  border-left: 1px solid var(--hr-rule);
+  border-right: 1px solid var(--hr-rule);
+  padding: 0 0 0 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.hr-pad { padding: 0 clamp(1.25rem, 3vw, 2.75rem); }
+
+.hr-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--font-jetbrains-mono, ui-monospace, monospace);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  margin: 0 0 1.6rem;
+}
+.hr-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+/* Big, tight and heavy. Leading under 1 is what makes a three-line headline
+   read as one mass rather than as three sentences. */
+.hr-title {
+  font-size: clamp(2.4rem, 5.2vw, 4.4rem);
+  line-height: 0.96;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+  /* Sub-1 leading pulls the lede up against the last descender, so the gap
+     after the headline has to be set larger than it looks like it needs. */
+  margin: 0 0 1.9rem;
+}
+.hr-title em {
+  font-style: normal;
+  color: var(--primary);
+}
+
+.hr-lede {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+  max-width: 30rem;
+  margin: 0 0 2.4rem;
+}
+
+/* ---------- action cells ---------- */
+
+/* Actions are rows of the grid. Each one spans the full column and is separated
+   by a rule, so they continue the drawing instead of interrupting it. */
+.hr-cells {
+  border-top: 1px solid var(--hr-rule);
+}
+.hr-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 1.05rem clamp(1.25rem, 3vw, 2.75rem);
+  border-bottom: 1px solid var(--hr-rule);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--foreground);
+  background: transparent;
+  text-align: left;
+  transition: background-color 0.16s ease;
+}
+.hr-cell:hover { background: var(--hr-cell-hover); }
+
+.hr-cell--install {
+  font-family: var(--font-jetbrains-mono, ui-monospace, monospace);
+  font-weight: 400;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+.hr-cell--install .hr-prompt { color: var(--primary); }
+
+.hr-icon {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted-foreground);
+}
+.hr-cell:hover .hr-icon { color: var(--foreground); }
+.hr-copied {
+  font-family: var(--font-jetbrains-mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+  color: var(--primary);
+  flex: none;
+}
+
+/* ---------- panel stage ---------- */
+
+/* Panels sit in perspective and run off the right edge. Bleeding past the
+   viewport is the point: it reads as a window onto something larger rather than
+   as a screenshot placed on a page. */
+.hr-stage {
+  position: relative;
+  min-width: 0;
+  perspective: 1600px;
+}
+/* Rotation is deliberately shallow. At -13deg the far edge of each panel
+   compressed hard enough that the code stopped being readable, which defeats
+   the point of showing code. Depth should be a hint, not a stunt. */
+.hr-deck {
+  position: absolute;
+  top: 50%;
+  left: clamp(1.25rem, 3vw, 2.5rem);
+  width: 108%;
+  transform: translateY(-50%) rotateY(-6deg) rotateX(1.5deg);
+  transform-style: preserve-3d;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.hr-card {
+  border: 1px solid var(--hr-rule);
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+  box-shadow: 0 40px 90px -50px color-mix(in srgb, var(--foreground) 55%, transparent);
+}
+.hr-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--hr-rule);
+  font-family: var(--font-jetbrains-mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+}
+.hr-tag {
+  color: var(--primary);
+  border: 1px solid color-mix(in srgb, var(--primary) 38%, transparent);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+}
+.hr-code {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  font-family: var(--font-jetbrains-mono, ui-monospace, monospace);
+  font-size: 0.76rem;
+  line-height: 1.7;
+  color: var(--foreground);
+  overflow-x: auto;
+}
+.hr-code .c { color: var(--muted-foreground); }
+.hr-code .k { color: var(--primary); }
+.hr-code .f { color: var(--accent-foreground); }
+.hr-code .s { color: var(--accent-foreground); }
+.hr-code .p { color: var(--muted-foreground); }
+
+.hr-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--primary);
+}
+.hr-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+.hr-feed { list-style: none; margin: 0; padding: 0.45rem; min-height: 132px; }
+.hr-feed li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.55rem;
+  font-size: 0.82rem;
+  color: var(--foreground);
+}
+.hr-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--primary);
+  opacity: 0.85;
+}
+
+/* ---------- responsive ---------- */
+
+/* Below the split, the drawing collapses to a single column and the panels move
+   under the copy, upright rather than in perspective. A 13deg rotation that
+   reads as depth on a wide screen just looks broken at phone width. */
+@media (max-width: 950px) {
+  .hr { min-height: 0; }
+  .hr-inner { grid-template-columns: minmax(0, 1fr); }
+  .hr-copy { padding-top: 6.5rem; border-right: none; }
+  .hr-stage { min-height: 0; padding: 2.5rem 1.25rem 3.5rem; }
+  .hr-deck {
+    position: static;
+    width: 100%;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hr-glow { animation: none; }
+}

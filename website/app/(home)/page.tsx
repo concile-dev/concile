@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import './landing.css';
 import { STACK_LOGOS } from './stack-logos';
-import { Hero } from './Hero';
+import { HeroRuled } from './HeroRuled';
 import { Reveal } from './Reveal';
 import { SpotlightGrid } from './SpotlightGrid';
 import { StatNumber } from './StatNumber';
@@ -17,7 +17,7 @@ export default function HomePage() {
   return (
     <div className="lp">
       {/* ---------------- HERO (animated, full-bleed) ---------------- */}
-      <Hero />
+      <HeroRuled />
 
       {/* ---------------- WORKS-WITH STRIP ---------------- */}
       <section className="strip">
