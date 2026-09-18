@@ -137,9 +137,13 @@
      after the headline has to be set larger than it looks like it needs. */
   margin: 0 0 1.9rem;
 }
+/* Emphasis in a greyscale system is tonal, not chromatic. The headline sits
+   below full strength and the emphasised phrase goes to it, so "come alive"
+   still lifts off the line without a brand colour to do the work. */
+.hr-title { color: color-mix(in srgb, var(--foreground) 62%, transparent); }
 .hr-title em {
   font-style: normal;
-  color: var(--primary);
+  color: var(--foreground);
 }
 
 .hr-lede {
@@ -287,8 +291,9 @@
   height: 20px;
   border-radius: 50%;
   flex: none;
-  background: var(--primary);
-  opacity: 0.85;
+  /* Not --primary. Primary is pure white in dark now, which turned the feed
+     into a column of hard white dots competing with the text beside them. */
+  background: color-mix(in srgb, var(--foreground) 28%, transparent);
 }
 
 /* ---------- responsive ---------- */

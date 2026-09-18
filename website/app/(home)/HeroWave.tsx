@@ -30,10 +30,11 @@ import { useTheme } from 'fumadocs-ui/provider/base';
  * already wires its own IntersectionObserver and visibilitychange listener.
  */
 
-// Tokens in blend order. Background appears twice on purpose: the mesh weights
-// by frequency, so repeating it keeps the field mostly neutral and lets the
-// copper read as blooms rather than as a colour wash the copy has to fight.
-const TOKENS = ['--background', '--primary', '--background', '--accent-foreground'];
+// Tokens in blend order. These are the theme's only chromatic values: the
+// interface around them is pure greyscale, so this shader is where all the
+// colour on the page comes from. That is the same division payloadcms.com
+// makes, except theirs is baked into a video and this follows the theme.
+const TOKENS = ['--wave-1', '--wave-2', '--wave-3', '--wave-4'];
 
 export function HeroWave() {
   const { resolvedTheme } = useTheme();

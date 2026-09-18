@@ -18,83 +18,118 @@
 :root {
   --radius: 0.625rem;
 
+  /* ------------------------------------------------------------------
+     Neutral greyscale, matching payloadcms.com.
+
+     Their whole palette is achromatic: 51 colour tokens, every base step
+     R=G=B, no brand hue anywhere. The only chromatic values on the site are
+     semantic status colours. All the warmth in their hero comes from the
+     background video, not from the theme.
+
+     So the colour here lives in one place, the hero wave (--hr-wave-* in
+     hero-ruled.css), and the interface stays neutral around it. Lightness
+     steps below are read off their base scale:
+       255 -> 100%   221 -> 88.4%   154 -> 66%    47 -> 25%
+       245 -> 96.5%  208 -> 84%     101 -> 47.3%  20 -> 11.5%
+       235 -> 93%    181 -> 75%      74 -> 36.8%   7 ->  4.5%
+     ------------------------------------------------------------------ */
+
   /* shadcn layer — light */
-  --background: oklch(98.5% 0.006 70);
-  --foreground: oklch(22% 0.014 55);
-  --card: oklch(99.4% 0.004 70);
-  --card-foreground: oklch(22% 0.014 55);
-  --popover: oklch(99.4% 0.004 70);
-  --popover-foreground: oklch(22% 0.014 55);
-  --primary: oklch(68% 0.11 58);
-  --primary-foreground: oklch(20% 0.02 55);
-  --secondary: oklch(96% 0.01 70);
-  --secondary-foreground: oklch(28% 0.014 55);
-  --muted: oklch(96% 0.01 70);
-  --muted-foreground: oklch(52% 0.016 58);
-  --accent: oklch(94% 0.03 62);
-  --accent-foreground: oklch(38% 0.07 55);
+  --background: oklch(100% 0 0);
+  --foreground: oklch(18.7% 0 0);
+  --card: oklch(100% 0 0);
+  --card-foreground: oklch(18.7% 0 0);
+  --popover: oklch(100% 0 0);
+  --popover-foreground: oklch(18.7% 0 0);
+  --primary: oklch(18.7% 0 0);
+  --primary-foreground: oklch(100% 0 0);
+  --secondary: oklch(96.5% 0 0);
+  --secondary-foreground: oklch(25% 0 0);
+  --muted: oklch(96.5% 0 0);
+  --muted-foreground: oklch(47.3% 0 0);
+  --accent: oklch(93% 0 0);
+  --accent-foreground: oklch(31% 0 0);
+  /* Destructive keeps its hue. Payload keeps chroma for status too: a neutral
+     palette is a brand decision, not a reason to make errors unreadable. */
   --destructive: oklch(58% 0.21 25);
-  --border: oklch(90% 0.01 66);
-  --input: oklch(90% 0.01 66);
-  --ring: oklch(68% 0.11 58);
+  --border: oklch(88.4% 0 0);
+  --input: oklch(88.4% 0 0);
+  --ring: oklch(47.3% 0 0);
+
+  /* Hero wave — the ONLY chromatic surface in the theme, the same division
+     Payload uses: neutral interface, warmth from the background animation.
+     Declared on :root rather than on .hr because the colour probe that feeds
+     these to the shader is a child of <body>, so it cannot inherit custom
+     properties defined further down the tree. */
+  --wave-1: #ffffff;
+  --wave-2: #d9bda5;
+  --wave-3: #bab4ad;
+  --wave-4: #f2ece5;
 
   /* fumadocs layer — light */
-  --color-fd-background: oklch(98.5% 0.006 70);
-  --color-fd-foreground: oklch(22% 0.014 55);
-  --color-fd-card: oklch(99.4% 0.004 70);
-  --color-fd-card-foreground: oklch(22% 0.014 55);
-  --color-fd-popover: oklch(99.4% 0.004 70);
-  --color-fd-popover-foreground: oklch(22% 0.014 55);
-  --color-fd-muted: oklch(96% 0.01 70);
-  --color-fd-muted-foreground: oklch(52% 0.016 58);
-  --color-fd-secondary: oklch(96% 0.01 70);
-  --color-fd-secondary-foreground: oklch(28% 0.014 55);
-  --color-fd-border: oklch(90% 0.01 66);
-  --color-fd-primary: oklch(62% 0.11 58);
-  --color-fd-primary-foreground: oklch(99% 0.006 70);
-  --color-fd-ring: oklch(68% 0.11 58);
-  --color-fd-accent: oklch(94% 0.03 62);
-  --color-fd-accent-foreground: oklch(38% 0.07 55);
+  --color-fd-background: oklch(100% 0 0);
+  --color-fd-foreground: oklch(18.7% 0 0);
+  --color-fd-card: oklch(100% 0 0);
+  --color-fd-card-foreground: oklch(18.7% 0 0);
+  --color-fd-popover: oklch(100% 0 0);
+  --color-fd-popover-foreground: oklch(18.7% 0 0);
+  --color-fd-muted: oklch(96.5% 0 0);
+  --color-fd-muted-foreground: oklch(47.3% 0 0);
+  --color-fd-secondary: oklch(96.5% 0 0);
+  --color-fd-secondary-foreground: oklch(25% 0 0);
+  --color-fd-border: oklch(88.4% 0 0);
+  --color-fd-primary: oklch(18.7% 0 0);
+  --color-fd-primary-foreground: oklch(100% 0 0);
+  --color-fd-ring: oklch(47.3% 0 0);
+  --color-fd-accent: oklch(93% 0 0);
+  --color-fd-accent-foreground: oklch(31% 0 0);
 }
 
 .dark {
   /* shadcn layer — dark */
-  --background: oklch(15% 0.008 60);
-  --foreground: oklch(95% 0.01 72);
-  --card: oklch(18.5% 0.01 60);
-  --card-foreground: oklch(95% 0.01 72);
-  --popover: oklch(18.5% 0.01 60);
-  --popover-foreground: oklch(95% 0.01 72);
-  --primary: oklch(75% 0.11 58);
-  --primary-foreground: oklch(16% 0.014 58);
-  --secondary: oklch(23% 0.012 60);
-  --secondary-foreground: oklch(92% 0.01 72);
-  --muted: oklch(23% 0.012 60);
-  --muted-foreground: oklch(67% 0.016 62);
-  --accent: oklch(28% 0.04 58);
-  --accent-foreground: oklch(88% 0.07 62);
+  --background: oklch(4.5% 0 0);
+  --foreground: oklch(100% 0 0);
+  --card: oklch(11.5% 0 0);
+  --card-foreground: oklch(100% 0 0);
+  --popover: oklch(11.5% 0 0);
+  --popover-foreground: oklch(100% 0 0);
+  --primary: oklch(100% 0 0);
+  --primary-foreground: oklch(4.5% 0 0);
+  --secondary: oklch(18.7% 0 0);
+  --secondary-foreground: oklch(93% 0 0);
+  --muted: oklch(18.7% 0 0);
+  --muted-foreground: oklch(66% 0 0);
+  --accent: oklch(25% 0 0);
+  --accent-foreground: oklch(84% 0 0);
   --destructive: oklch(70% 0.19 22);
-  --border: oklch(30% 0.014 60);
-  --input: oklch(30% 0.014 60);
-  --ring: oklch(75% 0.11 58);
+  --border: oklch(25% 0 0);
+  --input: oklch(25% 0 0);
+  --ring: oklch(66% 0 0);
+
+  /* Warmer and more separated than light: on a near-black surface the mesh
+     needs more contrast between stops before it reads as a moving form. */
+  --wave-1: #0a0a0a;
+  --wave-2: #b98a63;
+  --wave-3: #6f6a66;
+  --wave-4: #ded5cb;
 
   /* fumadocs layer — dark */
-  --color-fd-background: oklch(15% 0.008 60);
-  --color-fd-foreground: oklch(95% 0.01 72);
-  --color-fd-card: oklch(18.5% 0.01 60);
-  --color-fd-card-foreground: oklch(95% 0.01 72);
-  --color-fd-popover: oklch(18.5% 0.01 60);
-  --color-fd-popover-foreground: oklch(95% 0.01 72);
-  --color-fd-muted: oklch(23% 0.012 60);
-  --color-fd-muted-foreground: oklch(67% 0.016 62);
-  --color-fd-secondary: oklch(23% 0.012 60);
-  --color-fd-secondary-foreground: oklch(92% 0.01 72);
-  --color-fd-border: oklch(30% 0.014 60);
-  --color-fd-primary: oklch(75% 0.11 58);
-  --color-fd-primary-foreground: oklch(16% 0.014 58);
-  --color-fd-ring: oklch(75% 0.11 58);
-  --color-fd-accent: oklch(28% 0.04 58);
-  --color-fd-accent-foreground: oklch(88% 0.07 62);
+  --color-fd-background: oklch(4.5% 0 0);
+  --color-fd-foreground: oklch(100% 0 0);
+  --color-fd-card: oklch(11.5% 0 0);
+  --color-fd-card-foreground: oklch(100% 0 0);
+  --color-fd-popover: oklch(11.5% 0 0);
+  --color-fd-popover-foreground: oklch(100% 0 0);
+  --color-fd-muted: oklch(18.7% 0 0);
+  --color-fd-muted-foreground: oklch(66% 0 0);
+  --color-fd-secondary: oklch(18.7% 0 0);
+  --color-fd-secondary-foreground: oklch(93% 0 0);
+  --color-fd-border: oklch(25% 0 0);
+  --color-fd-primary: oklch(100% 0 0);
+  --color-fd-primary-foreground: oklch(4.5% 0 0);
+  --color-fd-ring: oklch(66% 0 0);
+  --color-fd-accent: oklch(25% 0 0);
+  --color-fd-accent-foreground: oklch(84% 0 0);
 }
 
 html {
