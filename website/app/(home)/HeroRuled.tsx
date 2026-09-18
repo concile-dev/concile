@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
+import { HeroWave } from './HeroWave';
 import './hero-ruled.css';
 
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
@@ -75,6 +76,7 @@ export function HeroRuled() {
 
   return (
     <section className="hr">
+      <HeroWave />
       <div className="hr-glow" aria-hidden="true" />
 
       <div className="hr-inner">

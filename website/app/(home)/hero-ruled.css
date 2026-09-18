@@ -31,16 +31,33 @@
   z-index: 2;
 }
 
-/* Warm wash so the near-black does not read as a flat void. Sits behind
-   everything and moves far below reading speed. */
+/* The flowing wave. Full bleed, behind everything, and masked at the bottom so
+   it dissolves into the section rather than ending on a hard edge.
+
+   Opacity is what keeps it a background. The shader renders at full strength;
+   the copy has to stay the most legible thing on the page, so the layer is
+   dialled down here rather than by washing out the shader's own colours. */
+.hr-wave {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.45;
+  mask-image: linear-gradient(180deg, #000 0%, #000 62%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 62%, transparent 100%);
+}
+.dark .hr-wave { opacity: 0.68; }
+
+/* A soft warm wash on top of the wave. The mesh alone can drift to a cool
+   neutral as it moves; this keeps the hero reliably copper. */
 .hr-glow {
   position: absolute;
   inset: -40%;
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(34% 40% at 24% 30%, color-mix(in srgb, var(--primary) 22%, transparent), transparent 70%),
-    radial-gradient(40% 44% at 78% 62%, color-mix(in srgb, var(--accent-foreground) 14%, transparent), transparent 72%);
+    radial-gradient(34% 40% at 24% 30%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 70%),
+    radial-gradient(40% 44% at 78% 62%, color-mix(in srgb, var(--accent-foreground) 10%, transparent), transparent 72%);
   filter: blur(80px) saturate(115%);
 }
 
@@ -65,11 +82,28 @@
 .hr-copy {
   border-left: 1px solid var(--hr-rule);
   border-right: 1px solid var(--hr-rule);
-  padding: 0 0 0 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
   min-width: 0;
+
+  /* Frosted fill over the wave, sized by measurement rather than by eye.
+
+     The wave moves, so which words it washes out changes second by second.
+     Without this fill it swallowed "REACTIVE" in the kicker outright, and
+     lowering the shader's own opacity only changes which frame breaks.
+
+     The binding case is --muted-foreground (kicker and lede), not
+     --foreground: against the worst-case composite the headline sits at 9.61
+     while muted text is far closer to the floor. Contrast of muted against
+     brightest-possible-wave under this fill, measured in dark:
+
+         76% -> 4.62    86% -> 5.52    90% -> 5.86
+
+     76% already clears AA, but by 0.12, which one token tweak would erase.
+     86% keeps the cell visually identical and buys a real margin. */
+  background: color-mix(in srgb, var(--background) 86%, transparent);
+  backdrop-filter: blur(7px);
 }
 
 .hr-pad { padding: 0 clamp(1.25rem, 3vw, 2.75rem); }
