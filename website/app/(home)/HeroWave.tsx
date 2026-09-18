@@ -30,10 +30,11 @@ import { useTheme } from 'fumadocs-ui/provider/base';
  * already wires its own IntersectionObserver and visibilitychange listener.
  */
 
-// Tokens in blend order. These are the theme's only chromatic values: the
-// interface around them is pure greyscale, so this shader is where all the
-// colour on the page comes from. That is the same division payloadcms.com
-// makes, except theirs is baked into a video and this follows the theme.
+// Tokens in blend order, running base -> deep -> highlight -> specular. These
+// are the theme's only chromatic values: the interface around them is pure
+// greyscale, so this shader is where all the colour on the page comes from.
+// Same division payloadcms.com makes, except theirs is baked into a video.
+// The stops are sampled from that video; the measurements are in global.css.
 const TOKENS = ['--wave-1', '--wave-2', '--wave-3', '--wave-4'];
 
 export function HeroWave() {

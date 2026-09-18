@@ -57,14 +57,29 @@
   --ring: oklch(47.3% 0 0);
 
   /* Hero wave — the ONLY chromatic surface in the theme, the same division
-     Payload uses: neutral interface, warmth from the background animation.
+     Payload uses: neutral interface, colour from the background animation.
      Declared on :root rather than on .hr because the colour probe that feeds
      these to the shader is a child of <body>, so it cannot inherit custom
-     properties defined further down the tree. */
+     properties defined further down the tree.
+
+     Stops are measured from Payload's own glass-animation video, 129,600
+     pixels over four frames, not picked by eye. Mean hue of the coloured
+     pixels is 206, a clean azure, and the distribution sits very dark:
+
+       p50  #00080d  hue 203  sat 1.00  lum 7
+       p75  #001b31  hue 207  sat 1.00  lum 23
+       p90  #132439  hue 213  sat 0.67  lum 34
+       p97  #2e4051  hue 209  sat 0.43  lum 61   steel highlight
+       p100 #957958  hue  32  sat 0.41  lum 125  gold specular
+
+     The shape is what matters: deep saturated blue almost everywhere, steel
+     where it catches, and a little warm gold only at the brightest points.
+     Light mode has no counterpart on their site, so these hold hue 206 and
+     invert the lightness. */
   --wave-1: #ffffff;
-  --wave-2: #d9bda5;
-  --wave-3: #bab4ad;
-  --wave-4: #f2ece5;
+  --wave-2: #cfe0ee;
+  --wave-3: #9db8d0;
+  --wave-4: #e8d9c2;
 
   /* fumadocs layer — light */
   --color-fd-background: oklch(100% 0 0);
@@ -106,12 +121,14 @@
   --input: oklch(25% 0 0);
   --ring: oklch(66% 0 0);
 
-  /* Warmer and more separated than light: on a near-black surface the mesh
-     needs more contrast between stops before it reads as a moving form. */
-  --wave-1: #0a0a0a;
-  --wave-2: #b98a63;
-  --wave-3: #6f6a66;
-  --wave-4: #ded5cb;
+  /* The measured video palette. Lifted slightly off the raw percentiles: the
+     source sits so low (median luminance 7) that using it verbatim leaves the
+     mesh invisible once the layer opacity is applied over it. Hue and the
+     blue -> steel -> gold ordering are kept exactly. */
+  --wave-1: #000306;
+  --wave-2: #00223d;
+  --wave-3: #3a5169;
+  --wave-4: #9d8160;
 
   /* fumadocs layer — dark */
   --color-fd-background: oklch(4.5% 0 0);
