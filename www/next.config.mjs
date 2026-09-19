@@ -16,10 +16,10 @@ const config = {
   // must be the monorepo root for it to resolve those MDX modules. Set it explicitly so
   // Turbopack doesn't have to infer it from a lockfile.
   //
-  // This was pinned to this directory while the docs lived in website/content/docs. Moving
-  // them to the root made every generated `../../docs/*.mdx` import in .source/server.ts
-  // unresolvable, because Turbopack will not resolve a module above its root. tsc has no
-  // such rule, so the typecheck passed and only the running app 500'd.
+  // This was pinned to this directory while the docs lived inside the app. Moving them
+  // out made every generated `../../docs/*.mdx` import in .source/server.ts unresolvable,
+  // because Turbopack will not resolve a module above its root. tsc has no such rule, so
+  // the typecheck passed and only the running app 500'd.
   turbopack: {
     root: path.join(import.meta.dirname, '..'),
   },
