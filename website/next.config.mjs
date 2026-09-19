@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { createMDX } from 'fumadocs-mdx/next';
 
 const withMDX = createMDX();
@@ -11,10 +12,16 @@ const config = {
   // ERR_INVALID_HTTP_RESPONSE and which leaves the page unhydrated. Trust the loopback IP
   // too. This setting applies to the dev server only.
   allowedDevOrigins: ['127.0.0.1'],
-  // This docs app is intentionally isolated from the concile backend workspace; pin Turbopack's
-  // root to this directory so it doesn't infer the parent monorepo root from its lockfile.
+  // Docs content lives at the repo root (../docs), outside this app dir, so Turbopack's root
+  // must be the monorepo root for it to resolve those MDX modules. Set it explicitly so
+  // Turbopack doesn't have to infer it from a lockfile.
+  //
+  // This was pinned to this directory while the docs lived in website/content/docs. Moving
+  // them to the root made every generated `../../docs/*.mdx` import in .source/server.ts
+  // unresolvable, because Turbopack will not resolve a module above its root. tsc has no
+  // such rule, so the typecheck passed and only the running app 500'd.
   turbopack: {
-    root: import.meta.dirname,
+    root: path.join(import.meta.dirname, '..'),
   },
   // The docs root has no page of its own (the old "home" duplicated
   // "What is concile?"). Send /docs to that page instead.

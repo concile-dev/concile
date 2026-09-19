@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 // on screen at once, so nothing is a click away.
 //
 // Snippets track the shipped API (`mutation({ args, handler })`), not the older
-// positional form. See content/docs/core-concepts/{schema-and-tables,mutations,queries}.mdx.
+// positional form. See docs/core-concepts/{schema-and-tables,mutations,queries}.mdx.
 type Step = { label: string; title: string; body: string; file: string; node: ReactNode };
 
 const STEPS: Step[] = [

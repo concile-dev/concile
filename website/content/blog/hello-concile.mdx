@@ -1,0 +1,36 @@
+---
+title: Hello, Concile
+description: We are building the backend we always wished existed. Here is why, and what it does.
+author: The Concile Team
+date: 2026-09-01
+---
+
+Every app starts as an idea. Then the wall appears.
+
+A database to run. A server to keep alive. An API to design. A socket to open for live updates. A cache to clear. And a thousand lines of glue that break the moment you look away. Most of that was never your idea. It was plumbing.
+
+We got tired of the plumbing. So we built Concile.
+
+## What it is
+
+Concile is an open-source reactive backend you self-host. You write one function in plain TypeScript. Concile runs it on the server, inside a transaction. When the data behind it changes, every screen watching that data updates on its own.
+
+```ts
+// concile/tasks.ts
+export const list = query(async (ctx) => ctx.db.query("tasks").collect());
+export const add = mutation(async (ctx, { text }) => {
+  await ctx.db.insert("tasks", { text, done: false });
+});
+```
+
+On the client you call `useQuery(api.tasks.list)` and it stays live. No polling. No refresh. No sockets to wire by hand. Add a row on one device and every other screen re-renders at once.
+
+## Who it is for
+
+It is for the expert who wants control of their stack. It is also for the person who has never heard the word "backend" and just wants to ship something real this afternoon. We think both deserve the same simple thing.
+
+## Where we are
+
+Concile is pre-1.0, and it works today, end to end. The reactive engine and the production tooling are built and tested on both Node and Bun. You can run it with one command in dev, and ship it with `docker compose up`.
+
+We are just getting started. If a backend that keeps your data alive sounds good to you, star the repo and build something with us.

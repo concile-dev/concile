@@ -4,7 +4,7 @@ import Link from 'next/link';
 // runs FeatureCards straight into the bento, and a third one would read as more
 // of the same field. Rows on hairlines instead, against the real config file.
 //
-// Names, one-liners and hrefs all track content/docs/components/*.mdx. If a
+// Names, one-liners and hrefs all track docs/components/*.mdx. If a
 // component's docs description changes, change it here too.
 type Component = { pkg: string; name: string; blurb: string; href: string };
 

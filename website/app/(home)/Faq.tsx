@@ -7,7 +7,7 @@ import { useId, useState } from 'react';
 // Single-open accordion, matching the docs FAQ's <Accordions type="single">.
 // The open/close animation is a CSS grid-template-rows 0fr -> 1fr transition
 // rather than a measured height, so there is no ResizeObserver and no layout
-// read. Answers track content/docs/reference/faq.mdx. If an answer changes
+// read. Answers track docs/reference/faq.mdx. If an answer changes
 // there, change it here too.
 type Item = { q: string; a: ReactNode };
 
