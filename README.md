@@ -135,6 +135,6 @@ If you want that future, there is one thing you can do right now.
 
 <div align="center">
 
-**[Documentation](https://concile.dev/docs)** · **[Quickstart](https://concile.dev/docs/get-started)** · **[Contributing](CONTRIBUTING.md)** · **[Architecture](website/content/docs/contributing/architecture/)**
+**[Documentation](https://concile.dev/docs)** · **[Quickstart](https://concile.dev/docs/get-started)** · **[Contributing](CONTRIBUTING.md)** · **[Architecture](docs/contributing/architecture/)**
 
 </div>

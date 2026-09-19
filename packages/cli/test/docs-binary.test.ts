@@ -10,7 +10,7 @@ import { join } from "node:path";
 describe("standalone-binary docs match reality", () => {
   // The single-binary content lives in the deploy-and-build page of the fumadocs site.
   const doc = readFileSync(
-    join(import.meta.dirname, "../../../website/content/docs/deploy/deploy-and-build.mdx"),
+    join(import.meta.dirname, "../../../docs/deploy/deploy-and-build.mdx"),
     "utf8",
   );
 
