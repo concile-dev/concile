@@ -17,8 +17,11 @@ const LINKS = [
 export function Navbar() {
   const pathname = usePathname();
 
+  // backdrop-blur comes from the Tailwind utility, not the `backdrop-filter` in
+  // global.css `.nb`: the v4 build strips that declaration, so the bar was 82%
+  // transparent with no blur and bright content read straight through it.
   return (
-    <header className="nb">
+    <header className="nb backdrop-blur-md">
       <div className="nb-inner">
         <Link href="/" className="nb-brand">
           {appName}

@@ -20,10 +20,12 @@
     "lucide-react": "^1.24.0",
     "motion": "^13.3.0",
     "next": "16.2.10",
+    "ogl": "^1.0.11",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "tailwind-merge": "^3",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "three": "^0.186.0"
   },
   "overrides": {
     "yuku-ast": "0.6.8"
@@ -34,6 +36,7 @@
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.186.0",
     "postcss": "^8.5.17",
     "tailwindcss": "^4.3.2",
     "typescript": "^6.0.3"

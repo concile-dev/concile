@@ -26,8 +26,8 @@
      semantic status colours. All the warmth in their hero comes from the
      background video, not from the theme.
 
-     So the colour here lives in one place, the hero wave (--hr-wave-* in
-     hero-ruled.css), and the interface stays neutral around it. Lightness
+     So the colour here lives in one place, the hero backdrop (--wave-* and
+     --field-* below), and the interface stays neutral around it. Lightness
      steps below are read off their base scale:
        255 -> 100%   221 -> 88.4%   154 -> 66%    47 -> 25%
        245 -> 96.5%  208 -> 84%     101 -> 47.3%  20 -> 11.5%
@@ -81,6 +81,18 @@
   --wave-3: #9db8d0;
   --wave-4: #e8d9c2;
 
+  /* The halftone field is painted through an alpha mask, so these are the ink
+     the dots are made of, not a surface colour. That is why they cannot reuse
+     --wave-*: those are pale in light mode because a gradient sits behind copy
+     there, and pale ink on a white page is nothing at all. Same azure family,
+     inverted in lightness per theme. --field-1 is the near edge at the bottom
+     of the sheet, --field-2 the far edge approaching the horizon. */
+  --field-1: #2d587d;
+  --field-2: #6f93b4;
+  --field-opacity: 0.85;
+  --veil-opacity: 0.55;
+  --silk-opacity: 0.5;
+
   /* fumadocs layer — light */
   --color-fd-background: oklch(100% 0 0);
   --color-fd-foreground: oklch(18.7% 0 0);
@@ -129,6 +141,12 @@
   --wave-2: #00223d;
   --wave-3: #3a5169;
   --wave-4: #9d8160;
+
+  --field-1: #78afe1;
+  --field-2: #2f5a7f;
+  --field-opacity: 0.62;
+  --veil-opacity: 0.72;
+  --silk-opacity: 0.62;
 
   /* fumadocs layer — dark */
   --color-fd-background: oklch(4.5% 0 0);

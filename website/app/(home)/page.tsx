@@ -6,8 +6,12 @@ import { Reveal } from './Reveal';
 import { SpotlightGrid } from './SpotlightGrid';
 import { StatNumber } from './StatNumber';
 import { BeamDiagram } from './BeamDiagram';
-import { CodeTabs } from './CodeTabs';
+import { Steps } from './Steps';
 import { FeatureCards } from './FeatureCards';
+import { Components } from './Components';
+import { Pillars } from './Pillars';
+import { ComparisonTable } from './ComparisonTable';
+import { Faq } from './Faq';
 import { CopyCommand } from './CopyCommand';
 import { DashboardShowcase } from './DashboardShowcase';
 import { BrowserFrame } from './BrowserFrame';
@@ -53,9 +57,9 @@ export default function HomePage() {
       </section>
 
       <div className="wrap">
-        {/* ---------------- FEATURE + TABBED CODE ---------------- */}
-        <Reveal className="feat">
-          <div className="feat-copy">
+        {/* ---------------- HOW IT WORKS (numbered step rail) ---------------- */}
+        <Reveal className="stp">
+          <div className="stp-copy">
             <span className="k">just typescript</span>
             <h3>Define it, subscribe to it, ship it</h3>
             <p>
@@ -67,7 +71,7 @@ export default function HomePage() {
               Read the quickstart
             </Link>
           </div>
-          <CodeTabs />
+          <Steps />
         </Reveal>
 
         {/* ---------------- DASHBOARD SHOWCASE (on the laptop screen) ---------------- */}
@@ -97,6 +101,11 @@ export default function HomePage() {
               Your functions talk to one engine. Every subscriber reads the same query, so a single
               commit reaches all of them. No refresh, no polling, no glue.
             </p>
+            {/* the bento's reactive-core tile used to carry this link; it was the
+                page's only route to the reactivity doc, so it moved here. */}
+            <Link className="tlink" href="/docs/core-concepts/reactivity">
+              Read about reactivity
+            </Link>
           </div>
           <BeamDiagram />
         </Reveal>
@@ -114,189 +123,76 @@ export default function HomePage() {
           <FeatureCards />
         </Reveal>
 
-        {/* ---------------- BENTO GRID ---------------- */}
-        <Reveal>
+        {/* ---------------- COMPONENTS (opt-in catalogue) ---------------- */}
+        <Reveal className="fc-section">
+          <div className="fc-head">
+            <span className="k">batteries included, you pick the ones</span>
+            <h2>Six components. Nothing you did not ask for.</h2>
+            <p>
+              Auth, authorization, scheduling, workflows, triggers and notifications ship as
+              separate packages. Each one plugs into the engine through a single seam, and you
+              compose the ones you want in one config file.
+            </p>
+          </div>
+          <Components />
+        </Reveal>
+
+        {/* ---------------- PILLARS ---------------- */}
+        <Reveal className="fc-section">
+          <div className="fc-head">
+            <span className="k">why this one</span>
+            <h2>Five things you cannot bolt on later</h2>
+            <p>
+              Not a feature list. These are properties of how Concile is built, and they are the
+              reason it behaves differently when the network drops, when your database changes, or
+              when one node stops being enough.
+            </p>
+          </div>
+          <Pillars />
+        </Reveal>
+
+        {/* ---------------- COMPARISON MATRIX ---------------- */}
+        <Reveal className="fc-section">
+          <div className="fc-head cmt-head">
+            <span className="k">the honest version</span>
+            <h2>We took the good parts</h2>
+            <p>
+              Reactive queries from Convex. A real database you can self-host from Supabase. Offline
+              that just works from Firebase. One binary and no setup from PocketBase. Here is where
+              that leaves us, including the two rows where it does not go our way.
+            </p>
+          </div>
+          <ComparisonTable />
+        </Reveal>
+
+        {/* ---------------- ESCAPE HATCHES + LIMITS ---------------- */}
+        <Reveal className="fc-section">
+          <div className="fc-head">
+            <span className="k">no magic</span>
+            <h2>Where the model ends</h2>
+            <p>
+              Reactive functions do not fit every job, and some things are simply not built yet.
+              Here is both, in one place, so you find out now instead of halfway through a sprint.
+            </p>
+          </div>
         <SpotlightGrid className="bento">
-          {/* code tile — the reactive read */}
-          <article className="cell cell--code s4" aria-hidden="true">
-            <div className="code-head">
-              <span className="file">concile/messages.ts</span>
-              <span className="chip">reactive</span>
-            </div>
-            <pre>
-              <code>
-                <span className="tc">{'// a query is a pure, reactive read'}</span>
-                {'\n'}
-                <span className="tk">export const</span> <span className="tf">list</span>{' '}
-                <span className="tp">=</span> <span className="tf">query</span>
-                <span className="tp">({'{'}</span>
-                {'\n  '}
-                <span className="tf">args</span>
-                <span className="tp">:</span> <span className="tp">{'{'}</span>{' '}
-                <span className="tf">channelId</span>
-                <span className="tp">:</span> <span className="tf">v</span>
-                <span className="tp">.</span>
-                <span className="tf">id</span>
-                <span className="tp">(</span>
-                <span className="ts">"channels"</span>
-                <span className="tp">)</span> <span className="tp">{'}'}</span>
-                <span className="tp">,</span>
-                {'\n  '}
-                <span className="tf">handler</span>
-                <span className="tp">:</span> <span className="tp">(</span>
-                <span className="tf">ctx</span>
-                <span className="tp">,</span> <span className="tp">{'{'}</span>{' '}
-                <span className="tf">channelId</span> <span className="tp">{'}'}</span>
-                <span className="tp">)</span> <span className="tp">{'=>'}</span>
-                {'\n    '}
-                <span className="tf">ctx</span>
-                <span className="tp">.</span>
-                <span className="tf">db</span>
-                <span className="tp">.</span>
-                <span className="tk">query</span>
-                <span className="tp">(</span>
-                <span className="ts">"messages"</span>
-                <span className="tp">,</span> <span className="ts">"by_channel"</span>
-                <span className="tp">)</span>
-                {'\n      '}
-                <span className="tp">.</span>
-                <span className="tk">eq</span>
-                <span className="tp">(</span>
-                <span className="ts">"channelId"</span>
-                <span className="tp">,</span> <span className="tf">channelId</span>
-                <span className="tp">)</span>
-                <span className="tp">.</span>
-                <span className="tk">collect</span>
-                <span className="tp">(),</span>
-                {'\n'}
-                <span className="tp">{'}'})</span>
-                <span className="tp">;</span>
-                {'\n\n'}
-                <span className="tc">{'// on the client, re-renders when a mutation commits'}</span>
-                {'\n'}
-                <span className="tk">const</span> <span className="tf">messages</span>{' '}
-                <span className="tp">=</span> <span className="tf">useQuery</span>
-                <span className="tp">(</span>
-                <span className="tf">api</span>
-                <span className="tp">.</span>
-                <span className="tf">messages</span>
-                <span className="tp">.</span>
-                <span className="tf">list</span>
-                <span className="tp">,</span> <span className="tp">{'{'}</span>{' '}
-                <span className="tf">channelId</span> <span className="tp">{'}'}</span>
-                <span className="tp">);</span>
-              </code>
-            </pre>
-          </article>
-
-          {/* reactive-loop tile */}
-          <article className="cell s2">
-            <span className="k">the reactive core</span>
-            <h3>Data changes push themselves</h3>
-            <p>Every query records what it read; every write is checked against it.</p>
-            <div className="loop">
-              <div className="loop-step">
-                <span className="n">01</span>
-                <span className="t">
-                  <b>A client subscribes.</b> The engine records its read set.
-                </span>
-              </div>
-              <div className="loop-step">
-                <span className="n">02</span>
-                <span className="t">
-                  <b>A mutation commits</b> in one serializable transaction.
-                </span>
-              </div>
-              <div className="loop-step">
-                <span className="n">03</span>
-                <span className="t">
-                  <b>The result is pushed.</b> Only queries the write touched re-run.
-                </span>
-              </div>
-            </div>
-            <Link className="tlink" href="/docs/core-concepts/reactivity">
-              Read about reactivity
-            </Link>
-          </article>
-
-          {/* real stat tile */}
-          <article className="cell cell--stat s2">
-            <p className="stat">
-              8.6<b>ms</b>
-            </p>
-            <p>
-              Median reactive propagation in a same-substrate benchmark. Run it yourself before you
-              trust it.
-            </p>
-            <Link className="tlink" href="/docs/get-started/performance">
-              See the numbers
-            </Link>
-          </article>
-
-          {/* capability tiles */}
-          <article className="cell s2">
-            <span className="k">components</span>
-            <h3>Auth, scheduler, workflows</h3>
-            <p>
-              Opt-in components: authentication, cron and scheduled jobs, durable multi-step workflows
-              with saga compensation, triggers, and notifications.
-            </p>
-          </article>
-
-          <article className="cell s2">
-            <span className="k">storage</span>
-            <h3>SQLite or Postgres, plus files</h3>
-            <p>
-              Zero-config SQLite for local, Postgres when you need it, and built-in blob storage on the
-              filesystem or any S3-compatible bucket.
-            </p>
-          </article>
-
-          <article className="cell s2">
-            <span className="k">the client</span>
-            <h3>Optimistic and offline</h3>
-            <p>
-              A typed client with instant optimistic updates and a durable offline outbox that survives
-              reloads, with exactly-once delivery on reconnect.
-            </p>
-          </article>
-
-          <article className="cell s2">
+          <article className="cell cell--rows s3">
             <span className="k">escape hatches</span>
-            <h3>Actions, HTTP, crons</h3>
-            <p>
-              Actions run outside the transaction for fetch, timers, and randomness. Public HTTP
-              endpoints handle webhooks.
-            </p>
-          </article>
-
-          <article className="cell s2">
-            <span className="k">dashboard</span>
-            <h3>A live data browser</h3>
-            <p>
-              Browse and edit tables, watch logs, and run functions from a built-in dashboard that
-              updates reactively.
-            </p>
-          </article>
-
-          {/* deploy tile */}
-          <article className="cell s3">
-            <span className="k">your infrastructure</span>
-            <h3>Runs where you run</h3>
-            <p>
-              One command in development. In production it is a single self-contained binary, a Docker
-              image, or a Cloudflare deployment, backed by your own SQLite file or Postgres. No managed
-              cloud in the loop, no vendor lock-in.
-            </p>
-            <div className="targets">
-              <span>single binary</span>
-              <span>docker</span>
-              <span>cloudflare</span>
-              <span>postgres</span>
-            </div>
-            <Link className="tlink" href="/docs/deploy/self-hosting">
-              Self-hosting guide
-            </Link>
+            <h3>When the model does not fit</h3>
+            <ul>
+              <li>
+                <b>Actions</b>
+                <span>Run outside the transaction for fetch, timers, and randomness.</span>
+              </li>
+              <li>
+                <b>HTTP endpoints</b>
+                <span>Public routes for webhooks. A Request goes in, a Response comes out.</span>
+              </li>
+              <li>
+                <b>Crons and schedules</b>
+                <span>runAfter, runAt, and cron expressions, durable across restarts.</span>
+              </li>
+            </ul>
           </article>
 
           {/* honest limits tile */}
@@ -309,8 +205,10 @@ export default function HomePage() {
                 <span>Query by index and range. Full-text and vector are reserved seams.</span>
               </li>
               <li>
-                <b>Single-node writes</b>
-                <span>One writer per shard. Multi-node scale-out is a later tier.</span>
+                <b>One writer by default</b>
+                <span>
+                  Multi-node write scale-out ships, but it is the newest part. Start on one node.
+                </span>
               </li>
               <li>
                 <b>No built-in TLS</b>
@@ -352,6 +250,24 @@ export default function HomePage() {
             </span>
             <span className="stat-l">CPU at that load</span>
           </div>
+          {/* the deleted 8.6ms bento tile owned this link, and it repeated the
+              p50 that this band already states */}
+          <Link className="tlink stats-link" href="/docs/get-started/performance">
+            Run the benchmark yourself
+          </Link>
+        </Reveal>
+
+        {/* ---------------- FAQ ---------------- */}
+        <Reveal className="fc-section">
+          <div className="fc-head">
+            <span className="k">before you ask</span>
+            <h2>Questions people actually ask</h2>
+            <p>
+              The short answers. Every one of them links to the longer version in the docs, where
+              the caveats live.
+            </p>
+          </div>
+          <Faq />
         </Reveal>
       </div>
 

@@ -3,7 +3,11 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { HeroWave } from './HeroWave';
+import { HeroHalftone } from './HeroHalftone';
+import { HeroVeil } from './DarkVeil';
+import { HeroSilk } from './Silk';
+import { HeroBeams } from './Beams';
+import { EditorShowcase } from '@/components/editor-showcase';
 import './hero-ruled.css';
 
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
@@ -11,17 +15,6 @@ const INSTALL = 'npm i concile';
 
 // The rolling feed that makes the "live" card actually move. Each tick pushes
 // the next item, so a first-time visitor sees data arriving on its own.
-const FEED = [
-  'Ada joined #general',
-  'shipped v0.9 to prod',
-  'Grace: deploying now',
-  'new order #1042',
-  'Lin reacted 🎉',
-  'payment captured',
-  'Kojo opened a PR',
-  'inbox: 3 new replies',
-];
-
 function CopyIcon() {
   return (
     <svg className="hr-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
@@ -40,28 +33,24 @@ function ArrowIcon() {
 }
 
 export function HeroRuled() {
-  const [feed, setFeed] = useState(() => FEED.slice(0, 3).map((t, i) => ({ id: i, t })));
-  const [ping, setPing] = useState(0);
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    let next = 3;
-    const timer = setInterval(() => {
-      setFeed((cur) => {
-        const item = { id: next, t: FEED[next % FEED.length] };
-        next += 1;
-        return [...cur.slice(-3), item];
-      });
-      setPing((p) => p + 1);
-    }, 2200);
-    return () => clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     if (!copied) return;
     const t = setTimeout(() => setCopied(false), 1600);
     return () => clearTimeout(t);
   }, [copied]);
+
+  // Backdrop switch. DarkVeil is the design on this branch; ?bg=field and
+  // ?bg=halftone keep the previous two reachable side by side. Read after mount
+  // rather than from useSearchParams, so the server and the first client render
+  // agree and there is no hydration mismatch to reconcile. All of this goes
+  // once one of the three wins.
+  const [bg, setBg] = useState<'beams' | 'silk' | 'veil' | 'field' | 'halftone'>('beams');
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('bg');
+    if (q === 'field' || q === 'halftone' || q === 'veil' || q === 'silk') setBg(q);
+  }, []);
 
   const copy = async () => {
     try {
@@ -76,8 +65,12 @@ export function HeroRuled() {
 
   return (
     <section className="hr">
-      <HeroWave />
-      <div className="hr-glow" aria-hidden="true" />
+      {bg === 'beams' && <HeroBeams />}
+      {bg === 'silk' && <HeroSilk />}
+      {bg === 'veil' && <HeroVeil />}
+      {bg === 'halftone' && <HeroHalftone />}
+      {bg === 'field' && <div className="hr-field" aria-hidden="true" />}
+      {(bg === 'field' || bg === 'halftone') && <div className="hr-wash" aria-hidden="true" />}
 
       <div className="hr-inner">
         <div className="hr-copy">
@@ -121,55 +114,15 @@ export function HeroRuled() {
           </div>
         </div>
 
-        {/* The panels are the product, shown rather than described: a write in
-            the code card lands as a row in the client below it. */}
+        {/* The editor is the product surface: a real project's files, the
+            function you would actually write, and the client it updates. Let
+            deliberately to run past the right edge, after the Payload hero. The
+            crop is safe here in a way it was not for the status cards: the file
+            tree, the tabs, the Run button and the code all sit in the left two
+            columns, and only the preview pane is cut. */}
         <div className="hr-stage">
-          <div className="hr-deck">
-            <div className="hr-card">
-              <div className="hr-bar">
-                <span>concile/messages.ts</span>
-                <span className="hr-tag">server</span>
-              </div>
-              <pre className="hr-code">
-                <code>
-                  <span className="c">{'// one write, live everywhere'}</span>{'\n'}
-                  <span className="k">export const</span> <span className="f">add</span> ={' '}
-                  <span className="f">mutation</span>(<span className="p">async</span> (ctx, {'{'} text {'}'}) {'=>'}
-                  {'\n  '}ctx.<span className="f">db</span>.<span className="f">insert</span>(
-                  <span className="s">&quot;messages&quot;</span>, {'{'} text {'}'})
-                  {'\n'});
-                </code>
-              </pre>
-            </div>
-
-            <div className="hr-card">
-              <div className="hr-bar">
-                <span>your app</span>
-                <span className="hr-live">
-                  <span className="hr-live-dot" key={ping} />
-                  live
-                </span>
-              </div>
-              <ul className="hr-feed">
-                {feed.map((m) => (
-                  <motion.li
-                    key={m.id}
-                    initial={{
-                      y: -10,
-                      backgroundColor: 'color-mix(in srgb, var(--primary) 18%, transparent)',
-                    }}
-                    animate={{
-                      y: 0,
-                      backgroundColor: 'color-mix(in srgb, var(--primary) 0%, transparent)',
-                    }}
-                    transition={{ duration: 0.5, ease: EASE }}
-                  >
-                    <span className="hr-avatar" />
-                    {m.t}
-                  </motion.li>
-                ))}
-              </ul>
-            </div>
+          <div className="hr-editor">
+            <EditorShowcase />
           </div>
         </div>
       </div>

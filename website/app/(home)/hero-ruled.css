@@ -31,34 +31,154 @@
   z-index: 2;
 }
 
-/* The flowing wave. Full bleed, behind everything, and masked at the bottom so
-   it dissolves into the section rather than ending on a hard edge.
+/* The halftone field. A sheet of dots seen at a low angle, massed in the
+   bottom-left and thinning to the right, after the background on
+   webcontainers.io.
 
-   Opacity is what keeps it a background. The shader renders at full strength;
-   the copy has to stay the most legible thing on the page, so the layer is
-   dialled down here rather than by washing out the shader's own colours. */
-.hr-wave {
+   They ship two full-colour JPGs and swap them on :root.dark, which bakes the
+   palette into the asset. public/hero-field.webp carries opacity only: the RGB
+   is flat white and every bit of the picture is in the alpha channel. It is
+   used as a mask over a gradient of --field-*, so one file serves both themes
+   and the colour stays in global.css with the rest of the palette.
+
+   What this gives up is their parallax. They set background-attachment: fixed,
+   which has no mask-* counterpart, so a masked layer cannot be pinned to the
+   viewport. On a hero exactly one viewport tall there is nothing to see until
+   it scrolls away, and it avoids background-attachment: fixed on iOS Safari,
+   where cover sizes against the document rather than the viewport and the image
+   comes out wildly magnified.
+
+   No JavaScript, no canvas, no WebGL, and nothing to park when the tab is
+   hidden. It is one composited layer that costs nothing after paint. */
+.hr-field {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.45;
-  mask-image: linear-gradient(180deg, #000 0%, #000 62%, transparent 100%);
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 62%, transparent 100%);
+  opacity: var(--field-opacity);
+  /* The ink. Strongest at the near edge along the bottom, receding toward the
+     horizon, which is what reads as depth once the mask is applied. */
+  background: linear-gradient(to top, var(--field-1) 0%, var(--field-2) 55%, var(--field-2) 100%);
+  -webkit-mask-image: url(/hero-field.webp);
+  mask-image: url(/hero-field.webp);
+  -webkit-mask-size: cover;
+  mask-size: cover;
+  -webkit-mask-position: center bottom;
+  mask-position: center bottom;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
 }
-.dark .hr-wave { opacity: 0.68; }
 
-/* A soft warm wash on top of the wave. The mesh alone can drift to a cool
-   neutral as it moves; this keeps the hero reliably copper. */
-.hr-glow {
+/* On a narrow viewport cover crops horizontally, not vertically: a 390px box
+   against a 2000x1240 mask shows about 31% of its width. Centred, that lands on
+   the thin middle of the sheet and the field disappears completely. Anchoring
+   left keeps the dense corner, which is the only part worth seeing at this
+   size. */
+@media (max-width: 700px) {
+  .hr-field {
+    -webkit-mask-position: left bottom;
+    mask-position: left bottom;
+  }
+}
+
+/* The shader variant reuses .hr-field only for its box: full bleed, behind the
+   copy, no pointer events. Everything the mask version paints has to come back
+   off, or the baked dot mask gets applied on top of the shader's own dots and
+   the two look identical for the wrong reason. */
+.hr-field--shader {
+  -webkit-mask-image: none;
+  mask-image: none;
+  background: none;
+  opacity: 1;
+}
+
+/* DarkVeil sits behind everything, full bleed, and is masked out under the copy
+   rather than dimmed globally. A CPPN paints its brightest areas wherever it
+   likes, and on this hero the copy column is fixed, so a flat opacity either
+   leaves the headline fighting a bright patch or washes the whole veil out.
+   The gradient keeps full strength on the right, where only the cards sit, and
+   falls away across the reading column. */
+.hr-veil {
   position: absolute;
-  inset: -40%;
+  inset: 0;
   z-index: 0;
   pointer-events: none;
-  background:
-    radial-gradient(34% 40% at 24% 30%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 70%),
-    radial-gradient(40% 44% at 78% 62%, color-mix(in srgb, var(--accent-foreground) 10%, transparent), transparent 72%);
-  filter: blur(80px) saturate(115%);
+  opacity: var(--veil-opacity);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.35) 34%, #000 62%);
+  mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.35) 34%, #000 62%);
+}
+/* Beams paints its own opaque background, since the scene needs one for the
+   lighting to read against. That means no opacity dial: dimming the layer would
+   also dim the background and leave a visible rectangle over the section. It is
+   matched to --background instead and sits at full strength. */
+.hr-beams {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.beams-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Silk is a full-field weave, not a beam, so there is no directional mask on
+   it. The copy already sits on its own panel (86% background plus a 7px
+   backdrop blur), which is what keeps the headline readable over it. Opacity is
+   the only dial. */
+.hr-silk {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--silk-opacity);
+}
+.silk-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.darkveil-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Mirrored. The CPPN puts its brightest region in the top-left, which is
+     where the headline sits, so unflipped the veil is brightest exactly where
+     it has to be quietest. Nothing in the image is legible left-to-right, so a
+     flip costs nothing and moves the interesting half over the cards. */
+  transform: scaleX(-1);
+}
+
+/* Under the copy column the veil is gone entirely, so on a single-column
+   layout there is nothing left to see. Mask top-to-bottom there instead, which
+   puts the veil below the copy rather than beside it. */
+@media (max-width: 1024px) {
+  .hr-veil {
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.3) 48%, #000 78%);
+    mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.3) 48%, #000 78%);
+  }
+}
+
+/* The wash that sits over the field, after their radial vignette. Theirs is
+   radial-gradient(145% 110% at 46% 20%, ...), a very large ellipse anchored
+   high, which leaves the middle clean and darkens only the corners. Ours is the
+   same geometry in --wave-*, so it tracks the theme.
+
+   Above the field in the stack, not below it, so the corners pull the dots down
+   too rather than leaving them floating over a darkened ground. */
+.hr-wash {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    145% 110% at 46% 20%,
+    transparent 38%,
+    color-mix(in srgb, var(--wave-2) 26%, transparent) 78%,
+    color-mix(in srgb, var(--wave-3) 34%, transparent) 100%
+  );
 }
 
 .hr-inner {
@@ -81,7 +201,6 @@
    rather than as a box drawn around the text. */
 .hr-copy {
   border-left: 1px solid var(--hr-rule);
-  border-right: 1px solid var(--hr-rule);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -102,8 +221,39 @@
 
      76% already clears AA, but by 0.12, which one token tweak would erase.
      86% keeps the cell visually identical and buys a real margin. */
-  background: color-mix(in srgb, var(--background) 86%, transparent);
-  backdrop-filter: blur(7px);
+  /* The scrim is drawn on a pseudo-element that runs PAST the column, not on
+     the column itself. On the element the ramp has to finish inside the box, so
+     the fade eats the end of the longest line: the headline reaches about 85%
+     of the column and would sit on a weaker wash than the flat 86% it replaced.
+     Extending 150px beyond the edge puts the whole ramp in the gap between the
+     copy and the editor, so every glyph sits on 88% or better and the softening
+     happens over empty space.
+
+     This replaced a flat fill plus a hard border-right, which split the hero
+     into two unrelated halves meeting at a 1px seam. The backdrop is one image
+     and should read as one.
+
+     backdrop-filter had to go rather than be feathered: it applies to the whole
+     box with no way to taper it, so the blur stopped dead at the column edge
+     and put the hard line straight back. The scrim sits slightly higher than
+     the old 86% across the text to pay that back. */
+  position: relative;
+  isolation: isolate;
+}
+
+.hr-copy::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  right: -150px;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--background) 90%, transparent) 0%,
+    color-mix(in srgb, var(--background) 88%, transparent) 78%,
+    transparent 100%
+  );
 }
 
 .hr-pad { padding: 0 clamp(1.25rem, 3vw, 2.75rem); }
@@ -127,21 +277,39 @@
 }
 
 /* Big, tight and heavy. Leading under 1 is what makes a three-line headline
-   read as one mass rather than as three sentences. */
-.hr-title {
-  font-size: clamp(2.4rem, 5.2vw, 4.4rem);
+   read as one mass rather than as three sentences.
+
+   Scoped under .lp deliberately. landing.css sets `.lp h1, .lp h2, .lp h3`,
+   which at (0,1,1) outranks a bare `.hr-title` at (0,1,0), so every declaration
+   here that landing.css also sets was being dropped on the floor: the size, the
+   weight, the tracking, the margin and the tonal colour. The headline has been
+   rendering as a plain .lp h1 the whole time.
+
+   The face itself is not set here. It arrives through --font-display along with
+   the rest of the landing headings, which is the seam that already existed. */
+.lp .hr-title {
+  /* Capped at 3.9rem, not the 4.4rem this rule asked for before it was scoped
+     high enough to win. The manual <br> breaks in the markup are cut to fit a
+     measure, and Outfit sets wider than Inter at the same size: at 4.4rem
+     "Watch your whole" no longer fits the copy column and wraps to a fourth
+     line. 3.9rem is what the headline was actually rendering at all along. */
+  font-size: clamp(2.2rem, 4.6vw, 3.9rem);
   line-height: 0.96;
   letter-spacing: -0.035em;
-  font-weight: 700;
+  /* 600, not the 700 landing.css gives every h1. Outfit is geometric and carries
+     more visual weight than Inter at the same number, so 700 tips a headline
+     this size into shouting. */
+  font-weight: 600;
   /* Sub-1 leading pulls the lede up against the last descender, so the gap
      after the headline has to be set larger than it looks like it needs. */
   margin: 0 0 1.9rem;
 }
+
 /* Emphasis in a greyscale system is tonal, not chromatic. The headline sits
    below full strength and the emphasised phrase goes to it, so "come alive"
    still lifts off the line without a brand colour to do the work. */
-.hr-title { color: color-mix(in srgb, var(--foreground) 62%, transparent); }
-.hr-title em {
+.lp .hr-title { color: color-mix(in srgb, var(--foreground) 62%, transparent); }
+.lp .hr-title em {
   font-style: normal;
   color: var(--foreground);
 }
@@ -154,21 +322,91 @@
   margin: 0 0 2.4rem;
 }
 
+/* The editor panel. Unlike the status cards this is MEANT to run past the right
+   edge, which is the Payload move: a surface big enough that the crop reads as
+   depth rather than as a mistake.
+
+   The bleed is bounded rather than free. .ed-body is a 190px / 1fr / 260px
+   grid, so overflowing by at most 260px cuts into the preview column and
+   nothing else. The file tree, the tabs, the Run button and the code stay whole
+   however wide the window is, which is the difference between this crop and the
+   one that was eating the "server" and "live" badges. */
+.hr-editor {
+  position: absolute;
+  top: 50%;
+  left: clamp(1.25rem, 3vw, 2.5rem);
+  width: calc(100% + clamp(110px, 13vw, 250px));
+  transform: translateY(-50%) rotateY(-7deg) rotateX(1.5deg);
+  transform-style: preserve-3d;
+
+  /* Dissolve into the backdrop instead of being sliced off by the viewport.
+     The panel already runs past the right edge, but as an opaque card that read
+     as a hard cut rather than as depth.
+
+     Dark carries the fade much further in because the panel and the backdrop
+     are both near-black there, so they can blend a long way before the panel
+     stops being legible. In light the card is white against a pale backdrop
+     with far less room, and starting the ramp early just makes it look washed
+     out, so it stays a short taper at the very edge.
+
+     The ramp has to begin inside the visible area to be seen at all: at a
+     1512px viewport the panel is about 900px wide starting near x=760, so
+     anything past ~83% falls off-screen and does nothing. */
+  --hr-editor-fade: 80%;
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 var(--hr-editor-fade), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0%, #000 var(--hr-editor-fade), transparent 100%);
+}
+.dark .hr-editor { --hr-editor-fade: 52%; }
+
+@media (max-width: 950px) {
+  /* Upright and fully in frame below the split, same as the deck was. A crop
+     that reads as depth on a wide screen just reads as broken on a phone. */
+  .hr-editor {
+    position: static;
+    width: 100%;
+    transform: none;
+  }
+}
+
 /* ---------- action cells ---------- */
 
 /* Actions are rows of the grid. Each one spans the full column and is separated
    by a rule, so they continue the drawing instead of interrupting it. */
+/* The rules fade out to the right on the same curve as the copy scrim above.
+   As plain 1px borders they ended dead in mid-air at the old column edge once
+   the vertical rule that used to terminate them was removed. Drawn as a
+   pseudo-element rather than a border because a border cannot carry a gradient
+   without border-image, which would apply to all four sides. */
 .hr-cells {
-  border-top: 1px solid var(--hr-rule);
+  position: relative;
 }
+.hr-cells::before,
+.hr-cell::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    var(--hr-rule) 0%,
+    var(--hr-rule) 62%,
+    color-mix(in srgb, var(--hr-rule) 45%, transparent) 84%,
+    transparent 100%
+  );
+}
+.hr-cells::before { top: 0; }
+.hr-cell::after { bottom: 0; }
+
 .hr-cell {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   width: 100%;
   padding: 1.05rem clamp(1.25rem, 3vw, 2.75rem);
-  border-bottom: 1px solid var(--hr-rule);
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--foreground);
@@ -216,8 +454,16 @@
 .hr-deck {
   position: absolute;
   top: 50%;
+  /* Bounded on both sides instead of 108% wide off a left offset. The old
+     value ran the deck past the stage column, and .hr clips at the section
+     edge, so the right end of every title bar was cut off: the "server" badge
+     and the "live" indicator were both off-screen. Bleeding the panels was a
+     deliberate look, but not at the cost of the only two status chips on the
+     panel. The right inset is the larger of the two to absorb the few pixels
+     rotateY pushes outward. */
   left: clamp(1.25rem, 3vw, 2.5rem);
-  width: 108%;
+  right: clamp(1.75rem, 4vw, 3.25rem);
+  width: auto;
   transform: translateY(-50%) rotateY(-6deg) rotateX(1.5deg);
   transform-style: preserve-3d;
   display: flex;
@@ -276,24 +522,106 @@
   border-radius: 50%;
   background: var(--primary);
 }
-.hr-feed { list-style: none; margin: 0; padding: 0.45rem; min-height: 132px; }
-.hr-feed li {
-  display: flex;
+/* Three subscribers, each showing the same row. The whole card is sized so the
+   three rows land in roughly the height the old feed occupied, since the deck
+   above it is positioned against the vertical centre. */
+.hr-clients { list-style: none; margin: 0; padding: 0.3rem 0.45rem; }
+.hr-client {
+  display: grid;
+  /* Fixed first column so the three platform tags form a straight edge and the
+     rows read as one value arriving in three places, not three separate items. */
+  grid-template-columns: 4.2rem minmax(0, 1fr);
   align-items: center;
   gap: 0.6rem;
-  padding: 0.55rem 0.7rem;
+  padding: 0.15rem 0.2rem;
+}
+.hr-client-tag {
+  font-family: var(--font-jetbrains-mono, ui-monospace, monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  text-align: right;
+}
+
+/* The fulfilment pipeline. Steps are the write itself, so the state attribute
+   drives everything: done is receded, now is the only thing at full strength,
+   next is barely there. Three tones, no icons, since a tick mark at this size
+   is noise. */
+.hr-pipe {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  /* Wide enough to hold a separator between chips, since the arrow is drawn
+     into the gap rather than inside a chip's border box. */
+  gap: 1.15rem;
+  margin: 0;
+  padding: 0.7rem 0.9rem 0.2rem;
+  font-family: var(--font-jetbrains-mono, ui-monospace, monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+}
+.hr-pipe-step {
+  position: relative;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.3rem;
+  border: 1px solid transparent;
+  /* No transition, deliberately. The rows below swap text on the same tick with
+     no transition at all, so ANY easing here leaves the pipeline contradicting
+     the rows it describes: the chip still reading "packed" while all three
+     clients already read "shipped". Status is discrete, it does not have
+     in-between values, and the flash on the rows already supplies the motion.
+     A 0.15s ease was not short enough to hide this; only removing it was. */
+}
+.hr-pipe-step[data-state='done'] {
+  color: color-mix(in srgb, var(--foreground) 45%, transparent);
+}
+.hr-pipe-step[data-state='now'] {
+  color: var(--foreground);
+  border-color: var(--hr-rule);
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+.hr-pipe-step[data-state='next'] {
+  color: color-mix(in srgb, var(--foreground) 22%, transparent);
+}
+/* Separators drawn in CSS so the markup stays a plain list of steps. Absolutely
+   positioned into the gap: as an in-flow ::before it sits inside the step's own
+   padding and border, which drew the arrow inside the current chip's box. */
+.hr-pipe-step + .hr-pipe-step::before {
+  content: '→';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translate(-0.3rem, -50%);
+  color: color-mix(in srgb, var(--foreground) 20%, transparent);
+}
+
+/* The line that names what is NOT in the code above. The whole pitch is the
+   work you do not do, and that is invisible unless it is said. */
+.hr-note {
+  margin: 0;
+  padding: 0.15rem 1.1rem 0.85rem;
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+}
+.hr-client-row {
+  /* Hugs its text rather than filling the column. The deck is 108% wide and
+     bleeds off the right edge by design, so a full-width flash became a
+     highlight bar running off the screen with no visible end. As a pill around
+     the text the update reads as one value changing. */
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.5rem 0.7rem;
   border-radius: 0.55rem;
   font-size: 0.82rem;
   color: var(--foreground);
-}
-.hr-avatar {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  flex: none;
-  /* Not --primary. Primary is pure white in dark now, which turned the feed
-     into a column of hard white dots competing with the text beside them. */
-  background: color-mix(in srgb, var(--foreground) 28%, transparent);
+  /* The rows are one line each and the text changes under them, so they need a
+     fixed box or the card twitches in height on every write. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ---------- responsive ---------- */
@@ -313,6 +641,3 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .hr-glow { animation: none; }
-}
