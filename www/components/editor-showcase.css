@@ -73,12 +73,80 @@
 .ed-code { margin: 0; padding: 0.7rem 0; flex: 1; overflow-x: auto; }
 .ed-row { display: flex; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.75; }
 .ed-gutter { width: 2.4rem; flex: none; text-align: right; padding-right: 0.9rem; color: var(--muted-foreground); user-select: none; }
-.ed-line { white-space: pre; color: var(--foreground); }
-.ed-code .k { color: var(--color-accent); }
-.ed-code .f { color: var(--tok-str); }
-.ed-code .s { color: var(--accent-foreground); }
-.ed-code .p { color: var(--color-muted); }
-.ed-code .c { color: var(--tok-comment); }
+.ed-line { white-space: pre; color: var(--ed-tok-op); }
+
+/* Syntax colours.
+ *
+ * VS Code's Dark+, verbatim. This panel is a picture of an editor, and the thing
+ * that makes a screenshot of an editor read as code rather than as prose is that
+ * it carries six or seven hues at once: control flow, declarations, calls,
+ * properties, strings, numbers. The panel used to map its five classes onto the
+ * site's neutral tokens, three of which resolved to near-greys, so it rendered
+ * as one colour and looked like a quote block.
+ *
+ * These are deliberately not themed to the site palette. Everything around the
+ * frame is, and the contrast between the restrained chrome and the real editor
+ * colours inside it is the point: it is a screenshot, not a section.
+ *
+ * Bracket pair colorization is included because it is switched on by default in
+ * VS Code and is a good part of why real code looks colourful at a glance. */
+.ed-code {
+  --ed-tok-key: #c586c0;  /* import, export, return */
+  --ed-tok-sto: #569cd6;  /* const, function, string, null, intrinsic tags */
+  --ed-tok-fn: #dcdcaa;   /* call and declaration names */
+  --ed-tok-var: #9cdcfe;  /* variables, parameters, properties */
+  --ed-tok-str: #ce9178;
+  --ed-tok-num: #b5cea8;
+  --ed-tok-type: #4ec9b0; /* classes, components, types */
+  --ed-tok-com: #6a9955;
+  --ed-tok-op: #d4d4d4;   /* operators, punctuation, plain text */
+  --ed-tok-b0: #ffd700;
+  --ed-tok-b1: #da70d6;
+  --ed-tok-b2: #179fff;
+}
+
+/* Light+ is the same theme's other half, so the panel stays an editor on paper
+   rather than becoming dark-on-light. */
+html:not(.dark) .ed-code {
+  --ed-tok-key: #af00db;
+  --ed-tok-sto: #0000ff;
+  --ed-tok-fn: #795e26;
+  --ed-tok-var: #001080;
+  --ed-tok-str: #a31515;
+  --ed-tok-num: #098658;
+  --ed-tok-type: #267f99;
+  --ed-tok-com: #008000;
+  --ed-tok-op: #000000;
+  --ed-tok-b0: #0431fa;
+  --ed-tok-b1: #319331;
+  --ed-tok-b2: #7b3814;
+}
+
+.ed-code .tk-key { color: var(--ed-tok-key); }
+.ed-code .tk-sto { color: var(--ed-tok-sto); }
+.ed-code .tk-fn { color: var(--ed-tok-fn); }
+.ed-code .tk-var { color: var(--ed-tok-var); }
+.ed-code .tk-str { color: var(--ed-tok-str); }
+.ed-code .tk-num { color: var(--ed-tok-num); }
+.ed-code .tk-type { color: var(--ed-tok-type); }
+.ed-code .tk-com { color: var(--ed-tok-com); }
+.ed-code .tk-op { color: var(--ed-tok-op); }
+.ed-code .tk-b0 { color: var(--ed-tok-b0); }
+.ed-code .tk-b1 { color: var(--ed-tok-b1); }
+.ed-code .tk-b2 { color: var(--ed-tok-b2); }
+
+/* The editable message is a string literal, so it is coloured as one. Tailwind's
+   preflight already strips the control chrome; this only has to carry the hue
+   and keep the caret visible against it. */
+.ed-code .ed-input {
+  color: var(--ed-tok-str);
+  caret-color: var(--ed-tok-str);
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+}
+.ed-code .ed-input:focus { outline: none; background: color-mix(in srgb, var(--ed-tok-str) 14%, transparent); }
 
 /* terminal */
 .ed-term { border-top: 1px solid var(--color-rule); background: var(--card); }

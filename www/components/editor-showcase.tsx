@@ -2,6 +2,7 @@
 
 import { useRef, useState, type ReactNode } from 'react';
 import { useIntervalInView } from '@/lib/use-interval-in-view';
+import { highlightLines } from '@/lib/highlight-ts';
 import './editor-showcase.css';
 
 // An interactive VSCode-style mockup: click files in the tree to switch tabs,
@@ -18,53 +19,81 @@ const TERM = [
 ];
 
 
-// static file contents (messages.ts is built in the component so it can hold the input)
-const STATIC_FILES: Record<string, ReactNode[]> = {
+// Static file contents, as plain source. messages.ts is built in the component
+// instead, because one of its lines holds the editable input.
+const STATIC_FILES: Record<string, string[]> = {
   'schema.ts': [
-    <><span className="k">import</span> {'{'} defineSchema, defineTable, v {'}'} <span className="k">from</span> <span className="s">&quot;concile/schema&quot;</span>;</>,
-    <>&nbsp;</>,
-    <><span className="k">export default</span> <span className="f">defineSchema</span>({'{'}</>,
-    <>{'  '}messages: <span className="f">defineTable</span>({'{'}</>,
-    <>{'    '}text: v.<span className="f">string</span>(),</>,
-    <>{'    '}author: v.<span className="f">optional</span>(v.<span className="f">id</span>(<span className="s">&quot;users&quot;</span>)),</>,
-    <>{'  '}{'}'}).<span className="f">index</span>(<span className="s">&quot;by_time&quot;</span>, [<span className="s">&quot;_creationTime&quot;</span>]),</>,
-    <>{'}'});</>,
+    'import { defineSchema, defineTable, v } from "concile/schema";',
+    '',
+    'export default defineSchema({',
+    '  messages: defineTable({',
+    '    text: v.string(),',
+    '    author: v.optional(v.id("users")),',
+    '  }).index("by_time", ["_creationTime"]),',
+    '});',
   ],
   'auth.ts': [
-    <><span className="k">import</span> {'{'} defineAuth, Password, GitHub {'}'} <span className="k">from</span> <span className="s">&quot;@concile/auth&quot;</span>;</>,
-    <>&nbsp;</>,
-    <><span className="k">export const</span> {'{'} auth, handlers {'}'} = <span className="f">defineAuth</span>({'{'}</>,
-    <>{'  '}providers: [<span className="f">Password</span>(), <span className="f">GitHub</span>()],</>,
-    <>{'  '}session: {'{'} rememberMe: <span className="p">true</span> {'}'},</>,
-    <>{'}'});</>,
+    'import { defineAuth, Password, GitHub } from "@concile/auth";',
+    '',
+    'export const { auth, handlers } = defineAuth({',
+    '  providers: [Password(), GitHub()],',
+    '  session: { rememberMe: true },',
+    '});',
   ],
   'Chat.tsx': [
-    <><span className="k">import</span> {'{'} useQuery {'}'} <span className="k">from</span> <span className="s">&quot;concile/react&quot;</span>;</>,
-    <><span className="k">import</span> {'{'} api {'}'} <span className="k">from</span> <span className="s">&quot;./_generated/api&quot;</span>;</>,
-    <>&nbsp;</>,
-    <><span className="k">export function</span> <span className="f">Chat</span>() {'{'}</>,
-    <>{'  '}<span className="k">const</span> messages = <span className="f">useQuery</span>(api.messages.list);</>,
-    <>{'  '}<span className="k">return</span> messages?.<span className="f">map</span>((m) {'=>'} <span className="p">&lt;p&gt;</span>{'{'}m.text{'}'}<span className="p">&lt;/p&gt;</span>);</>,
-    <>{'}'}</>,
+    'import { useQuery } from "concile/react";',
+    'import { api } from "./_generated/api";',
+    '',
+    'export function Chat() {',
+    '  const messages = useQuery(api.messages.list);',
+    '  return messages?.map((m) => <p>{m.text}</p>);',
+    '}',
   ],
   'package.json': [
-    <>{'{'}</>,
-    <>{'  '}<span className="s">&quot;name&quot;</span>: <span className="s">&quot;concile-app&quot;</span>,</>,
-    <>{'  '}<span className="s">&quot;dependencies&quot;</span>: {'{'}</>,
-    <>{'    '}<span className="s">&quot;concile&quot;</span>: <span className="s">&quot;^0.1.5&quot;</span></>,
-    <>{'  '}{'}'},</>,
-    <>{'  '}<span className="s">&quot;scripts&quot;</span>: {'{'} <span className="s">&quot;dev&quot;</span>: <span className="s">&quot;concile dev&quot;</span> {'}'}</>,
-    <>{'}'}</>,
+    '{',
+    '  "name": "concile-app",',
+    '  "dependencies": {',
+    '    "concile": "^0.1.5"',
+    '  },',
+    '  "scripts": { "dev": "concile dev" }',
+    '}',
   ],
   'concile.config.ts': [
-    <><span className="k">import</span> {'{'} defineConfig {'}'} <span className="k">from</span> <span className="s">&quot;concile/config&quot;</span>;</>,
-    <>&nbsp;</>,
-    <><span className="k">export default</span> <span className="f">defineConfig</span>({'{'}</>,
-    <>{'  '}functions: <span className="s">&quot;concile/&quot;</span>,</>,
-    <>{'  '}database: <span className="s">&quot;sqlite&quot;</span>,{'  '}<span className="c">// or &quot;postgres&quot;</span></>,
-    <>{'}'});</>,
+    'import { defineConfig } from "concile/config";',
+    '',
+    'export default defineConfig({',
+    '  functions: "concile/",',
+    '  database: "sqlite",  // or "postgres"',
+    '});',
   ],
 };
+
+// messages.ts, the one file you can edit.
+//
+// The object form, query({ handler }), is the shipped signature. This panel used
+// to show the older positional query(async (ctx) => ...), which contradicted the
+// steps section one screen below it.
+//
+// The insert is broken across lines rather than kept on one. .ed-line is
+// white-space: pre, so the single-line form ran past the code column and clipped
+// the input, which is the only thing here you can actually touch.
+const MESSAGES_SRC = [
+  'import { query, mutation } from "./_generated/server";',
+  '',
+  'export const list = query({',
+  '  handler: (ctx) => ctx.db.query("messages").collect(),',
+  '});',
+  '',
+  'export const add = mutation({',
+  '  handler: (ctx) => ctx.db.insert("messages", {',
+  // Kept in the source so the highlighter's bracket depth stays in step. The
+  // rendered row is replaced below, because the string holds the input.
+  '    text: "",',
+  '  }),',
+  '});',
+];
+
+const MESSAGES_INPUT_LINE = 8;
 
 const TREE = [
   { name: 'concile', folder: true },
@@ -142,42 +171,34 @@ export function EditorShowcase() {
   }
 
   // rows for the active file (messages.ts holds the live input)
-  const rows: ReactNode[] = isMessages
-    ? [
-        <><span className="k">import</span> {'{'} query, mutation {'}'} <span className="k">from</span> <span className="s">&quot;./_generated/server&quot;</span>;</>,
-        <>&nbsp;</>,
-        // The object form, `query({ handler })`, is the shipped signature. This
-        // panel used to show the older positional `query(async (ctx) => ...)`,
-        // which contradicted the steps section one screen below it.
-        <><span className="k">export const</span> <span className="f">list</span> = <span className="f">query</span>({'{'}</>,
-        <>{'  '}handler: (ctx) {'=>'} ctx.<span className="f">db</span>.<span className="f">query</span>(<span className="s">&quot;messages&quot;</span>).<span className="f">collect</span>(),</>,
-        <>{'}'});</>,
-        <>&nbsp;</>,
-        <><span className="k">export const</span> <span className="f">add</span> = <span className="f">mutation</span>({'{'}</>,
-        // The insert is broken across lines rather than kept on one. .ed-line is
-        // white-space: pre, so the single-line form ran past the code column and
-        // clipped the input, which is the only thing here you can actually touch.
-        <>{'  '}handler: (ctx) {'=>'} ctx.<span className="f">db</span>.<span className="f">insert</span>(<span className="s">&quot;messages&quot;</span>, {'{'}</>,
-        <>
-          {'    '}text:{' '}
-          <span className="ed-strq">&quot;</span>
-          <input
-            className="ed-input"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && booted) commit();
-            }}
-            spellCheck={false}
-            size={Math.max(text.length, 6)}
-            aria-label="message text to commit"
-          />
-          <span className="ed-strq">&quot;</span>,
-        </>,
-        <>{'  '}{'}'}),</>,
-        <>{'}'});</>,
-      ]
-    : STATIC_FILES[active] ?? [<>&nbsp;</>];
+  const source = isMessages ? MESSAGES_SRC : STATIC_FILES[active] ?? [''];
+  const rows: ReactNode[] = highlightLines(source).map((line, i) =>
+    isMessages && i === MESSAGES_INPUT_LINE ? (
+      // The one row the highlighter cannot produce: the string literal is an
+      // input, so it is assembled by hand in the same token colours.
+      <>
+        {'    '}
+        <span className="tk-var">text</span>
+        <span className="tk-op">:</span>{' '}
+        <span className="tk-str">&quot;</span>
+        <input
+          className="ed-input"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && booted) commit();
+          }}
+          spellCheck={false}
+          size={Math.max(text.length, 6)}
+          aria-label="message text to commit"
+        />
+        <span className="tk-str">&quot;</span>
+        <span className="tk-op">,</span>
+      </>
+    ) : (
+      line
+    ),
+  );
 
   return (
     <div className="ed" ref={rootRef}>
