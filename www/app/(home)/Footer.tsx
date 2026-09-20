@@ -1,7 +1,8 @@
 import Link from 'next/link';
+import { Wordmark } from './Wordmark';
 
 // Four columns on the same rules as the rest of the page, then the wordmark,
-// oversized and cropped by the page edge rather than centred inside it.
+// sampled into a particle field that fills the band at any width.
 const COLS: { head: string; links: { label: string; href: string }[] }[] = [
   {
     head: 'Use cases',
@@ -82,9 +83,7 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="hp-wordmark" aria-hidden="true">
-        <span>concile</span>
-      </div>
+      <Wordmark />
     </footer>
   );
 }

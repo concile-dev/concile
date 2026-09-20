@@ -35,9 +35,6 @@
   --hp-line-3: rgba(255, 255, 255, 0.28);
   --hp-frame: rgba(255, 255, 255, 0.16);
   --hp-shadow: 0 30px 70px rgba(0, 0, 0, 0.8);
-  /* The giant footer wordmark. One step off the page colour in either mode:
-     it is meant to be found, not read. */
-  --hp-wordmark: #0e0e0e;
   /* The translucent washes the panels use over the backdrop. */
   --hp-wash: rgba(9, 9, 12, 0.66);
   --hp-wash-2: rgba(14, 14, 18, 0.72);
@@ -242,24 +239,18 @@
 .hp-social a:hover { color: var(--hp-text); }
 .hp-social svg { width: 16px; height: 16px; }
 
+/* The band the particle wordmark fills.
+ *
+ * Taller than the cropped span it replaces, because this one is whole: the
+ * type is centred rather than run off the edge, so it needs room above and
+ * below the cap height instead of only beside it. The height stays ahead of
+ * the font ceiling in Wordmark.tsx at every width, which is what keeps the
+ * ascenders out of the overflow. */
 .hp-wordmark {
   position: relative;
-  height: clamp(90px, 14vw, 200px);
+  height: clamp(150px, 20vw, 280px);
   overflow: hidden;
   border-top: 1px solid var(--hp-line);
-}
-.hp-wordmark span {
-  position: absolute;
-  left: max(var(--hp-pad), calc((100% - 76rem) / 2 + clamp(1.25rem, 5vw, 3rem)));
-  top: 50%;
-  transform: translateY(-46%);
-  font-size: clamp(8rem, 32vw, 28rem);
-  font-weight: 700;
-  letter-spacing: -0.055em;
-  line-height: 0.8;
-  color: var(--hp-wordmark);
-  white-space: nowrap;
-  user-select: none;
 }
 
 /* ---------------- the re-skin ----------------
@@ -656,7 +647,6 @@ html:not(.dark) .hp {
   /* A black page can carry a heavy shadow because it has nowhere to go. White
      cannot: at 0.8 the screenshots look like they are floating off the sheet. */
   --hp-shadow: 0 30px 70px rgba(0, 0, 0, 0.1);
-  --hp-wordmark: #f2f2f2;
 
   /* The panels frost the backdrop instead of darkening it. */
   --hp-wash: rgba(255, 255, 255, 0.72);
