@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type CSSProperties } from 'react';
+import { getQuality } from './quality';
 import './particle-text.css';
 
 /**
@@ -147,6 +148,8 @@ export function ParticleText({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const quality = getQuality();
+
     let particles: Particle[] = [];
     let animationFrame: number | null = null;
     let resizeFrame: number | null = null;
@@ -198,7 +201,11 @@ export function ParticleText({
 
     const render = (now: number) => {
       ctx.clearRect(0, 0, width, height);
-      ctx.shadowBlur = glow && !reducedMotion ? particleSize * 3 : 0;
+      // A canvas shadow is a blur per fill, thousands of times a frame. It is the
+      // first thing to go when the machine cannot afford it; the mark still reads
+      // without the bloom, which is why light mode already ships with it off.
+      const wantGlow = glow && !reducedMotion && quality.tier === 'high';
+      ctx.shadowBlur = wantGlow ? particleSize * 3 : 0;
       if (ctx.shadowBlur) ctx.shadowColor = highlightColor;
 
       pointer.smoothX += (pointer.x - pointer.smoothX) * 0.18;
@@ -276,7 +283,9 @@ export function ParticleText({
       height = Math.floor(rect.height);
       if (width <= 0 || height <= 0) return;
 
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // Every frame clears and repaints this whole buffer, so its resolution is a
+      // per-frame cost and not just a memory one. Weak hardware draws at 1x.
+      const dpr = Math.min(window.devicePixelRatio || 1, quality.dpr);
       canvas.width = Math.max(1, Math.floor(width * dpr));
       canvas.height = Math.max(1, Math.floor(height * dpr));
       canvas.style.width = '100%';
@@ -348,7 +357,14 @@ export function ParticleText({
         }
       }
 
-      const maxParticles = Math.max(900, Math.min(5200, Math.floor((width * height) / 90)));
+      // Every particle here is a fill plus a shadow pass and a few trig calls per
+      // frame, all on the main thread, so this budget is the whole cost of the
+      // mark. At the shipped size it lands near 4,500, which measures around 4ms
+      // a frame on fast hardware and scales badly downward. Weak machines get a
+      // sparser field rather than a slower one.
+      const budget = Math.floor(5200 * quality.particleScale);
+      const floor = Math.min(900, budget);
+      const maxParticles = Math.max(floor, Math.min(budget, Math.floor((width * height) / 90)));
       const stride = Math.max(1, Math.ceil(targets.length / maxParticles));
       const baseRgb = hexToRgb(color);
       const highlightRgb = hexToRgb(highlightColor);

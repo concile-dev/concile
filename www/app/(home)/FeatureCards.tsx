@@ -1,20 +1,21 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { motion } from 'motion/react';
+import { useIntervalInView } from '@/lib/use-interval-in-view';
 
 // A feature grid where each card carries its own small, live visualization
 // (Concile's take on the Neon-style feature row). One shared 2.4s tick drives
 // the animated ones; the rest are static mocks. All original.
 export function FeatureCards() {
   const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 2400);
-    return () => clearInterval(id);
-  }, []);
+  const gridRef = useRef<HTMLDivElement>(null);
+  // Drives every animated card in the grid, so it sleeps whenever the grid is
+  // off screen. Nothing here is state the rest of the page reads.
+  useIntervalInView(gridRef, () => setTick((t) => t + 1), 2400);
 
   return (
-    <div className="fc-grid">
+    <div className="fc-grid" ref={gridRef}>
       <Card k="reactivity" title="Queries that stay live">
         <ReactiveViz tick={tick} />
       </Card>

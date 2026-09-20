@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
+import { useIntervalInView } from '@/lib/use-interval-in-view';
 import './editor-showcase.css';
 
 // An interactive VSCode-style mockup: click files in the tree to switch tabs,
@@ -111,14 +112,19 @@ export function EditorShowcase() {
   const [openTabs, setOpenTabs] = useState<string[]>(['messages.ts', 'Chat.tsx']);
   const [echo, setEcho] = useState<string[]>([]);
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      setLine((l) => (l < TERM.length ? l + 1 : l));
-    }, 850);
-    return () => clearInterval(id);
-  }, []);
-
+  const rootRef = useRef<HTMLDivElement>(null);
   const booted = line >= TERM.length;
+
+  // Types the boot log out a line at a time. Two reasons this is gated: it should
+  // not play while the hero is scrolled past, and once the log is fully printed
+  // there is nothing left to advance, so the timer retires instead of waking the
+  // main thread every 850ms for the life of the tab.
+  useIntervalInView(
+    rootRef,
+    () => setLine((l) => (l < TERM.length ? l + 1 : l)),
+    850,
+    !booted,
+  );
   const isMessages = active === 'messages.ts';
 
   function openFile(name: string) {
@@ -174,7 +180,7 @@ export function EditorShowcase() {
     : STATIC_FILES[active] ?? [<>&nbsp;</>];
 
   return (
-    <div className="ed">
+    <div className="ed" ref={rootRef}>
       <div className="ed-bar">
         <span className="ed-dots">
           <i />

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { LOW, demoteToLow, getQuality, isSoftwareRenderer } from './quality';
 
 /**
  * PixelBlast, from React Bits (reactbits.dev, MIT), after the Bayer dithering
@@ -39,7 +40,12 @@ void main() {
 }
 `;
 
-const FRAGMENT_SRC = `
+/**
+ * Octave count is baked in rather than passed as a uniform, because a GLSL loop
+ * bound has to be a constant and an early break would not save the ALU anyway.
+ * Weak hardware gets a shorter loop, which means a smaller shader.
+ */
+const fragmentSrc = (octaves: number) => `
 precision highp float;
 
 uniform vec3  uColor;
@@ -75,7 +81,7 @@ float Bayer2(vec2 a) {
 #define Bayer4(a) (Bayer2(.5*(a))*0.25 + Bayer2(a))
 #define Bayer8(a) (Bayer4(.5*(a))*0.25 + Bayer2(a))
 
-#define FBM_OCTAVES     5
+#define FBM_OCTAVES     ${octaves}
 #define FBM_LACUNARITY  1.25
 #define FBM_GAIN        1.0
 
@@ -257,13 +263,56 @@ export function PixelBlast({
     const parent = canvas?.parentElement;
     if (!canvas || !parent) return;
 
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      antialias,
-      alpha: true,
-      powerPreference: 'high-performance',
-    });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    // This backdrop is decoration, so nothing it does may be allowed to take the
+    // page with it. THREE.WebGLRenderer throws from its constructor when it
+    // cannot get a context, and this runs inside a mount effect with no error
+    // boundary above it, so an unguarded throw unmounts the whole landing tree
+    // and the visitor gets "This page couldn't load" instead of the site.
+    //
+    // That is not a hypothetical. Chrome ships with WebGL blacklisted on a long
+    // tail of old Intel GPUs and stale drivers, and it is off under --disable-gpu,
+    // in some VMs and in locked-down enterprise builds. It also happens on a
+    // remount that reuses this same <canvas>, because forceContextLoss() poisons
+    // the element itself: getContext() then hands back the same lost context, on
+    // which getShaderPrecisionFormat() returns null, and three dereferences it.
+    //
+    // Bailing out leaves the canvas transparent. The page behind it is already
+    // designed to carry its own background, so the only thing lost is the field.
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias,
+        alpha: true,
+        powerPreference: 'high-performance',
+      });
+    } catch {
+      return;
+    }
+
+    // A real context exists now, so the GPU can be asked what it is. Chrome falls
+    // back to SwiftShader (CPU rasterization) rather than failing outright on
+    // machines with no usable driver, and that path cannot afford the full field.
+    let quality = getQuality();
+    try {
+      const gl = renderer.getContext();
+      const ext = gl.getExtension('WEBGL_debug_renderer_info');
+      const name = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : '';
+      if (name && isSoftwareRenderer(name)) {
+        demoteToLow();
+        quality = LOW;
+      }
+    } catch {
+      // Some browsers hide the extension for fingerprinting reasons. Not knowing
+      // is fine; the adaptive throttle below still catches a slow machine.
+    }
+
+    // Publish the verdict so CSS can drop effects that are cheap to describe and
+    // expensive to composite. This is the only place that knows the final tier,
+    // because the GPU probe above can demote after the fact.
+    document.documentElement.dataset.quality = quality.tier;
+
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality.dpr));
     renderer.setClearAlpha(0);
 
     const uniforms = {
@@ -288,7 +337,7 @@ export function PixelBlast({
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const material = new THREE.ShaderMaterial({
       vertexShader: VERTEX_SRC,
-      fragmentShader: FRAGMENT_SRC,
+      fragmentShader: fragmentSrc(quality.octaves),
       uniforms,
       transparent: true,
       depthTest: false,
@@ -351,14 +400,52 @@ export function PixelBlast({
       renderer.render(scene, camera);
     };
 
-    const loop = () => {
-      draw();
+    // Frame pacing.
+    //
+    // The field drifts at uTime * 0.05, so it is nowhere near fast enough to need
+    // 60fps. Capping it is the cheapest possible win: halving the rate halves the
+    // fragment work per second outright, with no change to the shader.
+    let frameInterval = quality.frameInterval;
+    let lastDraw = 0;
+
+    // The cheap signals above can be wrong, and an unknown slow GPU would
+    // otherwise just drop frames forever. So watch real frame times and step
+    // down: full rate, then 30fps, then 15fps. Only long gaps count, and only
+    // while actually drawing, so this never reacts to a backgrounded tab.
+    const STEPS = [1000 / 30, 1000 / 15];
+    let step = quality.tier === 'low' ? 0 : -1;
+    let slow = 0;
+    let sampled = 0;
+
+    const watch = (gap: number) => {
+      if (step >= STEPS.length - 1 || sampled > 240) return;
+      sampled += 1;
+      // 24ms is a frame and a half at 60Hz. Sustained gaps that long mean the
+      // machine cannot hold the rate it is being asked for.
+      if (gap > 24) slow += 1;
+      else if (slow > 0) slow -= 1;
+      if (slow >= 20) {
+        step += 1;
+        frameInterval = STEPS[step];
+        slow = 0;
+        sampled = 0;
+      }
+    };
+
+    const loop = (now: number) => {
       frame = requestAnimationFrame(loop);
+      if (frameInterval > 0 && now - lastDraw < frameInterval - 1) return;
+      if (lastDraw > 0) watch(now - lastDraw);
+      lastDraw = now;
+      draw();
     };
 
     const park = () => {
       const shouldRun = visible && !document.hidden && !reduced.matches;
       if (shouldRun && !frame) {
+        // Unparking is not a slow frame. Clearing this both draws immediately on
+        // the next tick and keeps the gap out of the adaptive sample.
+        lastDraw = 0;
         frame = requestAnimationFrame(loop);
       } else if (!shouldRun && frame) {
         cancelAnimationFrame(frame);
@@ -391,7 +478,13 @@ export function PixelBlast({
       quad.geometry.dispose();
       material.dispose();
       renderer.dispose();
-      renderer.forceContextLoss();
+      // Deliberately no forceContextLoss(). It frees the context slot sooner,
+      // but it does so by poisoning this <canvas> element permanently: a later
+      // getContext() on it returns the same dead context rather than a new one.
+      // React keeps the DOM node across a route away-and-back, so the next mount
+      // would inherit the corpse and three would throw on it. dispose() has
+      // already released every GPU resource we allocated, and the context itself
+      // goes when the element does.
     };
     // Built once. Props are read through the ref inside draw().
     // eslint-disable-next-line react-hooks/exhaustive-deps

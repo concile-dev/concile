@@ -346,6 +346,17 @@
   border-color: var(--hp-line);
   box-shadow: none;
 }
+
+/* backdrop-filter is the worst case for these tiles, because what sits behind
+   them is a canvas that repaints continuously: every repaint forces each tile to
+   re-sample and re-blur its backdrop. At blur(2px) over a dot field the effect is
+   nearly invisible anyway, so weak hardware keeps the wash and loses the blur.
+   PixelBlast sets data-quality once it knows what it is running on. */
+:root[data-quality='low'] .hp.hp .lp .cell,
+:root[data-quality='low'] .hp.hp .lp .fc-card,
+:root[data-quality='low'] .hp.hp .lp .pill-card {
+  backdrop-filter: none;
+}
 .hp.hp .lp .cell:hover,
 .hp.hp .lp .fc-card:hover,
 .hp.hp .lp .pill-card:hover {
@@ -685,18 +696,25 @@ html:not(.dark) .hp .lp {
 
 /* The backdrop over white.
  *
- * Every one of these shaders was tuned against black, so it draws its light on
- * a dark field. Fading it down on paper does not give the light version of
- * that: it greys the page, because the field the shader spends most of its
- * pixels on is the part that goes from black to mid grey.
+ * The shader was tuned against black, so it draws its light on a dark field.
+ * Fading it down on paper does not give the light version of that: it greys the
+ * page, because the field the shader spends most of its pixels on is the part
+ * that goes from black to mid grey.
  *
- * Inverting flips the field to white and the light to dark, and the hue
- * rotation puts the colour back where the shader left it, near enough. The
- * band keeps its shape, its motion and its hue, and the page stays paper.
+ * This used to be solved with filter: invert(1) hue-rotate(180deg), which flips
+ * the field to white and the light to dark and puts the hue back near enough.
+ * It worked, but it is a full-screen compositor pass on a fixed, viewport-sized
+ * canvas that repaints every frame, which is the most expensive place on the
+ * page to put one.
+ *
+ * So the colour is chosen per theme instead and the filter is gone. Nothing
+ * about the result moved: the shader emits one constant RGB for every pixel and
+ * varies only alpha, and the filter only ever touched RGB, so feeding the
+ * already-inverted colour in paints the same image. See Veil.tsx for the value
+ * and for why it also has to undo the shader's own sRGB conversion.
  *
  * The scrim then mirrors: same geometry, same alphas, white instead of black. */
 html:not(.dark) .hp-veil canvas {
-  filter: invert(1) hue-rotate(180deg);
   opacity: 0.9;
 }
 html:not(.dark) .hp-veil-scrim {

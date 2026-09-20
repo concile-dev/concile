@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AreaChart, BarChart } from './DashboardCharts';
+import { useIntervalInView } from '@/lib/use-interval-in-view';
 
 // The Concile dashboard, as it appears when you run `concile dev`.
 //
@@ -95,14 +96,34 @@ export function DashboardShowcase() {
   const [traffic, setTraffic] = useState<number[]>(SEED_TRAFFIC);
   const [logs, setLogs] = useState<string[]>([]);
 
+  const rootRef = useRef<HTMLDivElement>(null);
+  const seq = useRef(0);
+  // Handles for the per-row "fresh" highlights, so none of them outlive the mock.
+  const fades = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const [animate, setAnimate] = useState(false);
+
   useEffect(() => {
     setRows((prev) => prev.map((r, i) => ({ ...r, at: clockAt(18 + i * 23) })));
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    setAnimate(!window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }, []);
 
-    let n = 0;
-    const id = setInterval(() => {
-      const next = nextEvent(n);
-      n += 1;
+  useEffect(() => {
+    const pending = fades.current;
+    return () => {
+      for (const id of pending) clearTimeout(id);
+      pending.clear();
+    };
+  }, []);
+
+  // This mock sits well down a very tall page and used to tick forever, which
+  // meant re-rendering the whole dashboard every 3.2s while the reader was
+  // nowhere near it. It now runs only while it is actually on screen.
+  useIntervalInView(
+    rootRef,
+    () => {
+      const next = nextEvent(seq.current);
+      seq.current += 1;
+      const n = seq.current;
       let docId = 'k57d2';
       for (let i = 0; i < 6; i += 1) docId += HEX[Math.floor(Math.random() * HEX.length)];
       const at = clockAt(0);
@@ -112,11 +133,15 @@ export function DashboardShowcase() {
       setTraffic((t) => [...t.slice(1), Math.max(12, t[t.length - 1] + Math.round((Math.random() - 0.45) * 18))]);
       setLogs((l) => [`${at}  mutation  ${next.text.slice(0, 30)}`, ...l].slice(0, 14));
 
-      setTimeout(() => setRows((prev) => prev.map((r) => (r.id === `r${n}` ? { ...r, fresh: false } : r))), 1400);
-    }, 3200);
-
-    return () => clearInterval(id);
-  }, []);
+      const fade = setTimeout(() => {
+        fades.current.delete(fade);
+        setRows((prev) => prev.map((r) => (r.id === `r${n}` ? { ...r, fresh: false } : r)));
+      }, 1400);
+      fades.current.add(fade);
+    },
+    3200,
+    animate,
+  );
 
   const openTable = (name: string) => {
     setTable(name);
@@ -124,7 +149,7 @@ export function DashboardShowcase() {
   };
 
   return (
-    <div className="db">
+    <div className="db" ref={rootRef}>
       <aside className="db-side">
         <div className="db-brand">
           <span className="db-bolt" aria-hidden="true">⚡</span> Concile
