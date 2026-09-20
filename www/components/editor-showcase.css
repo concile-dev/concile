@@ -51,7 +51,7 @@
 }
 .ed-bar-spacer { width: 33px; }
 
-.ed-body { display: grid; grid-template-columns: 44px 186px 1fr 250px; min-height: 380px; }
+.ed-body { display: grid; grid-template-columns: 44px 186px 1fr; min-height: 380px; }
 @media (max-width: 900px) {
   .ed-body { grid-template-columns: 1fr; }
   .ed-side, .ed-rail { display: none; }
@@ -117,42 +117,12 @@
 @keyframes ed-blink { 50% { opacity: 0; } }
 
 /* preview */
-.ed-preview { border-left: 1px solid var(--color-rule); display: flex; flex-direction: column; background: var(--card); }
-.ed-prev-bar { display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--color-rule); font-family: var(--font-mono); font-size: 0.7rem; color: var(--color-muted); }
-.ed-prev-feed { flex: 1; }
-.ed-prev-cap { padding: 0.6rem 0.8rem; border-top: 1px solid var(--color-rule); font-family: var(--font-mono); font-size: 0.66rem; color: var(--color-muted); }
 
 /* The preview pane reuses the hx- class names from the retired hero, but those
    rules lived in hero.css, a stylesheet nothing loaded (Hero.tsx was its only
    importer and nothing imported Hero.tsx). Both are deleted now. They also
    coloured themselves from --hx-emerald-2, a token the neutral palette no
    longer defines. Restated here on current tokens and scoped to the pane. */
-.ed-prev-file { font-family: var(--font-mono); }
-.ed-prev-live { display: inline-flex; align-items: center; gap: 0.4rem; }
-.ed-prev-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-accent);
-}
-.ed-prev-feed { list-style: none; margin: 0; padding: 0.5rem; }
-.ed-prev-feed li {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.45rem 0.6rem;
-  border-radius: 0.5rem;
-  font-size: 0.76rem;
-  color: var(--color-muted);
-}
-.ed-prev-feed li.is-new { color: var(--foreground); }
-.ed-prev-avatar {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  flex: none;
-  background: color-mix(in srgb, var(--foreground) 24%, transparent);
-}
 
 /* ---------------- Editor chrome: activity bar, icons, status bar ----------------
    The parts that make a mockup read as VS Code rather than as a generic code

@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { motion } from 'motion/react';
+import { useEffect, useState, type ReactNode } from 'react';
 import './editor-showcase.css';
 
 // An interactive VSCode-style mockup: click files in the tree to switch tabs,
-// and on messages.ts edit the message value + press Run to commit it live into
+// and on messages.ts edit the message value + press Enter to commit it live into
 // the preview (the write -> reactive-push loop). Not a real editor engine.
 
 const TERM = [
@@ -14,10 +13,9 @@ const TERM = [
   { text: '✓ watching concile/ for changes', cls: 'ed-ok' },
   { text: '✓ database ready (sqlite, 0 migrations)', cls: 'ed-ok' },
   { text: '✓ dashboard  →  http://localhost:3210', cls: 'ed-ok' },
-  { text: '◍ live — open messages.ts, edit, then Run', cls: 'ed-liveline' },
+  { text: '◍ live — open messages.ts and edit the text', cls: 'ed-liveline' },
 ];
 
-const SEED = ['Ada joined #general', 'new order #1042'];
 
 // static file contents (messages.ts is built in the component so it can hold the input)
 const STATIC_FILES: Record<string, ReactNode[]> = {
@@ -108,15 +106,10 @@ const RAIL = [
 
 export function EditorShowcase() {
   const [line, setLine] = useState(1);
-  const [tick, setTick] = useState(0);
   const [text, setText] = useState('gm from the docs');
   const [active, setActive] = useState('messages.ts');
   const [openTabs, setOpenTabs] = useState<string[]>(['messages.ts', 'Chat.tsx']);
-  const [feed, setFeed] = useState<{ id: number; t: string }[]>(
-    SEED.map((t, i) => ({ id: i, t })),
-  );
   const [echo, setEcho] = useState<string[]>([]);
-  const idRef = useRef(SEED.length);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -135,13 +128,11 @@ export function EditorShowcase() {
 
   function commit() {
     const t = text.trim() || 'hello';
-    setFeed((cur) => [...cur.slice(-3), { id: idRef.current++, t }]);
     // Result first, call second. The line is clipped rather than wrapped, and
     // the text is whatever was typed, so putting the message first meant a long
     // one ate the timing: "committed in 8.…". The ellipsis should land on the
     // payload, not on the proof.
     setEcho((e) => [...e.slice(-1), `✓ committed in 8.6ms  ·  add({ text: "${t}" })`]);
-    setTick((x) => x + 1);
   }
 
   // rows for the active file (messages.ts holds the live input)
@@ -252,17 +243,6 @@ export function EditorShowcase() {
                 {name}
               </button>
             ))}
-            {isMessages ? (
-              <button
-                type="button"
-                className="ed-run"
-                onClick={commit}
-                disabled={!booted}
-                title={booted ? 'Run this mutation' : 'starting dev server…'}
-              >
-                ▶ Run
-              </button>
-            ) : null}
           </div>
           <pre className="ed-code">
             <code>
@@ -298,37 +278,7 @@ export function EditorShowcase() {
           </div>
         </div>
 
-        <div className="ed-preview">
-          <div className="ed-prev-bar">
-            <span className="ed-prev-file">your app</span>
-            <span className="ed-prev-live">
-              <span className="ed-prev-dot" key={tick} />
-              live
-            </span>
-          </div>
-          <ul className="ed-prev-feed">
-            {feed.map((m, i) => (
-              <motion.li
-                key={m.id}
-                initial={{ y: -8, backgroundColor: 'color-mix(in srgb, var(--accent-foreground) 20%, transparent)' }}
-                animate={{ y: 0, backgroundColor: 'color-mix(in srgb, var(--accent-foreground) 0%, transparent)' }}
-                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className={i === feed.length - 1 ? 'is-new' : ''}
-              >
-                <span className="ed-prev-avatar" />
-                {m.t}
-              </motion.li>
-            ))}
-          </ul>
-          <div className="ed-prev-cap">
-            {isMessages
-              ? booted
-                ? 'edit the text, press Run, watch it land'
-                : 'starting…'
-              : 'the messages query, rendered live'}
-          </div>
         </div>
-      </div>
 
       <div className="ed-status" aria-hidden="true">
         <span className="ed-status-l">

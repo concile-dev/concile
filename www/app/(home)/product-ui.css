@@ -1,0 +1,265 @@
+/* Dense product-UI panels for the v2 composition.
+ *
+ * Self-contained, following the precedent editor-showcase.css set: own class
+ * namespace, own token aliases, no dependency on an ancestor like .lp. These
+ * are the "screenshots" in the editorial grid, so they have to read as real
+ * software: small type, tight rows, hairline rules, one restrained blue accent.
+ *
+ * The panels are modelled on apps/dashboard, so the class names follow its
+ * surfaces: data browser, document editor, function runner, logs.
+ */
+.pui {
+  --pui-bg: #0b0b0b;
+  --pui-bg-2: #111111;
+  --pui-line: #1f1f1f;
+  --pui-line-2: #2b2b2b;
+  --pui-fg: #ededed;
+  --pui-muted: #7d7d7d;
+  --pui-dim: #565656;
+  --pui-accent: #2563eb;
+  --pui-accent-soft: rgba(37, 99, 235, 0.18);
+  --pui-ok: #4ade80;
+  --pui-ok-line: #1c3a28;
+  --pui-dot: #2a2a2a;
+  --pui-sel: rgba(37, 99, 235, 0.16);
+  --pui-new: rgba(74, 222, 128, 0.07);
+  /* Syntax in the code tile. Four roles, same set the editor showcase uses. */
+  --pui-tok-key: #93b4f5;
+  --pui-tok-str: #c3e0a8;
+  --pui-tok-num: #e5b567;
+
+  background: var(--pui-bg);
+  color: var(--pui-fg);
+  font-family: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
+  font-size: 11px;
+  line-height: 1.45;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.pui *, .pui *::before, .pui *::after { box-sizing: border-box; }
+
+/* --- window chrome --- */
+.pui-chrome {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--pui-line);
+  background: var(--pui-bg-2);
+  color: var(--pui-dim);
+  font-size: 10px;
+}
+.pui-dots { display: flex; gap: 4px; flex: none; }
+.pui-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--pui-dot); display: block; }
+.pui-crumb {
+  display: block;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pui-crumb b { color: var(--pui-muted); font-weight: 400; }
+
+/* --- header block --- */
+.pui-head { padding: 0.75rem 0.85rem; border-bottom: 1px solid var(--pui-line); }
+.pui-title { font-size: 13px; font-weight: 600; letter-spacing: -0.015em; margin: 0; }
+.pui-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.4rem; color: var(--pui-dim); font-size: 10px; }
+.pui-meta b { color: var(--pui-muted); font-weight: 500; }
+.pui-id { font-family: var(--font-jetbrains-mono, ui-monospace), monospace; }
+.pui-note { color: var(--pui-dim); font-size: 10px; font-weight: 400; }
+
+/* --- fields, inputs, actions --- */
+.pui-body { padding: 0.85rem; display: grid; gap: 0.75rem; min-width: 0; }
+.pui-field { display: grid; gap: 0.3rem; min-width: 0; }
+.pui-label { color: var(--pui-muted); font-size: 10px; }
+.pui-row { display: flex; align-items: center; gap: 0.45rem; min-width: 0; }
+.pui-select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  border: 1px solid var(--pui-line-2);
+  background: var(--pui-bg-2);
+  padding: 0.3rem 0.45rem;
+  color: var(--pui-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pui-select.is-grow { flex: 1; min-width: 0; max-width: 15rem; }
+.pui-select svg { width: 10px; height: 10px; color: var(--pui-dim); flex: none; }
+
+.pui-btn {
+  flex: none;
+  border: 1px solid var(--pui-line-2);
+  padding: 0.3rem 0.6rem;
+  color: var(--pui-fg);
+  white-space: nowrap;
+}
+.pui-btn.is-primary { background: var(--pui-accent); border-color: var(--pui-accent); color: #fff; }
+.pui-btn.is-ghost { color: var(--pui-muted); }
+.pui-actions { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
+.pui-actions .pui-note { margin-right: auto; }
+
+/* --- JSON blocks, which is how the dashboard shows documents --- */
+.pui-code {
+  margin: 0;
+  border: 1px solid var(--pui-line-2);
+  background: var(--pui-bg-2);
+  padding: 0.5rem 0.55rem;
+  font-family: var(--font-jetbrains-mono, ui-monospace), monospace;
+  font-size: 10px;
+  line-height: 1.7;
+  display: grid;
+  min-width: 0;
+}
+.pui-code > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pui-code em { font-style: normal; color: var(--pui-tok-key); }
+.pui-code i { font-style: normal; }
+.pui-str { color: var(--pui-tok-str); }
+.pui-num { color: var(--pui-tok-num); }
+.pui-punct { color: var(--pui-dim); }
+
+/* --- filter bar --- */
+.pui-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--pui-line);
+}
+.pui-search {
+  /* capped, like the dashboard's own filter input. A panel is often cropped by
+     the page edge, and an input that grows forever pushes the controls after it
+     out of sight. */
+  flex: 1;
+  min-width: 0;
+  max-width: 12rem;
+  border: 1px solid var(--pui-line-2);
+  padding: 0.28rem 0.45rem;
+  color: var(--pui-dim);
+  background: var(--pui-bg-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pui-chip {
+  flex: none;
+  border: 1px solid var(--pui-line-2);
+  padding: 0.28rem 0.45rem;
+  color: var(--pui-muted);
+  white-space: nowrap;
+}
+.pui-chip.is-live { color: var(--pui-ok); border-color: var(--pui-ok-line); display: flex; align-items: center; gap: 0.3rem; }
+.pui-chip.is-live::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--pui-ok); }
+
+/* --- tables --- */
+.pui-table { width: 100%; border-collapse: collapse; font-size: 10.5px; table-layout: fixed; }
+.pui-table th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--pui-dim);
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--pui-line);
+  white-space: nowrap;
+}
+.pui-table td {
+  padding: 0.42rem 0.6rem;
+  border-bottom: 1px solid var(--pui-line);
+  color: var(--pui-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pui-table td:first-child { color: var(--pui-fg); }
+.pui-table code { font-family: var(--font-jetbrains-mono, ui-monospace), monospace; color: var(--pui-fg); }
+.pui-table tr.is-sel td { background: var(--pui-sel); color: var(--pui-fg); }
+.pui-table tr.is-new td { background: var(--pui-new); }
+.pui-badge {
+  display: inline-block;
+  max-width: 100%;
+  border: 1px solid var(--pui-line-2);
+  padding: 0.04rem 0.3rem;
+  color: var(--pui-dim);
+  font-size: 9.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pui-badge.is-ok { color: var(--pui-ok); border-color: var(--pui-ok-line); }
+
+.pui-foot { display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.6rem; }
+
+/* --- the dashboard sidebar --- */
+.pui-split { display: grid; grid-template-columns: 124px minmax(0, 1fr); min-height: 0; }
+.pui-main { min-width: 0; }
+.pui-side { border-right: 1px solid var(--pui-line); padding: 0.6rem 0; min-width: 0; }
+.pui-brand { display: block; padding: 0 0.6rem 0.5rem; font-weight: 600; color: var(--pui-fg); }
+.pui-side h4 {
+  margin: 0.55rem 0 0.35rem;
+  padding: 0 0.6rem;
+  font-size: 9.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--pui-dim);
+}
+.pui-side a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.26rem 0.6rem;
+  color: var(--pui-muted);
+  text-decoration: none;
+}
+.pui-side a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pui-side a b { font-weight: 400; color: var(--pui-dim); font-size: 9.5px; }
+.pui-side a.is-on { background: var(--pui-accent-soft); color: var(--pui-fg); }
+
+/* --- narrow panels ---------------------------------------------------------
+ * A panel can be 300px wide on a phone. At that size the sidebar and the
+ * lower-priority columns cost more than they show, so they come out and the
+ * remaining columns get the room. */
+@media (max-width: 760px) {
+  .pui { font-size: 10.5px; }
+  .pui-split { grid-template-columns: minmax(0, 1fr); }
+  .pui-side { display: none; }
+  .pui-col-opt { display: none; }
+  .pui-head, .pui-body { padding: 0.65rem; }
+  .pui-table th, .pui-table td { padding: 0.36rem 0.45rem; }
+  .pui-code { font-size: 9.5px; line-height: 1.6; }
+}
+
+
+/* ---------------- light mode ----------------
+ *
+ * These panels are the screenshots in the composition, and the hero pairs one
+ * of them with the editor showcase, which follows the theme. Holding .pui dark
+ * on a white page put a dark log card next to a light editor in the same
+ * figure, so the panels follow the theme too.
+ *
+ * Only the surface flips. The blue stays the blue, the green stays the green,
+ * and the syntax keeps its four roles: this is meant to read as the same
+ * software in its light theme, not as a different product. */
+html:not(.dark) .pui {
+  --pui-bg: #ffffff;
+  --pui-bg-2: #f7f7f7;
+  --pui-line: #e5e5e5;
+  --pui-line-2: #d6d6d6;
+  --pui-fg: #1a1a1a;
+  --pui-muted: #6b6b6b;
+  --pui-dim: #9a9a9a;
+  --pui-accent: #2563eb;
+  --pui-accent-soft: rgba(37, 99, 235, 0.1);
+  /* #4ade80 is a dark-surface green. On white it drops to 1.7:1, so the light
+     side takes the same hue several steps down. */
+  --pui-ok: #15803d;
+  --pui-ok-line: #bfe3cb;
+  --pui-dot: #d4d4d4;
+  --pui-sel: rgba(37, 99, 235, 0.1);
+  --pui-new: rgba(21, 128, 61, 0.08);
+  --pui-tok-key: #2f5fb3;
+  --pui-tok-str: #3d7a35;
+  --pui-tok-num: #9a6112;
+}
