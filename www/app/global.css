@@ -8,12 +8,28 @@
 @custom-variant system (&:is(.system *));
 
 /* ============================================================
-   Concile theme — "Copper": warm metallic accent on warm neutrals.
-   Two token layers, both defined on :root (light) and .dark:
-     1. shadcn-style tokens (--background, --primary, ...) for our
-        own components.
-     2. fumadocs tokens (--color-fd-*) so the docs UI matches.
-   Accent: copper #E0975A (steady), highlight #F3BE8C (pulse).
+   The Concile palette. This block is the whole theme.
+
+   Neutral greyscale surfaces with one chromatic --primary. Edit the
+   values here and the docs, the blog and the shared marketing chrome
+   all follow; nothing downstream holds a colour of its own.
+
+   Two namespaces, one source. The shadcn tokens (--background,
+   --primary, ...) are the real values. The fumadocs tokens
+   (--color-fd-*) alias them so the docs UI tracks the same theme.
+   They used to be two hand-typed copies of the same numbers, which is
+   why the docs and the landing drifted apart whenever one was edited.
+
+   To try another palette, replace the shadcn values here with a block
+   from ui.shadcn.com/themes or tweakcn. Nothing else needs touching.
+
+   Known gap: the landing does NOT follow yet. app/(home)/home.css
+   overrides --background, --foreground, --primary and five more with
+   literals on .hp .lp, so it ignores this block. Fixing that means
+   converting the --hp-* tokens to aliases, which is its own change.
+
+   This header previously described a copper accent, #E0975A, that no
+   token in the file has ever held.
    ============================================================ */
 :root {
   --radius: 0.625rem;
@@ -26,9 +42,13 @@
      semantic status colours. All the warmth in their hero comes from the
      background video, not from the theme.
 
-     So the colour here lives in one place, the hero backdrop (--wave-* and
-     --field-* below), and the interface stays neutral around it. Lightness
-     steps below are read off their base scale:
+     We keep the neutral surfaces and spend the colour on --primary instead,
+     since we have no hero video to carry it. The tokens that used to hold
+     that video's measured palette (--wave-*, --field-*, and the three
+     opacity values beside them) are gone: nothing referenced them, in CSS
+     or in TSX, after the hero they belonged to was replaced.
+
+     Lightness steps below are read off their base scale:
        255 -> 100%   221 -> 88.4%   154 -> 66%    47 -> 25%
        245 -> 96.5%  208 -> 84%     101 -> 47.3%  20 -> 11.5%
        235 -> 93%    181 -> 75%      74 -> 36.8%   7 ->  4.5%
@@ -41,6 +61,12 @@
   --card-foreground: oklch(18.7% 0 0);
   --popover: oklch(100% 0 0);
   --popover-foreground: oklch(18.7% 0 0);
+  /* Ink, not a hue. --primary drives buttons, active states, the marked phrase
+     and the focus ring, and here it is simply the darkest neutral, inverting to
+     the lightest one on the dark theme. The interface stays monochrome.
+
+     Swapping this for a chromatic value is the single edit that colours the
+     whole site, because everything downstream reads it. */
   --primary: oklch(18.7% 0 0);
   --primary-foreground: oklch(100% 0 0);
   --secondary: oklch(96.5% 0 0);
@@ -56,60 +82,89 @@
   --input: oklch(88.4% 0 0);
   --ring: oklch(47.3% 0 0);
 
-  /* Hero wave — the ONLY chromatic surface in the theme, the same division
-     Payload uses: neutral interface, colour from the background animation.
-     Declared on :root rather than on .hr because the colour probe that feeds
-     these to the shader is a child of <body>, so it cannot inherit custom
-     properties defined further down the tree.
+  /* fumadocs layer.
+   *
+   * Aliases, not copies. These were the same sixteen values typed a second
+   * time, with nothing tying the two sets together, so editing one and not the
+   * other was silent and the docs drifted away from everything else.
+   *
+   * Declared once, here, and NOT repeated under .dark. Each one resolves
+   * through a shadcn token that .dark already redefines, so the docs follow
+   * the theme with no second block. A second block is the copy that drifts. */
+  --color-fd-background: var(--background);
+  --color-fd-foreground: var(--foreground);
+  --color-fd-card: var(--card);
+  --color-fd-card-foreground: var(--card-foreground);
+  --color-fd-popover: var(--popover);
+  --color-fd-popover-foreground: var(--popover-foreground);
+  --color-fd-muted: var(--muted);
+  --color-fd-muted-foreground: var(--muted-foreground);
+  --color-fd-secondary: var(--secondary);
+  --color-fd-secondary-foreground: var(--secondary-foreground);
+  --color-fd-border: var(--border);
+  --color-fd-primary: var(--primary);
+  --color-fd-primary-foreground: var(--primary-foreground);
+  --color-fd-ring: var(--ring);
+  --color-fd-accent: var(--accent);
+  --color-fd-accent-foreground: var(--accent-foreground);
 
-     Stops are measured from Payload's own glass-animation video, 129,600
-     pixels over four frames, not picked by eye. Mean hue of the coloured
-     pixels is 206, a clean azure, and the distribution sits very dark:
+  /* ------------------------------------------------------------------
+     The semantic steps shadcn does not provide.
 
-       p50  #00080d  hue 203  sat 1.00  lum 7
-       p75  #001b31  hue 207  sat 1.00  lum 23
-       p90  #132439  hue 213  sat 0.67  lum 34
-       p97  #2e4051  hue 209  sat 0.43  lum 61   steel highlight
-       p100 #957958  hue  32  sat 0.41  lum 125  gold specular
+     shadcn gives one --border and one --card. The landing uses four edge
+     weights and three translucent panel washes, so those extra steps are
+     derived here instead of being hardcoded in home.css. That file used to
+     hold them as literals, which is why it needed a whole second copy of
+     itself for light mode.
+     ------------------------------------------------------------------ */
 
-     The shape is what matters: deep saturated blue almost everywhere, steel
-     where it catches, and a little warm gold only at the brightest points.
-     Light mode has no counterpart on their site, so these hold hue 206 and
-     invert the lightness. */
-  --wave-1: #ffffff;
-  --wave-2: #cfe0ee;
-  --wave-3: #9db8d0;
-  --wave-4: #e8d9c2;
+  /* Edge weights. These were rgba(black, a) on white and rgba(white, a) on
+     black, which is exactly a foreground mix, so they carry over without loss.
+     The alphas differ per theme on purpose: a black hairline on white reads
+     heavier than a white one on black at the same alpha. */
+  --rule-1: color-mix(in srgb, var(--foreground) 8%, transparent);
+  --rule-2: color-mix(in srgb, var(--foreground) 13%, transparent);
+  --rule-3: color-mix(in srgb, var(--foreground) 30%, transparent);
+  --rule-frame: color-mix(in srgb, var(--foreground) 14%, transparent);
+  --rule-grid: color-mix(in srgb, var(--foreground) 9%, transparent);
 
-  /* The halftone field is painted through an alpha mask, so these are the ink
-     the dots are made of, not a surface colour. That is why they cannot reuse
-     --wave-*: those are pale in light mode because a gradient sits behind copy
-     there, and pale ink on a white page is nothing at all. Same azure family,
-     inverted in lightness per theme. --field-1 is the near edge at the bottom
-     of the sheet, --field-2 the far edge approaching the horizon. */
-  --field-1: #2d587d;
-  --field-2: #6f93b4;
-  --field-opacity: 0.85;
-  --veil-opacity: 0.55;
-  --silk-opacity: 0.5;
+  /* Panel washes. Translucent because they sit over the animated canvas. */
+  --wash-1: color-mix(in srgb, var(--card) 72%, transparent);
+  --wash-2: color-mix(in srgb, var(--card) 86%, transparent);
+  --wash-3: color-mix(in srgb, var(--card) 92%, transparent);
 
-  /* fumadocs layer — light */
-  --color-fd-background: oklch(100% 0 0);
-  --color-fd-foreground: oklch(18.7% 0 0);
-  --color-fd-card: oklch(100% 0 0);
-  --color-fd-card-foreground: oklch(18.7% 0 0);
-  --color-fd-popover: oklch(100% 0 0);
-  --color-fd-popover-foreground: oklch(18.7% 0 0);
-  --color-fd-muted: oklch(96.5% 0 0);
-  --color-fd-muted-foreground: oklch(47.3% 0 0);
-  --color-fd-secondary: oklch(96.5% 0 0);
-  --color-fd-secondary-foreground: oklch(25% 0 0);
-  --color-fd-border: oklch(88.4% 0 0);
-  --color-fd-primary: oklch(18.7% 0 0);
-  --color-fd-primary-foreground: oklch(100% 0 0);
-  --color-fd-ring: oklch(47.3% 0 0);
-  --color-fd-accent: oklch(93% 0 0);
-  --color-fd-accent-foreground: oklch(31% 0 0);
+  /* A shadow is an absence of light, not a colour from the palette, so this
+     stays black in both themes and only its strength changes. Deriving it from
+     --foreground would make it white on the dark theme, which is a glow. */
+  --shadow-page: 0 30px 70px rgb(0 0 0 / 0.1);
+
+  /* Syntax colours. Code cannot go monochrome the way the interface can: a
+     single-colour listing reads as a quote block rather than as code. So this
+     is the one part of the theme that stays chromatic while --primary is ink.
+
+     Six hues at one lightness and one chroma, so only the hue varies. Holding L
+     and C is what keeps them distinguishable from each other and readable on
+     the page at the same time.
+
+     --chroma-h is a real anchor rather than a reading of --primary's hue, and
+     that is deliberate. An achromatic --primary has no meaningful hue: the
+     browser serialises it with a floating-point crumb in the b channel, which
+     came out as roughly 112 degrees rather than 0. Anchoring a palette on that
+     is anchoring it on rounding noise. Two knobs are worth the honesty.
+
+     At 25 the ramp runs red, orange, yellow-green, green, blue, magenta, which
+     is close to how most editors colour code already. Move this one number to
+     rotate the whole palette; if --primary is ever given a hue and the code
+     should follow it, set this to the same value. */
+  --chroma-h: 25;
+  --chroma-l: 0.48;
+  --chroma-c: 0.15;
+  --chroma-1: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 0));
+  --chroma-2: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 40));
+  --chroma-3: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 80));
+  --chroma-4: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 130));
+  --chroma-5: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 200));
+  --chroma-6: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 300));
 }
 
 .dark {
@@ -120,6 +175,8 @@
   --card-foreground: oklch(100% 0 0);
   --popover: oklch(11.5% 0 0);
   --popover-foreground: oklch(100% 0 0);
+  /* The same ink, inverted. Black primary on a black page would be invisible,
+     so the dark theme takes the lightest neutral and puts the dark one on top. */
   --primary: oklch(100% 0 0);
   --primary-foreground: oklch(4.5% 0 0);
   --secondary: oklch(18.7% 0 0);
@@ -133,38 +190,34 @@
   --input: oklch(25% 0 0);
   --ring: oklch(66% 0 0);
 
-  /* The measured video palette. Lifted slightly off the raw percentiles: the
-     source sits so low (median luminance 7) that using it verbatim leaves the
-     mesh invisible once the layer opacity is applied over it. Hue and the
-     blue -> steel -> gold ordering are kept exactly. */
-  --wave-1: #000306;
-  --wave-2: #00223d;
-  --wave-3: #3a5169;
-  --wave-4: #9d8160;
+  /* No --color-fd-* here on purpose. They alias the shadcn tokens in :root,
+     and every one of those is redefined above, so the docs are already dark.
+     Repeating them here is what made the two sets drift.
 
-  --field-1: #78afe1;
-  --field-2: #2f5a7f;
-  --field-opacity: 0.62;
-  --veil-opacity: 0.72;
-  --silk-opacity: 0.62;
+     The --rule-*, --wash-* and --chroma-* steps are not repeated either: they
+     are built from --foreground, --card and --primary, all redefined above.
+     Only the values that genuinely differ by theme are listed below. */
 
-  /* fumadocs layer — dark */
-  --color-fd-background: oklch(4.5% 0 0);
-  --color-fd-foreground: oklch(100% 0 0);
-  --color-fd-card: oklch(11.5% 0 0);
-  --color-fd-card-foreground: oklch(100% 0 0);
-  --color-fd-popover: oklch(11.5% 0 0);
-  --color-fd-popover-foreground: oklch(100% 0 0);
-  --color-fd-muted: oklch(18.7% 0 0);
-  --color-fd-muted-foreground: oklch(66% 0 0);
-  --color-fd-secondary: oklch(18.7% 0 0);
-  --color-fd-secondary-foreground: oklch(93% 0 0);
-  --color-fd-border: oklch(25% 0 0);
-  --color-fd-primary: oklch(100% 0 0);
-  --color-fd-primary-foreground: oklch(4.5% 0 0);
-  --color-fd-ring: oklch(66% 0 0);
-  --color-fd-accent: oklch(25% 0 0);
-  --color-fd-accent-foreground: oklch(84% 0 0);
+  /* Below about 7% a white hairline composites to #0e0e0e on black and reads
+     as nothing, so the dark ground needs its own alphas rather than the ones
+     tuned for paper. */
+  --rule-1: color-mix(in srgb, var(--foreground) 7.5%, transparent);
+  --rule-2: color-mix(in srgb, var(--foreground) 12%, transparent);
+  --rule-3: color-mix(in srgb, var(--foreground) 28%, transparent);
+  --rule-frame: color-mix(in srgb, var(--foreground) 16%, transparent);
+  --rule-grid: color-mix(in srgb, var(--foreground) 10%, transparent);
+
+  --wash-1: color-mix(in srgb, var(--card) 66%, transparent);
+  --wash-2: color-mix(in srgb, var(--card) 72%, transparent);
+  --wash-3: color-mix(in srgb, var(--card) 86%, transparent);
+
+  /* A black page can carry a heavy shadow because it has nowhere to go. White
+     cannot: at 0.8 the screenshots look like they are floating off the sheet. */
+  --shadow-page: 0 30px 70px rgb(0 0 0 / 0.8);
+
+  /* Lifted for the dark ground. Same hues, read against black instead of white. */
+  --chroma-l: 0.78;
+  --chroma-c: 0.13;
 }
 
 html {

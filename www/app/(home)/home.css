@@ -16,29 +16,54 @@
  * one class above the rules it replaces. */
 
 .hp {
-  --hp-bg: #000000;
-  --hp-surface: #080808;
-  --hp-surface-2: #0d0d0d;
-  --hp-text: #f5f5f5;
-  --hp-muted: #8a8a8a;
-  --hp-dim: #555555;
+  /* Every colour here is an alias. The values live in app/global.css, which is
+     the one block anyone edits to change the theme.
 
-  /* The same three line weights v2 settled on. Below about 0.07 alpha a line
-     composites to #0e0e0e on black and reads as nothing, so these sit above
-     that floor: quiet, not invisible. */
-  --hp-grid: rgba(255, 255, 255, 0.1);
-  --hp-line: rgba(255, 255, 255, 0.075);
-  --hp-line-2: rgba(255, 255, 255, 0.12);
-  /* The hover weight on the hero's arrow links, the edge of a screenshot
-     frame, and the drop shadow under one. These were literals; they are
-     tokens so the light block below can reach them. */
-  --hp-line-3: rgba(255, 255, 255, 0.28);
-  --hp-frame: rgba(255, 255, 255, 0.16);
-  --hp-shadow: 0 30px 70px rgba(0, 0, 0, 0.8);
-  /* The translucent washes the panels use over the backdrop. */
-  --hp-wash: rgba(9, 9, 12, 0.66);
-  --hp-wash-2: rgba(14, 14, 18, 0.72);
-  --hp-wash-3: rgba(9, 9, 12, 0.86);
+     This used to be eighteen literals plus a second set of eighteen for light
+     mode. The twin set existed only because a literal cannot know what theme it
+     is in; these resolve through tokens that already carry both, so the light
+     block is gone rather than converted. */
+  --hp-bg: var(--background);
+  --hp-surface: var(--card);
+  --hp-surface-2: var(--muted);
+  --hp-text: var(--foreground);
+  --hp-muted: var(--muted-foreground);
+  /* A fourth text rank, quieter than muted. shadcn has no token for it, so it
+     is mixed toward the page rather than picked. */
+  --hp-dim: color-mix(in srgb, var(--muted-foreground) 62%, var(--background));
+
+  /* The signal.
+   *
+   * v2 allowed itself a single colour and spent it like currency. The blue went
+   * when the palette was rebuilt on the theme tokens, and nothing replaced it,
+   * so the page went achromatic and read as a wireframe of itself.
+   *
+   * It is --primary now, not a colour of its own. That is a change in reach as
+   * well as in plumbing: --color-accent in landing.css resolves to --primary
+   * across about 74 rules, so buttons, active states, hover borders and card
+   * accents all carry it, not just the handful of places this token was first
+   * introduced for. If that reads as too much colour, the dial is --primary's
+   * chroma in global.css, not this line, and not reverting rules one by one.
+   *
+   * It is only ever a foreground here: the shell prompt, the benchmark units,
+   * the arrow on hover, the focus ring. There were companion --hp-signal-ink
+   * and --hp-signal-wash tokens for painting it as a block behind text, which
+   * is what the marked phrase in the hero used. That was removed, and they went
+   * with it rather than sitting here unreferenced. */
+  --hp-signal: var(--primary);
+
+  /* The line weights and washes now live in global.css, where the per-theme
+     alphas are set. The names are kept because the rest of this file and every
+     component below it already reads them. */
+  --hp-grid: var(--rule-grid);
+  --hp-line: var(--rule-1);
+  --hp-line-2: var(--rule-2);
+  --hp-line-3: var(--rule-3);
+  --hp-frame: var(--rule-frame);
+  --hp-shadow: var(--shadow-page);
+  --hp-wash: var(--wash-1);
+  --hp-wash-2: var(--wash-2);
+  --hp-wash-3: var(--wash-3);
 
   --hp-max: 1440px;
   --hp-pad: clamp(1.25rem, 3vw, 3rem);
@@ -94,8 +119,14 @@
 .hp-veil-scrim {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.42));
+  /* The page ground at alpha, not a colour of its own: black over the canvas
+     on the dark theme, white over it on light. Deriving it from --background is
+     what lets the light override below disappear. */
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--background) 12%, transparent),
+    color-mix(in srgb, var(--background) 42%, transparent)
+  );
 }
 
 /* The page rides above the veil. */
@@ -261,40 +292,36 @@
  * one blue, which is the only colour v2 allows itself. */
 
 .hp .lp {
-  /* The veil is the page surface now, so nothing paints over it at full
-     strength: tiles and code blocks keep a dark wash that is translucent by a
-     few points, which lets the violet through a section instead of only between
-     sections.
-     --background stays opaque black. v1 uses it as a text colour as well as a
-     surface (the accent button's label is `color: var(--background)`), so a
-     transparent value there paints the label out of existence. The page surface
-     is opened up on .lp itself instead, further down. */
-  --background: #000000;
-  --card: var(--hp-wash);
-  --foreground: #f5f5f5;
-  /* a step lighter than v10: this copy sits over a moving image, not over flat
-     black, so it needs the headroom */
-  --muted-foreground: #9b9b9b;
-  --border: rgba(255, 255, 255, 0.075);
-  --primary: #f5f5f5;
-  --accent: #0d0d0d;
-  --accent-foreground: #cfcfcf;
+  /* No --background, --foreground, --primary, --card, --border, --accent,
+     --accent-foreground or --muted-foreground here any more.
 
-  /* v1's own aliases that do not simply follow the theme */
-  --color-ink-2: #e9e9e9;
-  --color-graphite: var(--hp-wash);
-  --color-graphite-rule: rgba(255, 255, 255, 0.075);
-  --color-accent-ink: #000000;
-  --color-accent-wash: rgba(255, 255, 255, 0.08);
+     Those eight were the reason the landing ignored the palette entirely: they
+     redefined the shadcn tokens themselves with literals, so nothing in
+     global.css could reach this page. Deleting them is what makes a palette
+     swap arrive here.
 
-  /* Code keeps its colour. Monochrome syntax is unreadable, and these are the
-     same four values v2's own dashboard panels use. */
-  --tok-key: #93b4f5;
-  --tok-str: #c3e0a8;
-  --tok-punct: #6a6a6a;
-  --tok-comment: #5a5a5a;
-  --color-code-fg: #ededed;
-  --color-code-muted: #7d7d7d;
+     --card in particular had to go rather than be rewired. It was
+     var(--hp-wash), and --hp-wash is now a mix OF --card, so keeping it would
+     make --card depend on itself. A circular custom property resolves to
+     nothing, panels render transparent, and neither the linter nor tsc says a
+     word about it. */
+
+  /* v1's own aliases, now derived rather than picked. */
+  --color-ink-2: color-mix(in srgb, var(--foreground) 92%, var(--background));
+  --color-graphite: var(--wash-1);
+  --color-graphite-rule: var(--rule-1);
+  --color-accent-ink: var(--primary-foreground);
+  --color-accent-wash: color-mix(in srgb, var(--foreground) 8%, transparent);
+
+  /* Code keeps its colour, because monochrome syntax reads as a quote block
+     rather than as code. These are offsets from --primary's hue now, so they
+     follow a palette swap instead of being four fixed values. */
+  --tok-key: var(--chroma-6);
+  --tok-str: var(--chroma-2);
+  --tok-punct: var(--muted-foreground);
+  --tok-comment: var(--muted-foreground);
+  --color-code-fg: var(--foreground);
+  --color-code-muted: var(--muted-foreground);
 
   /* Square corners, one face. v1's display font was Outfit; v2 sets everything
      in Inter and reserves the mono for code, so the display alias collapses
@@ -310,7 +337,7 @@
 
 /* Section rules and tile edges become the same hairline as the page grid, so
    the card grids read as a ruled sheet rather than as stacked boxes. */
-.hp .lp { --color-rule: rgba(255, 255, 255, 0.075); }
+.hp .lp { --color-rule: var(--rule-1); }
 
 /* Square corners, everywhere.
  *
@@ -406,7 +433,6 @@
    the veil that reads as a rectangle of dead surface, and the grid is already
    half-lost against a moving image, so the mask does not come across here. */
 
-
 /* The remaining opaque bands.
  *
  * These paint `--color-paper`, which is the page colour and has to stay opaque
@@ -437,7 +463,28 @@
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  /* Dim, not the signal.
+
+     This carried --hp-signal for a while, which was fine when the signal was a
+     violet: a small accent arriving once per section. It stopped being fine the
+     moment --primary became ink, because the eyebrow then resolved to pure
+     white and a label became as loud as the heading it labels. Measured against
+     the pre-change build it was a jump from #555555 to #ffffff.
+
+     An eyebrow is a caption. It should sit under the heading, not beside it. */
   color: var(--hp-dim);
+}
+
+/* The unit after a benchmark number: the "ms", the "%". The figure itself stays
+   white, because four violet numbers at 3.5rem is not a signal, it is a chart.
+   The unit is two characters and it is the part that says what the number
+   means.
+
+   StatNumber renders the suffix as a <b> inside .stat-n. The stat *tile*
+   (.cell--stat) that landing.css also styles is not on this page at all. */
+.hp.hp .lp .stat-n b {
+  color: var(--hp-signal);
+  font-weight: inherit;
 }
 
 /* Keywords in the code samples resolve through --color-accent, which is now
@@ -531,6 +578,10 @@
 }
 .hp-cmd button:hover { color: var(--hp-text); }
 .hp-cmd svg { width: 14px; height: 14px; }
+/* The shell prompt. One glyph, in the hero, where the eye already is. A prompt
+   is the one character on the page that is genuinely not prose, so it is the
+   cheapest possible place to spend the signal. */
+.hp-cmd .hp-prompt { color: var(--hp-signal); font-style: normal; }
 
 .hp-hero-links { margin-top: 0 !important; }
 .hp-arrow {
@@ -551,8 +602,40 @@
   color: var(--hp-dim);
   transition: transform var(--hp-dur) var(--hp-ease), color var(--hp-dur) var(--hp-ease);
 }
-.hp-arrow:hover span:last-child { transform: translate(2px, -2px); color: var(--hp-text); }
+/* The glyph picks up the signal on hover, the label does not. Colouring the
+   whole link would make it a link colour, which is the one thing the budget
+   cannot afford: there are too many links. */
+.hp-arrow:hover span:last-child { transform: translate(2px, -2px); color: var(--hp-signal); }
 .hp-arrow:focus-visible { outline: 1px solid var(--hp-line-2); outline-offset: 3px; }
+
+/* Focus rings.
+ *
+ * Free colour: it appears only for keyboard users, one element at a time, and a
+ * ring that shares the page's neutral hairline is exactly as hard to find as
+ * the hairline. This also fixes a real accessibility problem rather than just
+ * spending the accent.
+ *
+ * The second block is not redundant. landing.css already rings these five in
+ * --color-accent, which resolves to white here, and .lp .tlink:focus-visible
+ * out-specifies a bare .hp a:focus-visible, so without it the generic rule below
+ * is silently overridden on exactly the elements people tab through most. Only
+ * the colour is taken; each keeps its own offset and radius. */
+.hp a:focus-visible,
+.hp button:focus-visible,
+.hp [tabindex]:focus-visible {
+  outline: 2px solid var(--hp-signal);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+.hp.hp .lp .btn:focus-visible,
+.hp.hp .lp .tlink:focus-visible,
+.hp.hp .lp .foot-links a:focus-visible,
+.hp.hp .lp .cmp-row:focus-visible,
+.hp.hp .lp .faq-btn:focus-visible,
+.hp.hp .hp-arrow:focus-visible {
+  outline-color: var(--hp-signal);
+}
 
 /* The screenshot frame: a real edge, not a grid hairline. */
 .hp-shot {
@@ -583,7 +666,6 @@
    they read as almost-invisible geometry; over a moving backdrop they read as a
    navy rectangle sitting on top of it, with an edge where the hero band ends.
    The backdrop is the hero's lighting now, so the glow does not come across. */
-
 
 @keyframes hp-rise {
   from { opacity: 0; transform: translateY(14px); }
@@ -618,7 +700,6 @@
   .hp-foot-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
-
 /* ---------------- light mode ----------------
  *
  * The same composition on white paper. Nothing about the layout, the grid, the
@@ -639,60 +720,12 @@
  * puts one of them beside the editor showcase, which follows the theme, so
  * holding them dark would split one figure across two modes. */
 
-html:not(.dark) .hp {
-  --hp-bg: #ffffff;
-  --hp-surface: #fafafa;
-  --hp-surface-2: #f4f4f4;
-  --hp-text: #111111;
-  --hp-muted: #666666;
-  --hp-dim: #9a9a9a;
+/* No light --hp-* block any more. Each one aliases a token in global.css
+   that already carries both themes, so a second set here would be the copy
+   that drifts. The per-theme alphas live beside those tokens. */
 
-  /* On white the floor runs the other way: above about 0.16 alpha a black line
-     stops reading as a hairline and starts reading as a border, so these sit
-     just under it. */
-  --hp-grid: rgba(0, 0, 0, 0.09);
-  --hp-line: rgba(0, 0, 0, 0.08);
-  --hp-line-2: rgba(0, 0, 0, 0.13);
-  --hp-line-3: rgba(0, 0, 0, 0.3);
-  --hp-frame: rgba(0, 0, 0, 0.14);
-  /* A black page can carry a heavy shadow because it has nowhere to go. White
-     cannot: at 0.8 the screenshots look like they are floating off the sheet. */
-  --hp-shadow: 0 30px 70px rgba(0, 0, 0, 0.1);
-
-  /* The panels frost the backdrop instead of darkening it. */
-  --hp-wash: rgba(255, 255, 255, 0.72);
-  --hp-wash-2: rgba(255, 255, 255, 0.86);
-  --hp-wash-3: rgba(255, 255, 255, 0.92);
-}
-
-html:not(.dark) .hp .lp {
-  --background: #ffffff;
-  --card: var(--hp-wash);
-  --foreground: #111111;
-  --muted-foreground: #5f5f5f;
-  --border: rgba(0, 0, 0, 0.08);
-  --primary: #111111;
-  --accent: #f4f4f4;
-  --accent-foreground: #3a3a3a;
-
-  --color-ink-2: #1c1c1c;
-  --color-graphite: var(--hp-wash);
-  --color-graphite-rule: rgba(0, 0, 0, 0.08);
-  /* The label on a filled button. Black in dark mode, so white here. */
-  --color-accent-ink: #ffffff;
-  --color-accent-wash: rgba(0, 0, 0, 0.06);
-  --color-rule: rgba(0, 0, 0, 0.08);
-
-  /* Code keeps its colour here too, darkened to hold on white. Same four
-     roles, same relationship, one notch more saturated because a light
-     background gives syntax less separation than a dark one. */
-  --tok-key: #2f5fb3;
-  --tok-str: #3d7a35;
-  --tok-punct: #8a8a8a;
-  --tok-comment: #9a9a9a;
-  --color-code-fg: #1a1a1a;
-  --color-code-muted: #6f6f6f;
-}
+/* No light .lp overrides either, for the same reason. The eight shadcn
+   tokens this block used to redefine are gone from the dark block too. */
 
 /* The backdrop over white.
  *
@@ -717,7 +750,5 @@ html:not(.dark) .hp .lp {
 html:not(.dark) .hp-veil canvas {
   opacity: 0.9;
 }
-html:not(.dark) .hp-veil-scrim {
-  background:
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.42));
-}
+/* No light .hp-veil-scrim override. The scrim derives from --background, which
+   is already white here. */

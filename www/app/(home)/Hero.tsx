@@ -27,7 +27,12 @@ export function Hero() {
             and every screen stays live.
           </p>
           <div className="hp-cmd">
-            <span>$ npx create-concile-app</span>
+            {/* The prompt is marked up so it can carry the signal on its own. It
+                is decoration, not content: a screen reader should hear the
+                command, not the dollar sign. */}
+            <span>
+              <i className="hp-prompt" aria-hidden="true">$</i> npx create-concile-app
+            </span>
             <button
               type="button"
               onClick={() => {
