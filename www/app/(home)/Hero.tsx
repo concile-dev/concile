@@ -29,10 +29,10 @@ export function Hero() {
 
               The subhead names the parts on purpose. An all-in-one claim is only
               believable once you list what is in the box. */}
-          <h1>Your whole backend, realtime by default.</h1>
+          <h1>Your entire backend. Realtime by default.</h1>
           <p className="hp-body">
-            Open source and self-hosted. Database, live queries, auth, file storage, cron jobs and a
-            dashboard in one binary.
+            100% open source and self-hosted. You get a database, live queries, auth, file storage,
+            cron jobs and a complete dashboard, all packed into a single binary.
           </p>
           <div className="hp-cmd">
             {/* The prompt is marked up so it can carry the signal on its own. It
@@ -63,7 +63,7 @@ export function Hero() {
             </button>
           </div>
           <p className="hp-body hp-hero-note">
-            There is no Concile cloud. Self-hosting is the only way it ships.
+            There is no Concile cloud. We built this exclusively for you to self-host.
           </p>
           <div className="hp-hero-links">
             <Link className="hp-arrow" href="/docs/get-started/quickstart">

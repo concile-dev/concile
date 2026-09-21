@@ -537,13 +537,12 @@
 
 .hp-hero h1 {
   margin: 0;
-  /* Sized to break at the comma, not inside the noun phrase.
+  /* Sized so each sentence of the headline holds its own line.
 
      12ch was tuned for "The backend to build the modern web", which wanted three
-     short lines. The current headline is two clauses of almost equal length,
-     "Your whole backend," at 19 characters and "realtime by default." at 20, so
-     12ch split it four ways and cut "Your whole / backend," in half. 20ch lets
-     each clause hold its own line.
+     short lines. The headline is now two sentences of nearly equal length, "Your
+     entire backend." and "Realtime by default.", and at 12ch it split four ways
+     and cut the noun phrase in half. 20ch lets each sentence sit on one line.
 
      text-wrap: balance is the safety net. If the words change again it evens the
      lines out rather than leaving one orphan, which is what went wrong here. */
@@ -559,10 +558,14 @@
  * hero at 3.9rem. This is the same `.hp .lp ...` pattern every other override in
  * this file uses, and the block below should be read as dead on that property.
  *
- * 3.35rem, not 3.9rem, because the headline has to break at its comma. At 3.9rem
- * "Your whole backend," measures 639px in a 567px column, so it split as
- * "Your whole / backend, realtime / by default." and cut the noun phrase in half.
- * Scaled down it fits, and the line breaks where the sentence does. */
+ * 3.35rem, not 3.9rem, because a sentence of the headline has to fit one line.
+ * At 3.9rem the first sentence measured 639px in a 567px column, so it wrapped
+ * mid-phrase as "Your whole / backend, realtime / by default." Scaled down, both
+ * sentences fit and the line breaks where the sentence does.
+ *
+ * This is measured against the current headline, so re-measure if the words
+ * change. The check is the rendered line count, not the character count:
+ * capitals and wide letters cost more than the character total suggests. */
 .hp .hp-hero h1 {
   font-size: clamp(2.2rem, 4.6vw, 3.35rem);
   font-family: var(--hp-sans);

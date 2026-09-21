@@ -60,12 +60,10 @@ export default function HomePage() {
         {/* ---------------- HOW IT WORKS (numbered step rail) ---------------- */}
         <Reveal className="stp">
           <div className="stp-copy">
-            <span className="k">just typescript</span>
-            <h3>An empty folder to a live app, in five steps</h3>
+            <span className="k">Just TypeScript</span>
+            <h3>From an empty folder to a live app in five steps</h3>
             <p>
-              One language for the whole backend. Name your tables, write a mutation, read it with
-              a query, subscribe from the client. Then ship the same code as a container or a
-              single binary. There is no API to design and no migration to run.
+              You write one language for the entire backend. Define your tables, create mutations and queries, and subscribe right from the client. When you're ready to deploy, it ships as a single container or binary. You don't have to design an API, and there are no migrations to run.
             </p>
             <Link className="tlink" href="/docs/get-started/quickstart">
               See the full quickstart
@@ -77,12 +75,10 @@ export default function HomePage() {
         {/* ---------------- DASHBOARD SHOWCASE (on the laptop screen) ---------------- */}
         <Reveal className="fc-section">
           <div className="fc-head">
-            <span className="k">the dashboard</span>
-            <h2>Watch your data change as you write it</h2>
+            <span className="k">The Dashboard</span>
+            <h2>Watch your data change as it happens</h2>
             <p>
-              A dashboard ships in the box, on the same origin as everything else. It reads through
-              a live subscription, so writes land in the table as they happen. There is no refresh
-              button, because there is nothing to refresh.
+              We include a built-in dashboard that runs on the exact same origin as your app. It uses live subscriptions, meaning you see writes land in the database immediately. We didn't even build a refresh button, because you'll never need it.
             </p>
           </div>
           <MacbookScroll>
@@ -95,13 +91,10 @@ export default function HomePage() {
         {/* ---------------- REACTIVITY DIAGRAM ---------------- */}
         <Reveal className="demo">
           <div className="demo-head">
-            <span className="k">a live query, not a change feed</span>
-            <h3>A change feed says a row changed. Concile says the answer changed.</h3>
+            <span className="k">Live queries, not change feeds</span>
+            <h3>Change feeds tell you a row changed. Concile tells you the answer changed.</h3>
             <p>
-              Most backends stream raw row events. Your client then works out whether each one still
-              belongs in a filtered, sorted, paginated view. That is a query engine you write twice.
-              Concile subscribes to the query itself, and pushes a new result only when a write
-              actually changed it.
+              Most backends just stream raw row events, forcing your client to figure out if that new row actually belongs in your filtered, sorted, paginated view. That means writing a query engine twice. Concile is different: it subscribes to the query itself, and only pushes a new result when a write actually affects your data.
             </p>
             {/* the bento's reactive-core tile used to carry this link; it was the
                 page's only route to the reactivity doc, so it moved here. */}
@@ -115,12 +108,10 @@ export default function HomePage() {
         {/* ---------------- CAPABILITIES (live mini-visuals) ---------------- */}
         <Reveal className="fc-section">
           <div className="fc-head">
-            <span className="k">everything in the box</span>
-            <h2>One process. The whole backend.</h2>
+            <span className="k">Everything in the box</span>
+            <h2>One process. Your entire backend.</h2>
             <p>
-              Reactivity, auth, scheduling, file storage and a live dashboard, all in one running
-              program on one origin. There is no stack to compose and nothing to network together.
-              Every card below is a small live view of the real thing.
+              We've packed reactivity, auth, scheduling, file storage, and a live dashboard into a single running program. There's no complex stack to piece together or network configurations to manage. Take a look below. Every card is a live, working piece of the real system.
             </p>
           </div>
           <FeatureCards />
@@ -129,12 +120,10 @@ export default function HomePage() {
         {/* ---------------- COMPONENTS (opt-in catalogue) ---------------- */}
         <Reveal className="fc-section">
           <div className="fc-head">
-            <span className="k">batteries included, you pick the ones</span>
-            <h2>Six components. Nothing you did not ask for.</h2>
+            <span className="k">Batteries included. You pick which ones to use.</span>
+            <h2>Six core components. Nothing you didn't ask for.</h2>
             <p>
-              Auth, authorization, scheduling, workflows, triggers and notifications ship as
-              separate packages. Each one plugs into the engine through the same seam. You list the
-              ones you want in one config file, and the rest never load.
+              Features like auth, authorization, scheduling, workflows, triggers, and notifications come as separate packages. They all plug into the core engine exactly the same way. Just list what you need in your config file, and the rest won't even load.
             </p>
           </div>
           <Components />
@@ -143,12 +132,10 @@ export default function HomePage() {
         {/* ---------------- PILLARS ---------------- */}
         <Reveal className="fc-section">
           <div className="fc-head">
-            <span className="k">why this one</span>
-            <h2>Five things you cannot bolt on later</h2>
+            <span className="k">Why this one</span>
+            <h2>Five things you can't just bolt on later</h2>
             <p>
-              Not a feature list. These are properties of how Concile is built. They are the reason
-              it behaves differently when the network drops, when your database changes, or when one
-              node stops being enough.
+              This isn't just another feature list. These are fundamental properties of how Concile is built. They're exactly why your app behaves differently when a user's network drops, when your database schemas change, or when you suddenly outgrow a single node.
             </p>
           </div>
           <Pillars />
@@ -157,12 +144,10 @@ export default function HomePage() {
         {/* ---------------- COMPARISON MATRIX ---------------- */}
         <Reveal className="fc-section">
           <div className="fc-head cmt-head">
-            <span className="k">the honest version</span>
-            <h2>We took the good parts</h2>
+            <span className="k">The honest version</span>
+            <h2>We borrowed the best ideas</h2>
             <p>
-              Reactive queries from Convex. A database you can self-host from Supabase. Offline that
-              survives a reload from Firebase. One binary and no setup from PocketBase. Here is
-              where that leaves us, including the rows where it does not go our way.
+              We loved Convex's reactive queries, Supabase's self-hosting, Firebase's resilient offline mode, and PocketBase's zero-setup single binary. So we brought those ideas together. Here's a transparent look at how we compare, including the areas where we fall short.
             </p>
           </div>
           <ComparisonTable />
@@ -171,16 +156,15 @@ export default function HomePage() {
         {/* ---------------- ESCAPE HATCHES + LIMITS ---------------- */}
         <Reveal className="fc-section">
           <div className="fc-head">
-            <span className="k">no magic</span>
-            <h2>Where the model ends</h2>
+            <span className="k">No magic</span>
+            <h2>Where our model ends</h2>
             <p>
-              Reactive functions do not fit every job, and some things are not built yet. Here is
-              both, in one place, so you find out now instead of halfway through a sprint.
+              Reactive functions aren't the right tool for everything, and honestly, some features just aren't built yet. We put them all right here so you find out now, rather than halfway through your next sprint.
             </p>
           </div>
         <SpotlightGrid className="bento">
           <article className="cell cell--rows s3">
-            <span className="k">escape hatches</span>
+            <span className="k">Escape hatches</span>
             <h3>When the model does not fit</h3>
             <ul>
               <li>
@@ -200,8 +184,8 @@ export default function HomePage() {
 
           {/* honest limits tile */}
           <article className="cell cell--limits s3">
-            <span className="k">honest limits</span>
-            <h3>What it doesn&apos;t do yet</h3>
+            <span className="k">Honest limits</span>
+            <h3>What it doesn't do yet</h3>
             <ul>
               <li>
                 <b>No search</b>
