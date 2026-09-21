@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // CHECKED below. Two rows are deliberately not wins for us. A table where one
 // column is all green reads as an advertisement and gets skipped.
 
-const CHECKED = '19 September 2026';
+const CHECKED = '21 September 2026';
 
 type Mark = 'yes' | 'part' | 'no';
 type Cell = { mark: Mark; note: string };
@@ -25,7 +25,7 @@ const ROWS: Row[] = [
     axis: 'Live results from your own server code',
     cells: [
       { mark: 'yes', note: 'Read-set precise' },
-      { mark: 'yes', note: 'Read-set precise' },
+      { mark: 'yes', note: 'Cached, subscribable queries' },
       { mark: 'part', note: 'Row change events' },
       { mark: 'part', note: 'Document listeners' },
       { mark: 'part', note: 'Record events' },
@@ -37,7 +37,7 @@ const ROWS: Row[] = [
       { mark: 'yes', note: 'Query, mutation, action' },
       { mark: 'yes', note: 'Query, mutation, action' },
       { mark: 'part', note: 'Edge functions, off to the side' },
-      { mark: 'part', note: 'Cloud functions, off to the side' },
+      { mark: 'part', note: 'Cloud Functions' },
       { mark: 'part', note: 'Go or JS hooks' },
     ],
   },
@@ -45,7 +45,7 @@ const ROWS: Row[] = [
     axis: 'Authorization is ordinary code, not a rules language',
     cells: [
       { mark: 'yes', note: 'Functions you can unit test' },
-      { mark: 'yes', note: 'Functions you can unit test' },
+      { mark: 'yes', note: 'Ordinary TypeScript functions' },
       { mark: 'no', note: 'Row-level security in SQL' },
       { mark: 'no', note: 'Security rules DSL' },
       { mark: 'no', note: 'API rule expressions' },
@@ -56,7 +56,7 @@ const ROWS: Row[] = [
     cells: [
       { mark: 'yes', note: 'One process, one command' },
       { mark: 'part', note: 'Open-source backend, cloud is the product' },
-      { mark: 'part', note: 'About a dozen services' },
+      { mark: 'part', note: 'Several composed services' },
       { mark: 'no', note: 'Google cloud only' },
       { mark: 'yes', note: 'One binary' },
     ],
@@ -77,7 +77,7 @@ const ROWS: Row[] = [
       { mark: 'yes', note: 'SQLite or Postgres, one flag' },
       { mark: 'no', note: 'Fixed store' },
       { mark: 'no', note: 'Postgres only' },
-      { mark: 'no', note: 'Firestore only' },
+      { mark: 'no', note: 'Firestore or Realtime Database' },
       { mark: 'no', note: 'SQLite only' },
     ],
   },
@@ -85,7 +85,7 @@ const ROWS: Row[] = [
     axis: 'Durable workflows with rollback',
     cells: [
       { mark: 'yes', note: 'Saga compensation' },
-      { mark: 'part', note: 'Workflow component, no saga' },
+      { mark: 'part', note: 'Workflow component' },
       { mark: 'no', note: 'Bring your own' },
       { mark: 'no', note: 'Bring your own' },
       { mark: 'no', note: 'Bring your own' },

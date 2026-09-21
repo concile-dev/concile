@@ -537,9 +537,35 @@
 
 .hp-hero h1 {
   margin: 0;
-  max-width: 12ch;
+  /* Sized to break at the comma, not inside the noun phrase.
+
+     12ch was tuned for "The backend to build the modern web", which wanted three
+     short lines. The current headline is two clauses of almost equal length,
+     "Your whole backend," at 19 characters and "realtime by default." at 20, so
+     12ch split it four ways and cut "Your whole / backend," in half. 20ch lets
+     each clause hold its own line.
+
+     text-wrap: balance is the safety net. If the words change again it evens the
+     lines out rather than leaving one orphan, which is what went wrong here. */
+  max-width: 20ch;
+  text-wrap: balance;
+}
+
+/* The hero's own size, at a specificity that actually wins.
+ *
+ * `.hp-hero h1` and `.lp h1` both score 0,1,1, so the tie broke on source order
+ * and landing.css loads after this file. The font-size declared below in the
+ * `.hp-hero h1` block therefore never applied: --text-display won, capping the
+ * hero at 3.9rem. This is the same `.hp .lp ...` pattern every other override in
+ * this file uses, and the block below should be read as dead on that property.
+ *
+ * 3.35rem, not 3.9rem, because the headline has to break at its comma. At 3.9rem
+ * "Your whole backend," measures 639px in a 567px column, so it split as
+ * "Your whole / backend, realtime / by default." and cut the noun phrase in half.
+ * Scaled down it fits, and the line breaks where the sentence does. */
+.hp .hp-hero h1 {
+  font-size: clamp(2.2rem, 4.6vw, 3.35rem);
   font-family: var(--hp-sans);
-  font-size: clamp(2.5rem, 5.2vw, 4.4rem);
   font-weight: 700;
   line-height: 1.05;
   letter-spacing: -0.032em;
@@ -582,6 +608,16 @@
    is the one character on the page that is genuinely not prose, so it is the
    cheapest possible place to spend the signal. */
 .hp-cmd .hp-prompt { color: var(--hp-signal); font-style: normal; }
+
+/* The second clause of the positioning line ("there is no cloud"). It sits
+   under the command rather than in the subhead so the subhead can stay one
+   idea, and it reads a step quieter than body copy because it is a
+   qualification, not the pitch. */
+.hp-hero-copy .hp-hero-note {
+  margin-top: 18px;
+  font-size: 13px;
+  color: var(--hp-dim);
+}
 
 .hp-hero-links { margin-top: 0 !important; }
 .hp-arrow {

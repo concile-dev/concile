@@ -42,7 +42,13 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Concile — the backend to build the modern web',
+  /* Title and description carry the same words as the H1, because a visitor who
+     searched one of them should land on a page that repeats it back. "Realtime"
+     rather than "reactive": reactive is Convex's brand term, realtime is what
+     this category is actually searched by. */
+  title: 'Concile: an open-source realtime backend you host yourself',
+  description:
+    'Your whole backend, realtime by default. Database, live queries, auth, file storage, cron jobs and a dashboard in one binary. Open source and self-hosted.',
 };
 
 export default function HomeLayout({ children }: { children: ReactNode }) {

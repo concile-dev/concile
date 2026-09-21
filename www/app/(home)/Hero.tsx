@@ -21,22 +21,30 @@ export function Hero() {
     <section className="hp-hero">
       <div className="hp-hero-inner">
         <div className="hp-hero-copy hp-rise">
-          <h1>The backend to build the modern web.</h1>
+          {/* "Realtime", not "reactive". Convex's landing page is literally "The
+              reactive backend platform", so reactive is their brand term and
+              building on it argues on their ground. Realtime is the word the
+              category actually searches for: Supabase ships Realtime, Firebase
+              ships the Realtime Database, and neither says reactive.
+
+              The subhead names the parts on purpose. An all-in-one claim is only
+              believable once you list what is in the box. */}
+          <h1>Your whole backend, realtime by default.</h1>
           <p className="hp-body">
-            The open-source reactive backend you run yourself. Write a function, subscribe once,
-            and every screen stays live.
+            Open source and self-hosted. Database, live queries, auth, file storage, cron jobs and a
+            dashboard in one binary.
           </p>
           <div className="hp-cmd">
             {/* The prompt is marked up so it can carry the signal on its own. It
                 is decoration, not content: a screen reader should hear the
                 command, not the dollar sign. */}
             <span>
-              <i className="hp-prompt" aria-hidden="true">$</i> npx create-concile-app
+              <i className="hp-prompt" aria-hidden="true">$</i> npm i concile && npx concile dev
             </span>
             <button
               type="button"
               onClick={() => {
-                navigator.clipboard?.writeText('npx create-concile-app');
+                navigator.clipboard?.writeText('npm i concile && npx concile dev');
                 setCopied(true);
                 setTimeout(() => setCopied(false), 1600);
               }}
@@ -54,9 +62,12 @@ export function Hero() {
               )}
             </button>
           </div>
+          <p className="hp-body hp-hero-note">
+            There is no Concile cloud. Self-hosting is the only way it ships.
+          </p>
           <div className="hp-hero-links">
             <Link className="hp-arrow" href="/docs/get-started/quickstart">
-              <span>Read the quickstart</span>
+              <span>Build your first live query</span>
               <span aria-hidden="true">→</span>
             </Link>
           </div>

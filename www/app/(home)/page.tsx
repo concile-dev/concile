@@ -61,14 +61,14 @@ export default function HomePage() {
         <Reveal className="stp">
           <div className="stp-copy">
             <span className="k">just typescript</span>
-            <h3>Define it, subscribe to it, ship it</h3>
+            <h3>An empty folder to a live app, in five steps</h3>
             <p>
-              One language for the whole backend. Write a mutation, read it with a query, and the
-              same code stays live in every client. When you are ready, ship it as a single binary
-              or a container.
+              One language for the whole backend. Name your tables, write a mutation, read it with
+              a query, subscribe from the client. Then ship the same code as a container or a
+              single binary. There is no API to design and no migration to run.
             </p>
             <Link className="tlink" href="/docs/get-started/quickstart">
-              Read the quickstart
+              See the full quickstart
             </Link>
           </div>
           <Steps />
@@ -80,9 +80,9 @@ export default function HomePage() {
             <span className="k">the dashboard</span>
             <h2>Watch your data change as you write it</h2>
             <p>
-              Concile ships a dashboard with every project. It reads through a live subscription, so
-              writes land in the table as they happen. There is no refresh button, because there is
-              nothing to refresh.
+              A dashboard ships in the box, on the same origin as everything else. It reads through
+              a live subscription, so writes land in the table as they happen. There is no refresh
+              button, because there is nothing to refresh.
             </p>
           </div>
           <MacbookScroll>
@@ -95,11 +95,13 @@ export default function HomePage() {
         {/* ---------------- REACTIVITY DIAGRAM ---------------- */}
         <Reveal className="demo">
           <div className="demo-head">
-            <span className="k">see it live</span>
-            <h3>One write. Every client. At once.</h3>
+            <span className="k">a live query, not a change feed</span>
+            <h3>A change feed says a row changed. Concile says the answer changed.</h3>
             <p>
-              Your functions talk to one engine. Every subscriber reads the same query, so a single
-              commit reaches all of them. No refresh, no polling, no glue.
+              Most backends stream raw row events. Your client then works out whether each one still
+              belongs in a filtered, sorted, paginated view. That is a query engine you write twice.
+              Concile subscribes to the query itself, and pushes a new result only when a write
+              actually changed it.
             </p>
             {/* the bento's reactive-core tile used to carry this link; it was the
                 page's only route to the reactivity doc, so it moved here. */}
@@ -114,10 +116,11 @@ export default function HomePage() {
         <Reveal className="fc-section">
           <div className="fc-head">
             <span className="k">everything in the box</span>
-            <h2>A whole backend, and you can watch each piece work</h2>
+            <h2>One process. The whole backend.</h2>
             <p>
-              Reactivity, auth, scheduling, file storage, and a live dashboard. Opt in to what you
-              need. Every card below is a small live view of the real thing.
+              Reactivity, auth, scheduling, file storage and a live dashboard, all in one running
+              program on one origin. There is no stack to compose and nothing to network together.
+              Every card below is a small live view of the real thing.
             </p>
           </div>
           <FeatureCards />
@@ -130,8 +133,8 @@ export default function HomePage() {
             <h2>Six components. Nothing you did not ask for.</h2>
             <p>
               Auth, authorization, scheduling, workflows, triggers and notifications ship as
-              separate packages. Each one plugs into the engine through a single seam, and you
-              compose the ones you want in one config file.
+              separate packages. Each one plugs into the engine through the same seam. You list the
+              ones you want in one config file, and the rest never load.
             </p>
           </div>
           <Components />
@@ -143,9 +146,9 @@ export default function HomePage() {
             <span className="k">why this one</span>
             <h2>Five things you cannot bolt on later</h2>
             <p>
-              Not a feature list. These are properties of how Concile is built, and they are the
-              reason it behaves differently when the network drops, when your database changes, or
-              when one node stops being enough.
+              Not a feature list. These are properties of how Concile is built. They are the reason
+              it behaves differently when the network drops, when your database changes, or when one
+              node stops being enough.
             </p>
           </div>
           <Pillars />
@@ -157,9 +160,9 @@ export default function HomePage() {
             <span className="k">the honest version</span>
             <h2>We took the good parts</h2>
             <p>
-              Reactive queries from Convex. A real database you can self-host from Supabase. Offline
-              that just works from Firebase. One binary and no setup from PocketBase. Here is where
-              that leaves us, including the two rows where it does not go our way.
+              Reactive queries from Convex. A database you can self-host from Supabase. Offline that
+              survives a reload from Firebase. One binary and no setup from PocketBase. Here is
+              where that leaves us, including the rows where it does not go our way.
             </p>
           </div>
           <ComparisonTable />
@@ -171,8 +174,8 @@ export default function HomePage() {
             <span className="k">no magic</span>
             <h2>Where the model ends</h2>
             <p>
-              Reactive functions do not fit every job, and some things are simply not built yet.
-              Here is both, in one place, so you find out now instead of halfway through a sprint.
+              Reactive functions do not fit every job, and some things are not built yet. Here is
+              both, in one place, so you find out now instead of halfway through a sprint.
             </p>
           </div>
         <SpotlightGrid className="bento">
@@ -207,7 +210,8 @@ export default function HomePage() {
               <li>
                 <b>One writer by default</b>
                 <span>
-                  Multi-node write scale-out ships, but it is the newest part. Start on one node.
+                  Multi-node write scale-out ships under a separate commercial license. It is the
+                  newest part of the system. Start on one node.
                 </span>
               </li>
               <li>
@@ -276,8 +280,11 @@ export default function HomePage() {
         <div className="cta2-glow" aria-hidden="true" />
         <Reveal className="cta2-inner">
           <span className="kicker">Get started</span>
-          <h2>Write your first reactive function in a few minutes.</h2>
-          <p>The quickstart takes you from an empty folder to a live, reactive app.</p>
+          <h2>Write one query. Watch it stay live.</h2>
+          <p>
+            The quickstart takes you from an empty folder to a live app in a few minutes. It runs on
+            your machine today, and on your own server tomorrow.
+          </p>
           <div className="cta2-row">
             <Link className="hx-btn hx-btn--primary" href="/docs/get-started/quickstart">
               Start building
@@ -293,7 +300,7 @@ export default function HomePage() {
             </a>
           </div>
           <div className="cta2-cmd">
-            <CopyCommand command="npx concile dev" />
+            <CopyCommand command="npm i concile && npx concile dev" />
           </div>
         </Reveal>
       </section>
