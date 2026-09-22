@@ -1,0 +1,503 @@
+---
+title: FAQ
+description: Straightforward answers about what concile is, what it isn't, and what we haven't built yet.
+---
+
+{/* diataxis: explanation */}
+
+## Is concile production-ready?
+
+If you're running a single node, absolutely! We use the reactive engine, client SDK, dashboard, and
+CLI end-to-end all the time.
+
+This covers a ton of features. You get schemas, typed queries, mutations, and action functions.
+We've got transactional execution running through a `DatabaseAdapter` seam, plus WebSocket reactive
+subscriptions that update precisely by index range rather than refreshing whole tables. On top of
+that, there are optimistic updates, a durable offline outbox, `concile dev`/`serve`, single-binary
+compilation, and a fully functional `docker compose up` for self-hosting. Everything ships and is
+thoroughly tested through the actual CLI server, not just with simple unit mocks.
+
+Our optional components are built with the same rigorous approach. Authentication, notifications,
+scheduling, crons, durable workflows with saga or compensation, change triggers, and authorization
+are all exercised through actual entrypoints rather than just in-process tests.
+
+Scaling across multiple nodes is a bit newer and falls under a different license. Things like
+`concile serve --fleet` (which gives you Tier 2, Postgres-backed write scale-out and live failover)
+and the Cloudflare-native multi-shard router are `ee/` licensed packages, rather than part of the
+FSL-1.1-Apache-2.0 core. Check out [Can I self-host for free?](#can-i-self-host-for-free) below for
+more details.
+
+These features definitely work and have solid benchmarks (take a look at [How fast is
+it?](#how-fast-is-it-measured-numbers)), but they are the newest additions to our system. They just
+haven't seen as much production time as our core single-node setup.
+
+If you are picking up concile today, we recommend starting with single-node self-hosting using
+either SQLite or Postgres. It is a very safe and heavily tested default that works great for most
+apps. You can always upgrade to the fleet later if you hit a write-throughput limit or genuinely
+need failover capabilities.
+
+Check out [What is concile?](/docs/get-started/what-is-concile) for the complete overview, and look
+at [What's deferred](#whats-deferred--not-shipped) below to see exactly what we haven't gotten
+around to building yet.
+
+## What's deferred or not shipped yet
+
+We want to be totally transparent. You won't find any of these listed as shipped features elsewhere
+in our documentation.
+
+<Accordions type="single">
+
+<Accordion title="Full-text and vector search">
+
+We haven't built this yet. There is no `.searchIndex()` or `.vectorIndex()`, and we aren't currently
+working on a builder for either. When you run `concile migrate`, it will actually flag a Convex
+app's use of these as unsupported rather than pretending it can translate them. Check out [Migrate
+from Convex](/docs/reference/migrate-from-convex#unsupported-patterns-it-detects) for more info. If
+you need search right now, you will want to use an external service.
+
+</Accordion>
+
+<Accordion title="True V8-isolate sandboxing">
+
+Right now, user functions run in-process using an inline executor. We designed the syscall boundary
+so that every `ctx.db` call crosses as a JSON operation name plus a JSON argument into a host-side
+kernel. We intentionally made this isolate-ready. That same boundary would work perfectly if the
+guest side became a real V8 isolate with its own globals. However, we haven't made that swap just
+yet. Please don't run untrusted, multi-tenant code on a shared deployment if you are expecting hard
+sandboxing. Our inline executor completely trusts the code it runs.
+
+</Accordion>
+
+<Accordion title="Built-in TLS termination">
+
+Out of the box, concile serves plain HTTP. You will need to put a reverse proxy like nginx, Caddy,
+or Traefik in front of it to handle HTTPS. This applies to every deployment path except for the
+Cloudflare Worker paths, since Cloudflare automatically terminates TLS at the edge.
+
+</Accordion>
+
+<Accordion title="Per-user or per-role file-read authorization">
+
+Currently, reading a private file uses a bearer-token model. Anyone with a valid `getUrl` link can
+read the file until that link expires. The storage serve endpoint does have an internal
+`checkRead(identity, id)` seam that we've reserved for more detailed rules, but we left it
+intentionally unwired for now. We simply don't have a per-`(table, id, identity)` read-permission
+primitive built into the engine to plug into it yet. If you need strict rules, you will have to
+manually check ownership inside the function that hands out the file's ID or URL.
+
+</Accordion>
+
+<Accordion title="Sub-workflows, replay-debugging, and handler versioning">
+
+When using `@concile/workflow`, keep in mind that a workflow cannot start and wait for another
+workflow as one of its steps. We also don't have a built-in UI for stepping through or visualizing a
+run's journal. Instead, you can query `workflow:status` or look at the `workflows`, `steps`, and
+`events` tables in the dashboard. Lastly, a workflow's registered handler and step sequence are
+fixed for the entire lifetime of the deployment. If you change it while runs are actively in-flight
+against the old sequence, it will throw a journal-mismatch error rather than quietly trying to
+reinterpret history.
+
+</Accordion>
+
+<Accordion title="Spreading object-storage shards across multiple nodes">
+
+Our object-storage substrate uses an object store as a write-only durable log and local SQLite as
+queryable state, completely bypassing a traditional database. The core is shipped and end-to-end
+proven on both filesystems and real MinIO. We've also shipped the final pieces: a multi-shard writer
+like `concile serve --object-store <url> --shards N` where one node owns all N lanes, read replicas
+via `--replica` and `--writer-url` to forward writes, a background garbage collection driver
+controlled by `CONCILE_OBJECTSTORE_GC_MS`, and an offline tool to reshard using `concile objectstore
+reshard`.
+
+The one thing missing is the ability to spread shard ownership across multiple Tier-3 nodes.
+Currently, a multi-shard writer has to own every lane itself. You can easily add replicas for read
+operations, but you cannot split those N shards across several writer nodes in the same way our
+Tier-2 Postgres fleet does.
+
+</Accordion>
+
+<Accordion title="Scheduled functions on the Cloudflare Containers path">
+
+This is less of a missing feature and more of a platform quirk we think you should know about.
+Cloudflare typically stops a Container about five seconds after it handles its last request. Because
+of this, things like `ctx.scheduler`, crons, triggers, and the storage reaper won't actually fire on
+that path. The Cloudflare DO-native path doesn't have this issue at all. For more details, check out
+[Can I run it on Cloudflare?](#can-i-run-it-on-cloudflare) below.
+
+</Accordion>
+
+</Accordions>
+
+## SQLite vs Postgres: which should I use?
+
+You have two great storage backends to choose from, and they both sit behind the same
+`DatabaseAdapter` or `DocStore` seam. The engine itself doesn't directly import either driver, so
+switching between SQLite and Postgres is as simple as flipping a flag. You won't ever need to change
+your application code to swap them.
+
+<Tabs items={['SQLite', 'Postgres']}>
+
+<Tab value="SQLite">
+
+This is our zero-config default. It's an embedded, MVCC, single-writer store that requires
+absolutely nothing external to run. We think it is the perfect choice for `concile dev` and for
+self-hosted single-node production environments. It is noticeably faster for single-node setups
+because you skip the network round trips and the fsync-per-commit costs. It runs entirely in-memory
+and is CPU-bound.
+
+```bash
+concile serve --dir concile
+```
+
+</Tab>
+
+<Tab value="Postgres">
+
+This is a fantastic opt-in alternative when you want a managed, externally durable database. If you
+already have backups, replicas, and monitoring set up, you can use them with the exact same engine
+just by passing `--database-url postgres://…` or setting `CONCILE_DATABASE_URL`. No code changes
+required! It is also mandatory if you plan to move to our multi-node fleet down the line. You can
+find more details in the [How fast is it?](#how-fast-is-it-measured-numbers) section below.
+
+```bash
+concile serve --dir concile --database-url postgres://user:pass@host:5432/db
+```
+
+</Tab>
+
+</Tabs>
+
+Both options use a single writer, and this is by design rather than a limitation of Postgres. We
+purposely commit exactly one mutation at a time on either backend. This keeps conflict validation
+incredibly cheap and ensures that the commit log's timestamp ordering actually makes sense. Trying
+to add concurrency just introduces latency because clients end up queueing behind the single writer
+instead of improving throughput. When we tested the same insert workload, here is what we found:
+
+| concurrent clients | SQLite ops/s | SQLite p50 / p99 | Postgres ops/s | Postgres p50 / p99 |
+|---|---:|---:|---:|---:|
+| 1 | 44,516 | 0.019 / 0.042 ms | 4,516 | 0.211 / 0.585 ms |
+| 8 | 46,553 | 0.019 / 0.041 ms | 4,617 | 1.643 / 2.678 ms |
+| 64 | 46,157 | 0.019 / 1.527 ms | 4,472 | 14.018 / 20.209 ms |
+
+As you can see, Postgres is about ten times slower than SQLite in this specific scenario because it
+is bound by fsync. The real bottleneck for commits is syncing to the disk, not the engine itself. If
+you want to scale your writes beyond a single writer, your best bet is to shard or add fleet nodes
+at Tier 2 as mentioned below. You definitely shouldn't try adding more threads against a single
+connection.
+
+The best part is that neither backend ever requires an app-schema migration! Both are completely
+physically schemaless. The tables, fields, and indexes you define in `schema.ts` simply live as data
+inside a few fixed internal tables, specifically an append-only MVCC log containing `documents`,
+`indexes`, and some bookkeeping data. These internal tables never change shape as your schema
+evolves. You will never have to run `CREATE TABLE`, `ALTER TABLE`, or write any migration files for
+either store. Check out our [Postgres](/docs/deploy/postgres) guide for the full technical
+breakdown, including our group commit feature. Group commit is turned on by default for Postgres and
+gives a nice 39 to 58 percent throughput boost, but we leave it off by default for SQLite because it
+actually slows things down when there is no fsync cost to absorb.
+
+## How does concile compare to Convex?
+
+We intentionally modeled our reactive system directly after Convex's public architecture. It works
+brilliantly. A query records precisely which index ranges it read, a mutation saves a write set, and
+a subscription only bothers to re-run when a committed write intersects with what it was already
+looking at. This single elegant mechanism gives you OCC serializability alongside realtime updates,
+completely eliminating manual cache invalidation. Where we really stand apart is what you can build
+and do with it:
+
+* We built it to be self-hostable from day one. You don't have to rely on a managed cloud. Just run
+  `docker compose up` and you will have the engine, database, and dashboard running together in one
+  container on your own hardware.
+* You get pluggable storage. You can pick SQLite or Postgres, rather than being locked into a single
+  proprietary database.
+* You can compile everything into a single binary with `concile build`. It neatly packs the engine,
+  your app, and the dashboard into one executable, which is super handy if you are distributing apps
+  via Electron or Tauri.
+* We use native `@concile/*` imports instead of `convex/*`. concile is a standalone product, not
+  just a Convex account or a simple drop-in replacement. If you are coming over, you can use
+  `concile migrate --from convex` as your starting point, which you can read about in [Migrate from
+  Convex](/docs/reference/migrate-from-convex).
+* We've actually pushed past some of Convex's shipped features. Today, concile includes durable
+  workflows with saga or compensation capabilities, a native Postgres storage adapter, and a durable
+  offline mutation outbox that supports client-supplied IDs.
+
+<Callout type="warn" title="Two API differences you should know before porting code">
+
+First, you won't find `ctx.db.patch(...)`. Instead, you just read the document, use a spread to
+merge your changes, and then call `ctx.db.replace(id, { ...doc, ...changes })`. If you use `concile
+migrate`, it will actually flag every `.patch(...)` call and show you this exact fix.
+
+Second, a mutation's client-side promise resolves the moment it commits, rather than waiting for
+Convex's later flicker-free gate. When you `await send(args)`, it resolves as soon as the server
+response arrives to confirm the commit, not when an authoritative push finally overtakes the
+optimistic layer. We did this on purpose. Resolving at the gate-time has some rough edges. A simple
+transport drop could turn a successfully committed mutation into a rejected promise, and a lost
+gating frame with no further traffic could leave a promise hanging endlessly. We wanted to avoid
+those headaches entirely. In real-world usage, this rarely makes a difference because your
+optimistic update renders instantly when you call the mutation anyway. However, if you are porting
+code that awaits a mutation and then reads from a local cache, you should remember that our
+guarantee is simply "committed," rather than "your optimistic guess has been definitively
+superseded." Check out [Optimistic
+updates](/docs/client/optimistic-updates#the-promise-resolves-at-commit-not-at-the-flicker-free-gate)
+for our full reasoning and a couple of side effects you might notice.
+
+</Callout>
+
+We don't just make claims, we measure them. We ran a benchmark on the exact same substrate, putting
+both backends in Docker containers on the same host and driving them with their native WebSocket
+clients using identical test code against a matched app:
+
+| metric | concile | Convex |
+|---|---:|---:|
+| reactive propagation p50 (50 subscribers) | **8.6 ms** | 13.4 ms |
+| reactive propagation p99 | 13.7 ms | 27.3 ms |
+
+We are right in the same ballpark, and in this specific test, we are running on par with or even
+slightly faster than the commercial Rust reference we modeled ourselves after. Take a look at
+[Performance](/docs/get-started/performance) for our full scorecard and the caveats that come with
+it. It's important to note that concile is a clean-room build that we developed by studying Convex's
+publicly available architecture documentation. We aren't a fork, and we definitely didn't decompile
+Convex's code.
+
+## How does concile compare to Firebase or Supabase?
+
+Firebase and Supabase are both very different types of reactive backends.
+
+* Firebase bases its realtime model heavily on security rules. These rules directly control client
+  access to raw documents, so there is no transactional function layer sitting between a write and
+  the database. This means your authorization logic gets locked away in a rules DSL rather than
+  living as ordinary code that you can easily unit test.
+* Supabase essentially wraps Postgres in a ring of about a dozen microservices, including things
+  like PostgREST, Realtime, GoTrue, Storage, and Studio. They tie it all together with row-level
+  security and use a WAL-tailing realtime server that runs as a single-threaded path.
+* With concile, all the reactivity stems from one simple mechanism running in a single process. We
+  use deterministic TypeScript functions that record read and write sets, which then intersect at
+  commit time. You won't find a restrictive rules DSL here. Authorization is just normal function
+  code that you can optionally compose using row policies from `@concile/authz`. You also don't have
+  to manage a massive fleet of services because the entire backend is just one process.
+
+Then there is the deployment side. You can deploy concile anywhere that runs a container, a binary,
+or a Cloudflare Worker. You just don't get that level of portability with Firebase, which is
+strictly Google-only. In reality, you don't really get it with Supabase either, since running a
+dozen-service self-hosted setup is overwhelmingly heavy compared to our simple `docker compose up`.
+
+## Can I self-host for free?
+
+Absolutely! We license concile under FSL-1.1-Apache-2.0, which is the Functional Source License and
+happens to be the exact same one Convex uses. This means you are completely free to use, modify, and
+self-host the software at any scale on your own infrastructure. The license only restricts one
+specific thing, which is offering concile as a competing hosted service. Furthermore, every release
+automatically converts to plain Apache 2.0 two years after it ships.
+
+It is free forever. This isn't a trial, and we don't do bait-and-switch tactics.
+
+* **Single-node self-host.** You get the full engine, including functions, reactivity, workflows
+  with saga, storage, scheduling, actions, `httpAction`, the Postgres adapter, the single-binary
+  build, and the dashboard. It is fully production-ready for the vast majority of apps.
+* **Deploy anywhere.** You can run it on your own hardware, a VPS, your cloud of choice, Docker, or
+  even an air-gapped server. It never phones home.
+* **Data and code portability.** We use plain HTTP and open formats. You can effortlessly move your
+  data in with `concile migrate` and pull it right back out using `concile migrate export` and
+  `import`. You are never locked in.
+
+So what is gated? Multi-node write scale-out. Things like `concile serve --fleet` with
+Postgres-backed `@concile/fleet` and the Cloudflare-native multi-shard router under
+`@concile/runtime-cloudflare-shard` live in a separate `ee/` directory. They fall under a different
+commercial license, following the open-core pattern used by GitLab and n8n, rather than using a
+viral SSPL-style copyleft license.
+
+Right now, we are letting everyone use both of these enterprise features in production entirely for
+free, with no license key required. Our current goal is to build a great community, not to maximize
+revenue. The plan for the future is to introduce a paid license key to unlock scale and enterprise
+capabilities once the demand is there. Even then, the key will only unlock capabilities, never
+restrict where you deploy. You will always run it on your own infrastructure. We won't force you
+into a managed cloud, we won't charge metered usage, and we won't do phone-home verification. You
+will simply use a signed key that checks itself offline at boot, just like n8n and GitLab do.
+
+## Does it have full-text or vector search?
+
+Not right now. Check out [What's deferred](#whats-deferred--not-shipped) above. We deliberately
+avoid listing search as a feature in our docs, and when you run `concile migrate`, it will actually
+flag any Convex `.searchIndex(...)` or `.vectorIndex(...)` calls as unsupported instead of faking a
+translation. If your app genuinely needs search today, you will want to hook up an external service
+or write a custom adapter.
+
+## How fast is it? Let's talk real numbers.
+
+Every performance metric we share is hand-transcribed straight from our runnable benchmark harness
+in the `benchmarks/` directory. We always measure both sides of any comparison under the exact same
+conditions. Here are the highlights:
+
+| metric | headline result |
+|---|---|
+| reactive propagation vs Convex (same-substrate, 50 subscribers) | **8.6 ms p50** vs 13.4 ms |
+| Postgres group commit (on by default there) | **+39% to +58%** write throughput under concurrency |
+| reconnect bandwidth with resume fingerprints | **99.3% smaller** for unchanged subscriptions |
+| concurrent subscribed connections, one sync node | **10,000** clean at 7.69 KB/connection |
+| Cloudflare DO-native vs Containers write latency | **133 ms** vs ~1,500 ms |
+
+If you want the complete scorecard covering write throughput, sharding, fleet scale-out, the offline
+outbox, and Docker capacity tiers, check out [Performance](/docs/get-started/performance). We lay
+out the honest caveats behind every single number and give you the commands to reproduce them
+yourself.
+
+## What runtime does it use?
+
+Bun is our primary runtime for things like `concile dev`, `serve`, and the single-binary compile
+with `bun build --compile`. However, Node is fully supported for running the engine, including npm
+packages and our Node SQLite adapter. The engine itself is completely runtime-agnostic behind its
+storage and runtime seams. Whether you use `concile dev` or `serve`, it doesn't care which runtime
+you choose as long as that seam is satisfied.
+
+## Can I run it on Cloudflare?
+
+Yes! You can use `@concile/runtime-cloudflare` in two distinctly different architectures. The
+DO-native path is our first-class deployment target. When you run `concile deploy --target
+cloudflare`, it automatically reconciles your `wrangler.jsonc` bindings like the Durable Object
+class, the SQLite migration, `nodejs_compat`, and optional R2, then shells out to `wrangler deploy`
+to handle it for you. The Containers path is a bit more hands-on, requiring a manual `wrangler
+deploy` of the portable `concile serve` image.
+
+<Tabs items={['DO-native (recommended)', 'Containers (experimental)']}>
+
+<Tab value="DO-native (recommended)">
+
+In this setup, a single Durable Object acts as your entire backend. It contains the OCC writer,
+DO-SQLite storage under `ctx.storage.sql`, every hibernatable WebSocket, the subscription index, and
+a wake alarm. Because the writer and subscription index share the same in-process object, a
+mutation's reactive fan-out is just a simple function call in the same turn. It avoids messy RPC
+hops that can mess up ordering. This architectural choice is precisely what guarantees our engine's
+write-serialization and origin-frontier ordering.
+
+You will also be happy to know that scheduled functions, crons, triggers, and the storage reaper all
+fire flawlessly on this path. We use a DO alarm via `ctx.storage.setAlarm` to wake the object up
+from full hibernation and call `runtime.fireDueTimers()`. This is the biggest advantage over the
+Containers path.
+
+```mermaid
+flowchart TD
+  Client["Client (HTTP / WebSocket)"] --> Worker["Worker (stateless router)"]
+  Worker -->|"forwards every request/upgrade to one DO by name"| DO["ConcileDurableObject"]
+  subgraph internals[" "]
+    OCC["OCC writer (the DO's own single-threaded model IS the mutex)"]
+    Sqlite["DoSqliteAdapter over ctx.storage.sql"]
+    WS["Hibernatable WebSockets"]
+    Sub["Subscription index"]
+    Alarm["Wake alarm"]
+  end
+  DO --> OCC
+  DO --> Sqlite
+  DO --> WS
+  DO --> Sub
+  DO --> Alarm
+  Alarm -->|"calls"| Fire["runtime.fireDueTimers()"]
+```
+
+There are a few limits you should keep in mind. You get 10 GB of DO-SQLite storage per object, a
+flat billed 128 MB of memory, and a soft ceiling of about 200 to 500 writes per second for a
+write-heavy single DO. For v1, you only get a single global DO since there is no built-in sharding.
+If you need sharding, that's available as a separate paid package under
+`@concile/runtime-cloudflare-shard`.
+
+</Tab>
+
+<Tab value="Containers (experimental)">
+
+We want to warn you about a correctness gap on this path before you commit to it.
+
+This path runs the exact same portable `concile serve` image you would use under Docker anywhere
+else. It is fronted by a stateless Worker and relies on R2 as the object-store source of truth.
+Since Container disks are ephemeral, a plain SQLite deployment would quietly lose all its data every
+time it restarts. Because of this, you absolutely must use the `--object-store` flag here.
+
+The catch is that scheduled functions, crons, triggers, and the storage reaper simply do NOT fire on
+this path. Cloudflare stops a container roughly five seconds after it handles its last request. This
+gives you amazing scale-to-zero economics, but it also means a `ctx.scheduler.runAfter(300_000, …)`
+call tries to schedule work in a process that will be dead five seconds later. You might not notice
+the problem until you realize none of your background emails ever went out. You should only use this
+path for purely request-driven apps that don't need scheduled tasks.
+
+</Tab>
+
+</Tabs>
+
+### Real world measurements
+
+| | DO-native | Containers |
+|---|---:|---:|
+| write latency | **133 ms** | **~1,500 ms** |
+
+We measured both of these against real Cloudflare and real R2 recently. The DO-native path is
+roughly **11×** faster for writes because it benefits from co-located DO-SQLite writing, whereas the
+Containers path suffers an R2 CAS round trip on every single commit.
+
+<Callout type="info" title="When to pick which">
+
+You should almost always default to the DO-native path. The only exceptions are if you desperately
+need the portable image's storage options like Postgres that DO-native doesn't support, or if you
+are deliberately building a request-driven app without a scheduler. Check out
+[Cloudflare](/docs/deploy/cloudflare) for complete setup instructions for both paths, including how
+to handle `wrangler.jsonc`, region-pinning hints, and R2-backed file storage.
+
+</Callout>
+
+## Does concile lock me in?
+
+Not at all. We have two solid reasons why that is true rather than just a marketing slogan:
+
+* **The exact same app code runs absolutely everywhere.** Your `schema.ts` and `concile/` functions
+  run without a single modification whether you are on `concile dev`, using `concile serve` with
+  SQLite or Postgres, running a compiled single binary, operating a multi-node fleet, or deploying
+  to either Cloudflare path. Scaling up to a tiered architecture only requires changing deployment
+  configurations and adapters. You never have to touch the functions you wrote.
+* **Your data is explicitly portable.** You can easily run `concile migrate export` and `concile
+  migrate import` to pull a complete point-in-time dump from a running deployment's admin API and
+  push it straight into a fresh one. This pulls every live document, index row, and table-number
+  map. The tool works seamlessly between any two hosts or topologies because every concile store
+  uses the exact same logical MVCC-log shape.
+
+```bash
+CONCILE_ADMIN_KEY=… concile migrate export --url https://old-host.example.com --out dump.json
+CONCILE_ADMIN_KEY=… concile migrate import --url https://new-host.example.com --in dump.json
+```
+
+A few caveats to keep in mind: the import targets a completely fresh deployment, not a merge. It
+will flat out refuse to run if the target's table numbers don't match the dump's. Right now, it only
+supports single-shard migration since we haven't built multi-shard migration yet. Also, the dump is
+a true point-in-time snapshot, not a live streaming copy. Make sure you stop writes on your source
+for a clean cutover. Since different physical topologies like a Postgres fleet versus a Cloudflare
+DO-native host naturally store data differently, this export and import step is your bridge between
+them. Data doesn't magically teleport, but we make sure it is never trapped.
+
+On the licensing side, you get single-node self-hosting, deploy-anywhere flexibility, and total data
+and code portability for free, forever, under the FSL. There is no trial period and absolutely no
+bait-and-switch. Take another look at [Can I self-host for free?](#can-i-self-host-for-free) above
+for the details.
+
+## What do you mean by "component"?
+
+A component is simply an opt-in, composable piece of server-side functionality. Things like
+authentication, notifications, scheduling and crons, durable workflows, change triggers, and
+authorization are all components. You add them to your project just by listing them in your
+`concile.config.ts`, using functions like `defineAuth()` or `defineScheduler()`. The beautiful part
+is that the core engine handling schemas, queries, mutations, and reactivity has no idea what auth
+or notifications even are.
+
+When you add a component, it brings in its own namespaced tables. This means a table like
+`scheduler/jobs` will never accidentally collide with your app's own `jobs` table. Components also
+provide a handy `ctx.<name>` facade in your handlers, internal modules, and sometimes a background
+driver. We don't hide any of this behind an obscure `init` wizard. You get to compose exactly the
+components your app needs, and a component can even declare a dependency on another one, like how
+`defineWorkflow()` requires `"scheduler"`. These are all resolved seamlessly at compose time. Head
+over to the [Components overview](/docs/components/overview) for a deeper dive.
+
+## Where should I go next?
+
+* If you are completely new: Read [What is concile?](/docs/get-started/what-is-concile) then jump
+  into the [Quickstart](/docs/get-started/quickstart).
+* If you are coming from Convex: Check out [Migrate from
+  Convex](/docs/reference/migrate-from-convex).
+* Figuring out storage: Review our [Postgres](/docs/deploy/postgres) guide.
+* Ready to grow past one node: Learn about [Scaling](/docs/deploy/scaling).
+* Deploying to Cloudflare: See our [Cloudflare](/docs/deploy/cloudflare) documentation.
+* Looking for specific API signatures: Read up on [Configuration](/docs/reference/configuration) and
+  the [CLI](/docs/core-concepts/cli).

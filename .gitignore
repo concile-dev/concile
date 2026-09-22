@@ -45,6 +45,9 @@ concile-chat-working.png
 /benchmarks/
 /.intent/
 .gstack/
+# Marketing research wiki. Competitor teardowns, keyword data and draft
+# positioning are working notes, not product. This repo is public.
+/.marketing/
 
 # AI-agent tooling — kept local, not shipped to the public repo
 /CLAUDE.md

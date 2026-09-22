@@ -1,0 +1,292 @@
+/* EditorShowcase — a VS Code-style panel. Self-contained on purpose.
+ *
+ * It used to live in landing.css scoped under .lp, which coupled it to the
+ * landing page twice over: every selector needed that ancestor, and eight of
+ * the twelve design tokens it reads are declared on .lp rather than :root. Drop
+ * it anywhere else and it rendered unstyled AND uncoloured.
+ *
+ * So the tokens are aliased onto .ed itself below, mapping to the global
+ * palette with the same values landing.css used. The component imports this
+ * file, owns its own names, and can be mounted anywhere in the app.
+ *
+ * Placement is deliberately NOT in here. Whoever mounts it decides where it
+ * sits and how big it is; the hero does that with .hr-editor.
+ */
+.ed {
+  --color-rule: var(--border);
+  --color-accent: var(--primary);
+  --color-muted: var(--muted-foreground);
+  --color-ink-2: var(--foreground);
+  --tok-str: var(--accent-foreground);
+  --tok-comment: var(--muted-foreground);
+  /* Fallback inside the var(), not just after it. --font-jetbrains-mono is set
+     by app/(home)/layout.tsx on a wrapper div, so it exists only in the (home)
+     route group; elsewhere an unfallback'd var() makes the whole declaration
+     invalid at computed-value time and the panel loses its mono font outright.
+     This is a portable component, so it cannot assume that layout. */
+  --font-mono: var(--font-jetbrains-mono, ui-monospace), 'SF Mono', monospace;
+  --radius-md: 16px;
+}
+
+/* ---------------- Editor showcase (VSCode-style mockup) ---------------- */
+.ed {
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  overflow: hidden;
+  box-shadow: 0 40px 100px -50px color-mix(in srgb, var(--foreground) 90%, transparent);
+  position: relative;
+}
+.ed-bar {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.55rem 0.9rem; border-bottom: 1px solid var(--color-rule);
+  background: var(--card);
+}
+.ed-dots { display: inline-flex; gap: 0.4rem; }
+.ed-dots i { width: 11px; height: 11px; border-radius: 50%; background: var(--border); }
+.ed-dots i:first-child { background: var(--border); }
+.ed-title {
+  flex: 1; text-align: center; font-family: var(--font-mono);
+  font-size: 0.72rem; color: var(--color-muted);
+}
+.ed-bar-spacer { width: 33px; }
+
+.ed-body { display: grid; grid-template-columns: 44px 186px 1fr; min-height: 380px; }
+@media (max-width: 900px) {
+  .ed-body { grid-template-columns: 1fr; }
+  .ed-side, .ed-rail { display: none; }
+}
+
+/* sidebar */
+.ed-side { border-right: 1px solid var(--color-rule); padding: 0.6rem 0; background: var(--card); }
+.ed-side-h { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.1em; color: var(--color-muted); padding: 0.3rem 0.9rem 0.5rem; }
+.ed-file { font-family: var(--font-mono); font-size: 0.74rem; color: var(--color-ink-2); padding: 0.22rem 0.9rem; cursor: default; }
+.ed-folder { color: var(--color-muted); }
+.ed-in { padding-left: 1.6rem; }
+.ed-file.ed-active { background: color-mix(in srgb, var(--primary) 8%, transparent); color: var(--foreground); box-shadow: inset 2px 0 0 var(--color-accent); }
+
+/* main */
+.ed-main { display: flex; flex-direction: column; min-width: 0; }
+.ed-tabs { display: flex; border-bottom: 1px solid var(--color-rule); background: var(--card); }
+.ed-tab { font-family: var(--font-mono); font-size: 0.72rem; color: var(--color-muted); padding: 0.5rem 0.95rem; border-right: 1px solid var(--color-rule); }
+.ed-tab.ed-active { color: var(--foreground); background: var(--card); border-top: 1px solid var(--color-accent); }
+.ed-code { margin: 0; padding: 0.7rem 0; flex: 1; overflow-x: auto; }
+.ed-row { display: flex; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.75; }
+.ed-gutter { width: 2.4rem; flex: none; text-align: right; padding-right: 0.9rem; color: var(--muted-foreground); user-select: none; }
+.ed-line { white-space: pre; color: var(--ed-tok-op); }
+
+/* Syntax colours.
+ *
+ * VS Code's Dark+, verbatim. This panel is a picture of an editor, and the thing
+ * that makes a screenshot of an editor read as code rather than as prose is that
+ * it carries six or seven hues at once: control flow, declarations, calls,
+ * properties, strings, numbers. The panel used to map its five classes onto the
+ * site's neutral tokens, three of which resolved to near-greys, so it rendered
+ * as one colour and looked like a quote block.
+ *
+ * These are deliberately not themed to the site palette. Everything around the
+ * frame is, and the contrast between the restrained chrome and the real editor
+ * colours inside it is the point: it is a screenshot, not a section.
+ *
+ * Bracket pair colorization is included because it is switched on by default in
+ * VS Code and is a good part of why real code looks colourful at a glance. */
+.ed-code {
+  --ed-tok-key: #c586c0;  /* import, export, return */
+  --ed-tok-sto: #569cd6;  /* const, function, string, null, intrinsic tags */
+  --ed-tok-fn: #dcdcaa;   /* call and declaration names */
+  --ed-tok-var: #9cdcfe;  /* variables, parameters, properties */
+  --ed-tok-str: #ce9178;
+  --ed-tok-num: #b5cea8;
+  --ed-tok-type: #4ec9b0; /* classes, components, types */
+  --ed-tok-com: #6a9955;
+  --ed-tok-op: #d4d4d4;   /* operators, punctuation, plain text */
+  --ed-tok-b0: #ffd700;
+  --ed-tok-b1: #da70d6;
+  --ed-tok-b2: #179fff;
+}
+
+/* Light+ is the same theme's other half, so the panel stays an editor on paper
+   rather than becoming dark-on-light. */
+html:not(.dark) .ed-code {
+  --ed-tok-key: #af00db;
+  --ed-tok-sto: #0000ff;
+  --ed-tok-fn: #795e26;
+  --ed-tok-var: #001080;
+  --ed-tok-str: #a31515;
+  --ed-tok-num: #098658;
+  --ed-tok-type: #267f99;
+  --ed-tok-com: #008000;
+  --ed-tok-op: #000000;
+  --ed-tok-b0: #0431fa;
+  --ed-tok-b1: #319331;
+  --ed-tok-b2: #7b3814;
+}
+
+.ed-code .tk-key { color: var(--ed-tok-key); }
+.ed-code .tk-sto { color: var(--ed-tok-sto); }
+.ed-code .tk-fn { color: var(--ed-tok-fn); }
+.ed-code .tk-var { color: var(--ed-tok-var); }
+.ed-code .tk-str { color: var(--ed-tok-str); }
+.ed-code .tk-num { color: var(--ed-tok-num); }
+.ed-code .tk-type { color: var(--ed-tok-type); }
+.ed-code .tk-com { color: var(--ed-tok-com); }
+.ed-code .tk-op { color: var(--ed-tok-op); }
+.ed-code .tk-b0 { color: var(--ed-tok-b0); }
+.ed-code .tk-b1 { color: var(--ed-tok-b1); }
+.ed-code .tk-b2 { color: var(--ed-tok-b2); }
+
+/* The editable message is a string literal, so it is coloured as one. Tailwind's
+   preflight already strips the control chrome; this only has to carry the hue
+   and keep the caret visible against it. */
+.ed-code .ed-input {
+  color: var(--ed-tok-str);
+  caret-color: var(--ed-tok-str);
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+}
+.ed-code .ed-input:focus { outline: none; background: color-mix(in srgb, var(--ed-tok-str) 14%, transparent); }
+
+/* terminal */
+.ed-term { border-top: 1px solid var(--color-rule); background: var(--card); }
+.ed-term-bar { display: flex; gap: 1rem; padding: 0.45rem 0.9rem; border-bottom: 1px solid var(--color-rule); font-family: var(--font-mono); font-size: 0.68rem; color: var(--color-muted); }
+.ed-term-bar .ed-active { color: var(--foreground); }
+/* The terminal types itself in a line at a time and then gains up to two more
+   when Run commits, so its height has to be reserved up front or the whole
+   panel grows under the cursor. 116px was about 5.8 lines against a worst case
+   of 8: the six boot lines plus the two the echo keeps. Stated as a calc off
+   the line box so it stays correct if the type scale moves. */
+.ed-term-body {
+  --ed-term-lines: 8;
+  --ed-term-size: 0.74rem;
+  --ed-term-lh: 1.7;
+  padding: 0.7rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: var(--ed-term-size);
+  line-height: var(--ed-term-lh);
+  min-height: calc(var(--ed-term-lines) * var(--ed-term-size) * var(--ed-term-lh) + 1.4rem);
+}
+/* One logical line, one visual line. Reserving height by line count only works
+   if a line cannot wrap, and the echo line carries whatever text is typed into
+   the editor, so it can be any length: at the default message it already wrapped
+   to two, making eight lines render as ten and growing the panel by 35px on the
+   second Run. A real terminal truncates rather than reflowing the pane. */
+.ed-term-body > * {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ed-cmd { color: var(--foreground); }
+.ed-dim { color: var(--color-muted); }
+.ed-ok { color: var(--color-accent); }
+.ed-liveline { color: var(--tok-str); }
+.ed-cursor { display: inline-block; width: 7px; height: 1em; margin-left: 2px; background: var(--color-accent); vertical-align: text-bottom; animation: ed-blink 1s step-end infinite; }
+@keyframes ed-blink { 50% { opacity: 0; } }
+
+/* preview */
+
+/* The preview pane reuses the hx- class names from the retired hero, but those
+   rules lived in hero.css, a stylesheet nothing loaded (Hero.tsx was its only
+   importer and nothing imported Hero.tsx). Both are deleted now. They also
+   coloured themselves from --hx-emerald-2, a token the neutral palette no
+   longer defines. Restated here on current tokens and scoped to the pane. */
+
+/* ---------------- Editor chrome: activity bar, icons, status bar ----------------
+   The parts that make a mockup read as VS Code rather than as a generic code
+   panel: the icon rail down the left, a coloured glyph on every file row, and
+   the status strip with the branch on it. */
+.ed-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+  border-right: 1px solid var(--color-rule);
+  background: color-mix(in srgb, var(--foreground) 3%, var(--card));
+}
+.ed-rail-ic {
+  position: relative;
+  width: 100%;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: var(--color-muted);
+  opacity: 0.55;
+}
+/* VS Code marks the open view with a rail down the left edge of its icon, not
+   with a background. */
+.ed-rail-ic.ed-active {
+  opacity: 1;
+  color: var(--foreground);
+  box-shadow: inset 2px 0 0 var(--color-accent);
+}
+.ed-rail-ic svg { width: 18px; height: 18px; }
+.ed-side-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+.ed-side-more { opacity: 0.6; letter-spacing: 0.1em; }
+.ed-root {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--foreground);
+  padding: 0.22rem 0.9rem 0.3rem;
+}
+.ed-chev { display: inline-block; width: 0.75rem; color: var(--color-muted); }
+.ed-chev--closed { transform: translateY(-1px); }
+
+/* Two letters instead of a real icon set: at 0.74rem a Seti glyph is mush, but
+   a tinted TS or {} still reads instantly. */
+.ed-ic {
+  display: inline-block;
+  width: 1.15rem;
+  margin-right: 0.35rem;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-align: center;
+  vertical-align: 1px;
+}
+.ed-ic--ts { color: #4d9cd6; }
+.ed-ic--tsx { color: #4bb6c9; }
+.ed-ic--json { color: #cf9b4a; }
+.ed-ic--file { color: var(--color-muted); }
+.ed-filebtn { display: flex; align-items: center; width: 100%; text-align: left; }
+
+.ed-side-foot {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  padding: 0.3rem 0.9rem;
+}
+.ed-side-foot:first-of-type { margin-top: 0.6rem; border-top: 1px solid var(--color-rule); padding-top: 0.5rem; }
+
+.ed-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.3rem 0.7rem;
+  border-top: 1px solid var(--color-rule);
+  background: color-mix(in srgb, var(--foreground) 4%, var(--card));
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  color: var(--color-muted);
+}
+.ed-status-l, .ed-status-r { display: flex; align-items: center; gap: 0.9rem; }
+.ed-branch { display: inline-flex; align-items: center; gap: 0.3rem; }
+.ed-branch svg { width: 11px; height: 11px; }
+
+/* Placed last on purpose. The narrow-screen rule that hides the rail lives up
+   in the original editor block, and the .ed-rail display rule above is appended
+   after it: same specificity, later wins, so the rail kept showing at phone
+   width with the sidebar already gone. Re-stated here so it comes last. */
+@media (max-width: 900px) {
+  .ed-rail { display: none; }
+}

@@ -1,5 +1,5 @@
 /**
- * The concile terminal theme — the website's dark palette (`website/app/global.css`
+ * The concile terminal theme — the website's dark palette (`www/app/global.css`
  * `.dark` fumadocs tokens), converted from oklch to terminal hex. The terminal
  * dashboard is the same brand surface as concile.dev, not a stock TUI theme.
  */

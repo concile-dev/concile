@@ -1,0 +1,1888 @@
+/* Concile landing · theme: Emerald Noir (always dark) · macrostructure: Bento Grid + feature rows
+ * Palette: near-black paper, emerald as the steady accent, lime reserved for the moment of change.
+ * Bento: irregular tile grid; rhythm from size variation, not card uniformity. */
+
+.lp {
+  /* --- tokens (portable copy at docs/tokens.css) --- */
+  /* Emerald Noir (dark). Flipped from the original light paper theme so the
+     body reads as one dark surface under the Aceternity hero. */
+  --color-paper: var(--background);
+  --color-paper-2: var(--card);
+  --color-ink: var(--foreground);
+  --color-ink-2: var(--foreground);
+  --color-muted: var(--muted-foreground);
+  --color-rule: var(--border);
+  --color-accent: var(--primary);
+  --color-accent-hover: var(--accent-foreground);
+  --color-accent-ink: var(--background);
+  --color-accent-wash: color-mix(in srgb, var(--primary) 12%, transparent);
+  --color-graphite: var(--card);
+  --color-graphite-rule: var(--border);
+  --color-code-fg: var(--foreground);
+  --color-code-muted: var(--muted-foreground);
+  --tok-key: var(--primary);
+  --tok-str: var(--accent-foreground);
+  --tok-punct: var(--muted-foreground);
+  --tok-comment: var(--muted-foreground);
+  /* Outfit for headings, after the Gilroy/Inter split on webcontainers.io.
+     --font-inter previously had no fallback and was never defined anywhere, so
+     this whole declaration was invalid at computed-value time and every .lp
+     heading quietly inherited Inter from <html>. Both names are real now. */
+  --font-display: var(--font-outfit), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono, ui-monospace), "SF Mono", monospace;
+  --text-display: clamp(2.4rem, 4.5vw + 0.5rem, 3.9rem);
+  --text-display-s: clamp(1.75rem, 2.6vw + 0.5rem, 2.5rem);
+  --text-2xl: clamp(1.5rem, 2vw + 0.5rem, 2rem);
+  --text-stat: clamp(2.5rem, 4vw + 0.5rem, 3.5rem);
+  --text-lg: 1.125rem;
+  --text-base: 1rem;
+  --text-sm: 0.875rem;
+  --text-xs: 0.75rem;
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --rule: 1px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-snap: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur: 200ms;
+  --dur-snap: 170ms;
+
+  overflow-x: clip;
+  background: var(--color-paper);
+  color: var(--color-ink-2);
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The landing is always Emerald Noir (dark), regardless of the docs light/dark
+   toggle, so the `.lp` tokens above apply in both modes. A previous build left a
+   `.dark .lp` override here that flipped the accent to coral; it is removed so the
+   body no longer contradicts the emerald hero. */
+
+.lp *,
+.lp *::before,
+.lp *::after {
+  box-sizing: border-box;
+}
+
+.lp .wrap {
+  width: 100%;
+  max-width: 76rem;
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 5vw, 3rem);
+}
+
+/* --- type --- */
+.lp h1,
+.lp h2,
+.lp h3 {
+  font-family: var(--font-display);
+  font-style: normal;
+  color: var(--color-ink);
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+  min-width: 0;
+  margin: 0;
+}
+.lp h1 {
+  font-size: var(--text-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.lp h2 {
+  font-size: var(--text-display-s);
+  font-weight: 650;
+}
+.lp h3 {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.lp p {
+  margin: 0;
+}
+
+/* --- soft pill CTAs --- */
+.lp .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 0.72rem 1.3rem;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 550;
+  white-space: nowrap;
+  text-decoration: none;
+  border: var(--rule) solid transparent;
+  transition:
+    background var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out),
+    transform var(--dur) var(--ease-out);
+}
+.lp .btn--primary {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+.lp .btn--primary:hover {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+.lp .btn--ghost {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  border-color: var(--color-rule);
+}
+.lp .btn--ghost:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+.lp .btn:active {
+  transform: translateY(0);
+}
+.lp .btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* tile-internal typographic link */
+.lp .tlink {
+  color: var(--color-accent);
+  font-weight: 550;
+  font-size: var(--text-sm);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--dur) var(--ease-out);
+}
+.lp .tlink::after {
+  content: " \2192";
+  font-family: var(--font-mono);
+}
+.lp .tlink:hover {
+  color: var(--color-accent-hover);
+}
+.lp .tlink:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.lp .kicker {
+  font-size: var(--text-xs);
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--color-accent);
+}
+
+/* ============ HERO — centered, fixed-height (not full viewport) ============ */
+.lp .hero {
+  text-align: center;
+  padding-block: clamp(var(--space-2xl), 8vw, var(--space-3xl)) var(--space-2xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-lg);
+}
+.lp .hero .kicker {
+  color: var(--color-muted);
+}
+.lp .hero .kicker b {
+  color: var(--color-accent);
+  font-weight: 650;
+}
+.lp .hero h1 {
+  max-width: 15ch;
+}
+.lp .hero .lede {
+  font-size: var(--text-lg);
+  color: var(--color-ink-2);
+  max-width: 52ch;
+}
+.lp .hero .lede b {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+.lp .cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  justify-content: center;
+  margin-top: var(--space-xs);
+}
+
+/* ============ BENTO GRID ============ */
+.lp .bento {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-rows: min-content;
+  align-items: start;
+  gap: var(--space-md);
+  padding-bottom: var(--space-3xl);
+}
+.lp .cell {
+  background: var(--color-paper-2);
+  border: var(--rule) solid var(--color-rule);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg) var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  transition: border-color var(--dur) var(--ease-out);
+}
+.lp .cell:hover {
+  border-color: color-mix(in oklch, var(--color-accent) 45%, var(--color-rule));
+}
+.lp .cell h3 + p,
+.lp .cell .k + h3 {
+  margin: 0;
+}
+.lp .cell p {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+.lp .cell .k {
+  font-size: var(--text-xs);
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-accent);
+}
+
+/* spans */
+.lp .s2 { grid-column: span 2; }
+.lp .s3 { grid-column: span 3; }
+.lp .s4 { grid-column: span 4; }
+.lp .s6 { grid-column: span 6; }
+.lp .r2 { grid-row: span 2; }
+
+.lp pre {
+  margin: 0;
+  padding: var(--space-md) var(--space-lg) var(--space-lg);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.7;
+  color: var(--color-code-fg);
+  tab-size: 2;
+}
+.lp pre code { font-family: inherit; }
+.lp .tk { color: var(--tok-key); }
+.lp .ts { color: var(--tok-str); }
+.lp .tp { color: var(--tok-punct); }
+.lp .tc { color: var(--tok-comment); }
+.lp .tf { color: var(--color-code-fg); }
+
+/* --- stat tile --- */
+.lp .cell--stat {
+  justify-content: center;
+  gap: var(--space-xs);
+}
+.lp .cell--stat .stat {
+  font-family: var(--font-display);
+  font-size: var(--text-stat);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--color-ink);
+}
+.lp .cell--stat .stat b {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+.lp .cell--stat p {
+  color: var(--color-ink-2);
+}
+
+/* --- reactive-loop tile --- */
+
+/* --- deploy targets --- */
+.lp .targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: var(--space-2xs);
+}
+.lp .targets span {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-ink-2);
+  background: var(--color-paper);
+  border: var(--rule) solid var(--color-rule);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+}
+
+/* --- limits tile --- */
+.lp .cell--limits ul,
+.lp .cell--rows ul {
+  list-style: none;
+  margin: var(--space-xs) 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: var(--space-md) var(--space-xl);
+}
+.lp .cell--limits li,
+.lp .cell--rows li {
+  border-top: var(--rule) solid var(--color-rule);
+  padding-top: var(--space-sm);
+}
+.lp .cell--limits li b,
+.lp .cell--rows li b {
+  display: block;
+  color: var(--color-ink);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  margin-bottom: 0.1rem;
+}
+.lp .cell--limits li span,
+.lp .cell--rows li span {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+/* --- CTA tile --- */
+.lp .cell--cta {
+  background: var(--color-accent-wash);
+  border-color: color-mix(in oklch, var(--color-accent) 30%, var(--color-rule));
+  align-items: center;
+  text-align: center;
+  gap: var(--space-md);
+  padding-block: var(--space-2xl);
+}
+.lp .cell--cta h2 {
+  max-width: 22ch;
+}
+.lp .cell--cta p {
+  color: var(--color-ink-2);
+  font-size: var(--text-base);
+  max-width: 44ch;
+}
+
+/* ============ FOOTER — Ft2 Inline single line ============ */
+.lp .foot {
+  border-top: var(--rule) solid var(--color-rule);
+  padding-block: var(--space-xl);
+}
+.lp .foot-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md) var(--space-lg);
+}
+.lp .foot-brand {
+  font-weight: 650;
+  color: var(--color-ink);
+  letter-spacing: -0.01em;
+}
+.lp .foot-brand span {
+  color: var(--color-muted);
+  font-weight: 400;
+  margin-left: var(--space-sm);
+}
+.lp .foot-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-lg);
+}
+.lp .foot-links a {
+  color: var(--color-ink-2);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  transition: color var(--dur) var(--ease-out);
+}
+.lp .foot-links a:hover {
+  color: var(--color-accent);
+}
+.lp .foot-links a:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+.lp .foot-license {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 900px) {
+  .lp .bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .lp .s2, .lp .s3, .lp .s4, .lp .s6 { grid-column: span 2; }
+  .lp .r2 { grid-row: auto; }
+}
+@media (max-width: 560px) {
+  .lp .bento {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lp .s2, .lp .s3, .lp .s4, .lp .s6 { grid-column: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp .btn,
+  .lp .cell,
+  .lp .tlink,
+  .lp .foot-links a {
+    transition: none;
+  }
+  .lp .btn:hover { transform: none; }
+}
+
+/* ---- Aceternity Card Spotlight: cursor-follow emerald glow + hover lift ---- */
+.lp .bento .cell {
+  position: relative;
+  transition:
+    border-color var(--dur) var(--ease-out),
+    transform var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
+}
+.lp .bento .cell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    220px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--primary) 16%, transparent),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.35s var(--ease-out);
+}
+.lp .bento .cell:hover::before { opacity: 1; }
+.lp .bento .cell > * { position: relative; z-index: 1; }
+.lp .bento .cell:hover {
+  border-color: color-mix(in oklch, var(--color-accent) 55%, var(--color-rule));
+  transform: translateY(-3px);
+  box-shadow: 0 24px 60px -34px color-mix(in srgb, var(--primary) 55%, transparent);
+}
+
+/* ---------------- Works-with strip (marquee) ---------------- */
+.lp .strip {
+  border-top: 1px solid var(--color-rule);
+  border-bottom: 1px solid var(--color-rule);
+  padding: 1.5rem 0;
+  background: var(--color-paper);
+}
+.lp .strip .wrap { display: flex; flex-direction: column; gap: 1rem; align-items: center; }
+.lp .strip-label {
+  font-size: var(--text-xs); letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--color-muted);
+}
+.lp .strip-mask {
+  width: 100%; overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.lp .strip-track { display: flex; gap: 0.75rem; width: max-content; animation: strip-scroll 34s linear infinite; }
+.lp .strip-pill {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.45rem 0.95rem;
+  border: 1px solid var(--color-rule); border-radius: 999px;
+  font-family: var(--font-mono); font-size: var(--text-sm);
+  color: var(--color-ink-2); background: var(--color-paper-2);
+  transition: color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
+}
+/* Logos sit monochrome so eleven brand palettes do not fight the page, then
+   bloom into their official colour (--logo, set per pill) on hover. */
+.lp .strip-logo {
+  width: 16px; height: 16px; flex: none;
+  color: var(--color-muted);
+  transition: color var(--dur) var(--ease-out);
+}
+.lp .strip-pill:hover { color: var(--color-ink); border-color: var(--color-accent); }
+.lp .strip-pill:hover .strip-logo { color: var(--logo, var(--color-accent)); }
+/* Marks that are pure black (or near-black, e.g. SQLite) would disappear on a
+   dark ground, so on dark they resolve to the page ink instead of their hex. */
+.dark .lp .strip-pill:hover .strip-logo.is-dark-mark { color: var(--color-ink); }
+@keyframes strip-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ---------------- Stats band ---------------- */
+.lp .stats {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;
+  margin: clamp(2rem, 6vh, 4rem) 0; padding: 2rem;
+  border: 1px solid var(--color-rule); border-radius: var(--radius-md);
+  background: var(--color-paper-2);
+}
+.lp .stat-item { display: flex; flex-direction: column; gap: 0.35rem; text-align: center; }
+.lp .stat-n {
+  font-size: var(--text-stat); font-weight: 700; letter-spacing: -0.02em;
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+}
+.lp .stat-l { font-size: var(--text-sm); color: var(--color-muted); }
+/* the band is a 4-column grid, so the link has to span it or it becomes a 5th column */
+.lp .stats-link { grid-column: 1 / -1; justify-self: center; margin-top: var(--space-sm); }
+@media (max-width: 720px) { .lp .stats { grid-template-columns: repeat(2, 1fr); } }
+
+/* ---------------- Final CTA (glow) ---------------- */
+.lp .cta2 {
+  position: relative; overflow: hidden;
+  padding: clamp(4rem, 10vh, 7rem) 1.5rem;
+  border-top: 1px solid var(--color-rule);
+}
+.lp .cta2-glow {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(52% 120% at 50% 118%, color-mix(in srgb, var(--primary) 22%, transparent), transparent 70%);
+}
+.lp .cta2-inner { position: relative; max-width: 640px; margin: 0 auto; text-align: center; }
+.lp .cta2-inner h2 { font-size: var(--text-display-s); letter-spacing: -0.02em; margin: 0.4rem 0 0.8rem; }
+.lp .cta2-inner p { color: var(--color-muted); font-size: var(--text-lg); }
+.lp .cta2-row { display: flex; gap: 0.8rem; justify-content: center; margin-top: 1.6rem; flex-wrap: wrap; }
+
+/* ---------------- Components catalogue ---------------- */
+/* Rows on hairlines, not cards: FeatureCards and the bento are both card grids
+   and sit either side of this section. */
+.lp .cmp {
+  display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: clamp(2rem, 5vw, 3.5rem); align-items: start;
+}
+.lp .cmp-code {
+  min-width: 0;
+  border: 1px solid var(--color-rule); border-radius: var(--radius-sm);
+  background: var(--color-graphite); overflow: hidden;
+}
+.lp .cmp-file {
+  font-family: var(--font-mono); font-size: 0.68rem; color: var(--color-muted);
+  padding: 0.55rem 0.9rem 0;
+}
+.lp .cmp-code pre {
+  margin: 0; padding: 0.45rem 0.9rem 0.9rem;
+  font-family: var(--font-mono); font-size: 0.72rem; line-height: 1.7;
+  color: var(--color-code-fg); overflow-x: auto;
+}
+.lp .cmp-code .k { color: var(--color-accent); }
+.lp .cmp-code .f { color: var(--tok-str); }
+.lp .cmp-code .s { color: var(--accent-foreground); }
+.lp .cmp-code .c { color: var(--tok-comment); }
+.lp .cmp-note {
+  margin: var(--space-md) 0 0;
+  font-size: var(--text-sm); color: var(--color-muted); line-height: 1.6;
+}
+
+.lp .cmp-list { list-style: none; margin: 0; padding: 0; }
+.lp .cmp-item + .cmp-item { border-top: 1px solid var(--color-rule); }
+.lp .cmp-row {
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 0.15rem 1rem; align-items: baseline;
+  padding: var(--space-md) 0; text-decoration: none;
+  transition: background var(--dur-snap) var(--ease-snap);
+}
+.lp .cmp-pkg {
+  grid-column: 1;
+  font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+.lp .cmp-name {
+  grid-column: 1;
+  font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em;
+  color: var(--color-ink);
+}
+.lp .cmp-blurb { grid-column: 1; font-size: var(--text-sm); color: var(--color-muted); }
+.lp .cmp-arrow {
+  grid-column: 2; grid-row: 1 / span 3; align-self: center;
+  font-family: var(--font-mono); color: var(--color-muted);
+  transition: transform var(--dur-snap) var(--ease-snap), color var(--dur-snap) var(--ease-snap);
+}
+.lp .cmp-row:hover .cmp-arrow { transform: translateX(4px); color: var(--color-accent); }
+.lp .cmp-row:hover .cmp-name { color: var(--color-accent); }
+.lp .cmp-row:focus-visible {
+  outline: 2px solid var(--color-accent); outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+
+@media (max-width: 900px) {
+  .lp .cmp { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp .cmp-row, .lp .cmp-arrow { transition: none; }
+  .lp .cmp-row:hover .cmp-arrow { transform: none; }
+}
+
+/* ---------------- CTA buttons ---------------- */
+/* These rules used to live in hero.css, which only the (now deleted) Hero.tsx
+   imported, so nothing loaded them and the final CTA rendered as bare text.
+   They resolve theme tokens directly rather than the old .hx-* aliases, which
+   were scoped to the hero and undefined out here. */
+.lp .hx-btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.72rem 1.25rem; border-radius: 0.7rem;
+  font-size: 0.95rem; font-weight: 600; text-decoration: none;
+  transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out);
+}
+.lp .hx-btn--primary {
+  color: var(--color-accent-ink);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-accent) 92%, white),
+    var(--color-accent)
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-ink) 30%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--color-paper) 22%, transparent),
+    0 1px 2px color-mix(in srgb, var(--color-ink) 18%, transparent),
+    0 8px 26px -8px color-mix(in srgb, var(--color-accent) 55%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+.lp .hx-btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--color-ink) 35%, transparent),
+    0 14px 40px -10px color-mix(in srgb, var(--color-accent) 75%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+.lp .hx-btn--ghost {
+  color: var(--color-ink);
+  border: 1px solid var(--color-rule);
+  background: color-mix(in srgb, var(--color-ink) 2%, transparent);
+}
+.lp .hx-btn--ghost:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+  transform: translateY(-2px);
+}
+.lp .hx-btn:active { transform: translateY(0) scale(0.985); transition-duration: 90ms; }
+.lp .hx-arrow { transition: transform var(--dur) var(--ease-out); }
+.lp .hx-btn--primary:hover .hx-arrow { transform: translateX(4px); }
+@media (prefers-reduced-motion: reduce) {
+  .lp .hx-btn, .lp .hx-arrow { transition: none; }
+  .lp .hx-btn:hover, .lp .hx-btn:active { transform: none; }
+}
+
+/* ---------------- Footer (multi-column) ---------------- */
+.lp .foot { border-top: 1px solid var(--color-rule); padding: 3rem 0 2rem; background: var(--color-paper); }
+.lp .foot-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 2rem; }
+.lp .foot-brand { font-size: 1.25rem; font-weight: 700; margin: 0; }
+.lp .foot-tag { color: var(--color-muted); font-size: var(--text-sm); margin: 0.4rem 0 0.8rem; }
+.lp .foot-col { display: flex; flex-direction: column; gap: 0.55rem; }
+.lp .foot-h { font-size: var(--text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-ink-2); margin-bottom: 0.2rem; }
+.lp .foot-col a { color: var(--color-muted); text-decoration: none; font-size: var(--text-sm); }
+.lp .foot-col a:hover { color: var(--color-accent); }
+.lp .foot-bottom {
+  display: flex; justify-content: space-between;
+  margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--color-rule);
+  font-size: var(--text-xs); color: var(--color-muted);
+}
+@media (max-width: 720px) {
+  .lp .foot-grid { grid-template-columns: 1fr 1fr; }
+  .lp .foot-brand-col { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) { .lp .strip-track { animation: none; } }
+
+/* ---------------- Reactivity diagram section ---------------- */
+.lp .demo { margin: clamp(3rem, 8vh, 6rem) 0; }
+.lp .demo-head { text-align: center; max-width: 640px; margin: 0 auto 2.5rem; }
+.lp .demo-head h3 { font-size: var(--text-display-s); letter-spacing: -0.02em; margin: 0.4rem 0 0.6rem; }
+.lp .demo-head p { color: var(--color-muted); font-size: var(--text-lg); }
+
+/* ============================================================
+   Premium craft pass (from the design panel): film grain,
+   lit-edge borders, snappier micro-interactions.
+   ============================================================ */
+
+/* Film grain over the whole surface: kills gradient banding on dark screens. */
+.lp::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Lit-edge gradient border: bright emerald at the top, fading to the base rule.
+   Uses a masked overlay so it works on any radius and layers over the spotlight glow. */
+.lp .cell,
+.lp .stats {
+  position: relative;
+}
+.lp .cell::after,
+.lp .stats::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  z-index: 2;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--primary) 32%, transparent) 0%,
+    color-mix(in srgb, var(--foreground) 6%, transparent) 22%,
+    color-mix(in srgb, var(--border) 90%, transparent) 100%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/* Snappier hover on interactive chrome; add a press state. */
+.lp .btn,
+.lp .tlink { transition-timing-function: var(--ease-snap); transition-duration: var(--dur-snap); }
+.lp .btn:active { transform: translateY(0) scale(0.985); transition-duration: 90ms; }
+
+/* ---------------- How it works: numbered step rail ---------------- */
+/* Replaced the tabbed code block. Static by design: Reveal.tsx explains why
+   scroll-driven reveals are off the table in this Next + Turbopack setup, so
+   the rail is drawn in CSS and never animates in. */
+.lp .stp {
+  /* minmax(0, ...) not 1fr: a grid track's default min-width is auto, so the
+     unbreakable <pre> inside a step sets the track's floor and blows the whole
+     row past the viewport. `.lp` clips overflow-x, so that reads as truncation,
+     not a scrollbar. */
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 4rem); align-items: start;
+  margin: clamp(3rem, 8vh, 6rem) 0;
+}
+.lp .stp h3 {
+  font-size: var(--text-display-s); margin: 0.6rem 0 0.8rem; letter-spacing: -0.02em;
+  /* without this the third line is a lone "it" */
+  text-wrap: balance;
+}
+.lp .stp > .stp-copy p { font-size: var(--text-lg); color: var(--color-muted); line-height: 1.6; }
+
+/* Five steps run about twice the height of the copy, so the headline holds
+   its place while they scroll past. 6rem clears the sticky navbar. */
+@media (min-width: 1024px) {
+  .lp .stp-copy { position: sticky; top: 6rem; }
+}
+
+.lp .stp-list { list-style: none; margin: 0; padding: 0; }
+.lp .stp-item { position: relative; min-width: 0; padding: 0 0 2.25rem 3.5rem; }
+.lp .stp-item:last-child { padding-bottom: 0; }
+
+/* The rail hangs off each item except the last, so it stops at the final disc
+   instead of overhanging the end of the list. */
+.lp .stp-item:not(:last-child)::before {
+  content: "";
+  position: absolute; left: calc(1.125rem - 0.5px);
+  top: 2.5rem; bottom: 0; width: 1px;
+  background: var(--color-rule);
+}
+.lp .stp-node {
+  position: absolute; left: 0; top: 0;
+  display: grid; place-items: center;
+  width: 2.25rem; height: 2.25rem;
+  border: 1px solid var(--color-rule); border-radius: 50%;
+  background: var(--color-paper-2);
+  font-family: var(--font-mono); font-size: 0.68rem;
+  color: var(--color-muted);
+}
+.lp .stp-label {
+  display: block;
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--color-muted);
+  padding-top: 0.5rem;
+}
+.lp .stp-title {
+  font-family: var(--font-display); font-size: var(--text-2xl);
+  font-weight: 500; letter-spacing: -0.015em;
+  color: var(--color-ink);
+  margin: 0.35rem 0 0.5rem;
+}
+.lp .stp-body { color: var(--color-muted); font-size: var(--text-base); margin: 0 0 1rem; }
+
+.lp .stp-code {
+  min-width: 0;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-sm);
+  background: var(--color-graphite);
+  overflow: hidden;
+}
+.lp .stp-file {
+  font-family: var(--font-mono); font-size: 0.68rem; color: var(--color-muted);
+  padding: 0.55rem 0.9rem 0;
+}
+.lp .stp-code pre {
+  margin: 0; padding: 0.45rem 0.9rem 0.9rem;
+  font-family: var(--font-mono); font-size: 0.75rem; line-height: 1.7;
+  color: var(--color-code-fg); overflow-x: auto;
+}
+.lp .stp-code .c { color: var(--tok-comment); }
+.lp .stp-code .k { color: var(--color-accent); }
+.lp .stp-code .f { color: var(--tok-str); }
+.lp .stp-code .s { color: var(--accent-foreground); }
+.lp .stp-code .p { color: var(--color-muted); }
+
+@media (max-width: 820px) {
+  .lp .stp { grid-template-columns: minmax(0, 1fr); }
+  .lp .stp-item { padding-left: 3rem; }
+}
+
+/* ---------------- Feature grid with live mini-visuals ---------------- */
+.lp .fc-section { margin: clamp(3rem, 8vh, 5rem) 0; }
+.lp .fc-head { text-align: center; max-width: 640px; margin: 0 auto 2.5rem; }
+.lp .fc-head h2 { font-size: var(--text-display-s); letter-spacing: -0.02em; margin: 0.4rem 0 0.6rem; }
+.lp .fc-head p { color: var(--color-muted); font-size: var(--text-lg); }
+.lp .fc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md); }
+@media (max-width: 900px) { .lp .fc-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .lp .fc-grid { grid-template-columns: 1fr; } }
+.lp .fc-card {
+  position: relative; background: var(--color-paper-2);
+  border: 1px solid var(--color-rule); border-radius: var(--radius-md);
+  padding: var(--space-lg); display: flex; flex-direction: column; gap: 0.35rem;
+  transition: border-color var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+}
+.lp .fc-card:hover {
+  border-color: color-mix(in oklch, var(--color-accent) 45%, var(--color-rule));
+  transform: translateY(-2px);
+}
+/* The card icons are inline <svg> with a viewBox and no width/height, so they
+   size to their container. Without this rule they filled the card. It lived
+   next to the .ed-* rules and was swept out with them in 04b5282; it sits with
+   the rest of the .fc-* group now. `flex: none` because .fc-card is a flex
+   column: the icon must not stretch or shrink. */
+.lp .fc-ic { flex: none; width: 26px; height: 26px; color: var(--color-accent); margin-bottom: 0.45rem; }
+.lp .fc-ic svg { width: 100%; height: 100%; display: block; }
+.lp .fc-k { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-accent); }
+.lp .fc-title { font-size: 1.05rem; font-weight: 600; color: var(--color-ink); letter-spacing: -0.01em; }
+.lp .fc-viz {
+  margin-top: var(--space-sm); background: var(--color-graphite);
+  border: 1px solid var(--color-rule); border-radius: 10px;
+  min-height: 120px; padding: 0.9rem; display: flex; flex-direction: column; justify-content: center;
+  overflow: hidden;
+}
+.lp .fc-mono { font-family: var(--font-mono); font-size: 0.72rem; color: var(--color-muted); }
+.lp .fc-dim { opacity: 0.7; }
+
+.lp .fc-reactive { display: flex; flex-direction: column; gap: 0.15rem; }
+.lp .fc-num { font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+
+.lp .fc-spark-wrap { display: flex; flex-direction: column; gap: 0.6rem; }
+.lp .fc-spark { width: 100%; height: 48px; }
+.lp .fc-spark-wrap b { color: var(--color-accent); }
+
+.lp .fc-sched { display: flex; flex-direction: column; gap: 0.9rem; }
+.lp .fc-timeline { position: relative; display: flex; justify-content: space-between; align-items: center; padding: 0.3rem 0.2rem; }
+.lp .fc-track { position: absolute; left: 4px; right: 4px; top: 50%; height: 1px; background: var(--color-rule); }
+.lp .fc-tdot { position: relative; width: 9px; height: 9px; border-radius: 50%; background: var(--border); transition: background var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out); }
+.lp .fc-tdot.is-on { background: var(--color-accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-foreground) 18%, transparent); }
+
+.lp .fc-auth { display: flex; flex-direction: column; gap: 0.4rem; }
+.lp .fc-field { font-family: var(--font-mono); font-size: 0.72rem; color: var(--color-ink-2); border: 1px solid var(--color-rule); border-radius: 6px; padding: 0.4rem 0.55rem; background: color-mix(in srgb, var(--foreground) 2%, transparent); }
+.lp .fc-dots { letter-spacing: 1px; color: var(--color-muted); }
+.lp .fc-auth-btn { text-align: center; font-size: 0.75rem; font-weight: 600; color: var(--background); background: var(--color-accent); border-radius: 6px; padding: 0.4rem; margin-top: 0.15rem; }
+
+.lp .fc-tree { display: flex; flex-direction: column; gap: 0.28rem; font-size: 0.72rem; color: var(--color-ink-2); }
+.lp .fc-tree .fc-indent { padding-left: 1rem; color: var(--color-muted); }
+
+.lp .fc-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+.lp .fc-table td { padding: 0.3rem 0.4rem; color: var(--color-ink-2); border-bottom: 1px solid var(--color-rule); }
+.lp .fc-table tr:last-child td { border-bottom: 0; }
+.lp .fc-badge {
+  display: inline-block; padding: 0.1rem 0.45rem; border-radius: 999px;
+  /* readable on both themes: tint the surface, keep the label high-contrast */
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  font-size: 0.66rem;
+}
+
+/* ---------------- Copyable command pill (final CTA) ---------------- */
+.lp .copycmd {
+  display: inline-flex; align-items: center; gap: 0.75rem; cursor: pointer;
+  font-family: var(--font-mono); font-size: 0.85rem;
+  color: var(--color-ink-2); background: var(--color-paper-2);
+  border: 1px solid var(--color-rule); border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  transition: border-color var(--dur-snap) var(--ease-snap), transform var(--dur-snap) var(--ease-snap);
+}
+.lp .copycmd:hover { border-color: var(--color-accent); transform: translateY(-1px); }
+.lp .copycmd:active { transform: translateY(0) scale(0.985); transition-duration: 90ms; }
+.lp .copycmd-d { color: var(--color-accent); }
+.lp .copycmd-tag { font-size: 0.7rem; color: var(--color-muted); border-left: 1px solid var(--color-rule); padding-left: 0.6rem; }
+
+.lp .cta2-cmd { margin-top: 1.1rem; display: flex; justify-content: center; }
+
+/* ---------------- Beam diagram (fan-in / fan-out topology) ---------------- */
+.lp .bd {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: clamp(2.5rem, 9vw, 7rem);
+  padding: var(--space-lg) 0;
+}
+.lp .bd-wires { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: visible; }
+.lp .bd-col { position: relative; z-index: 1; display: flex; flex-direction: column; gap: var(--space-md); }
+.lp .bd-col--mid { align-items: center; }
+
+/* the grouped "your app" box on the left */
+.lp .bd-group {
+  position: relative;
+  display: flex; flex-direction: column; gap: var(--space-sm);
+  padding: 2rem 1rem 1rem;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-paper-2) 55%, transparent);
+}
+.lp .bd-group-l {
+  position: absolute; top: 0.8rem; left: 1rem;
+  font-family: var(--font-mono); font-size: 0.62rem;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.lp .bd-node {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "ic title" "ic sub";
+  align-items: center;
+  column-gap: 0.6rem;
+  padding: 0.7rem 0.95rem;
+  border: 1px solid var(--color-rule);
+  border-radius: 12px;
+  background: var(--color-paper-2);
+  transition: border-color var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+}
+.lp .bd-node:hover { border-color: var(--color-accent); transform: translateY(-1px); }
+.lp .bd-ic { grid-area: ic; width: 17px; height: 17px; color: var(--color-muted); }
+.lp .bd-ic svg { width: 100%; height: 100%; display: block; }
+.lp .bd-t { grid-area: title; font-weight: 600; font-size: 0.95rem; color: var(--color-ink); line-height: 1.25; }
+.lp .bd-s { grid-area: sub; font-size: 0.76rem; color: var(--color-muted); line-height: 1.3; }
+
+/* the engine sits in the accent, so the eye lands on it first */
+.lp .bd-node.is-core {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  padding: 0.95rem 1.4rem;
+  box-shadow: 0 14px 40px -18px color-mix(in srgb, var(--color-accent) 70%, transparent);
+}
+.lp .bd-node.is-core .bd-ic,
+.lp .bd-node.is-core .bd-t { color: var(--color-accent-ink); }
+.lp .bd-node.is-core .bd-s { color: color-mix(in srgb, var(--color-accent-ink) 70%, transparent); }
+.lp .bd-node.is-core .bd-t { font-size: 1.1rem; }
+
+@media (max-width: 860px) {
+  .lp .bd { grid-template-columns: 1fr; gap: var(--space-lg); }
+  .lp .bd-wires { display: none; }
+  .lp .bd-col--mid { align-items: stretch; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp .bd-wires circle { display: none; }
+}
+
+
+/* ---------------- MacBook frame around the editor showcase ---------------- */
+/* --open runs 0 (leaned back) to 1 (upright) and is written by MacbookScroll.tsx.
+   It defaults to 1 on purpose: with no JS the machine renders upright and the
+   section reads normally. */
+.lp .mbk-stage {
+  --open: 1;
+  max-width: 72rem;
+  margin-inline: auto;
+  perspective: 2400px;
+}
+.lp .mbk {
+  position: relative;
+  transform-origin: center bottom;
+  transform:
+    rotateX(calc((1 - var(--open)) * 15deg))
+    scale(calc(0.94 + 0.06 * var(--open)));
+  will-change: transform;
+}
+.lp .mbk-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* the screen fill sits behind the editor, so match it */
+  color: var(--card);
+  filter: drop-shadow(0 40px 60px color-mix(in srgb, var(--foreground) 32%, transparent));
+}
+
+/* Aluminium and bezel. A real machine stays metal in both themes, so these only
+   shift from silver to space grey rather than inverting. */
+.lp .mbk-stage {
+  --mbk-edge: #a4a5a7;
+  --mbk-case: #222;
+  --mbk-bezel: #000;
+  --mbk-hinge: #1d1d1d;
+  --mbk-notch: #000;
+  --mbk-cam: #080d4c;
+  --mbk-base: #acadaf;
+  --mbk-foot: #b9b9bb;
+  --mbk-foot-2: #292929;
+  --mbk-grip: #8f9091;
+}
+.dark .lp .mbk-stage {
+  --mbk-edge: #6e6f72;
+  --mbk-case: #2a2a2d;
+  --mbk-bezel: #050505;
+  --mbk-hinge: #141416;
+  --mbk-base: #6b6c6f;
+  --mbk-foot: #7a7b7e;
+  --mbk-foot-2: #1c1c1e;
+  --mbk-grip: #5c5d60;
+}
+
+/* The dashboard, laid over the screen cutout. It fills its box and lays itself
+   out, so the screen only has to clip it to the bezel's rounding. */
+.lp .mbk-screen {
+  position: absolute;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp .mbk { transform: none; }
+}
+/* At phone width the frame would crush the dashboard. Drop the machine, keep
+   the screen. */
+@media (max-width: 900px) {
+  .lp .mbk-stage { perspective: none; }
+  .lp .mbk { transform: none; }
+  .lp .mbk-svg { display: none; }
+  .lp .mbk-screen {
+    position: static;
+    width: auto !important;
+    height: auto !important;
+    border-radius: var(--radius-md);
+  }
+  .lp .mbk-screen > .bw {
+    height: auto;
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .lp .mbk-screen .db { grid-template-columns: minmax(0, 1fr); }
+  /* A hidden sidebar would make every tab unreachable, so at this width it
+     becomes a scrollable row of chips above the pane instead. */
+  .lp .mbk-screen .db-side {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    overflow-x: auto;
+    padding: 0.5rem 0.6rem;
+    border-right: none;
+    border-bottom: 1px solid var(--color-rule);
+    scrollbar-width: none;
+  }
+  .lp .mbk-screen .db-side::-webkit-scrollbar { display: none; }
+  .lp .mbk-screen .db-brand,
+  .lp .mbk-screen .db-sec,
+  .lp .mbk-screen .db-badge { display: none; }
+  .lp .mbk-screen .db-nav {
+    width: auto;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    padding: 0.24rem 0.62rem;
+    border: 1px solid var(--color-rule);
+  }
+  .lp .mbk-screen .db-kpis { grid-template-columns: repeat(2, 1fr); }
+  /* Mobile Safari drops the back/forward and tool glyphs and gives the bar to the
+     address pill. Without that the URL here truncates to "localhost:30…". */
+  .lp .mbk-screen .bw-nav,
+  .lp .mbk-screen .bw-tools { display: none; }
+
+  /* The data row asks for 406px of fixed columns inside a ~300px pane, which
+     collapses the text column to nothing and clips the rest. Drop _id and the
+     row actions here and keep the three columns that carry the point: what was
+     written, by whom, when. `--fn` rows already fit, so they keep all four. */
+  .lp .mbk-screen .db-tr:not(.db-tr--fn) {
+    /* 70px is the `_creationTime` header's own width: a narrower track would be
+       overrun by it, since a header cell has no ellipsis to fall back on. */
+    grid-template-columns: minmax(0, 1fr) 58px 70px;
+    gap: 0.45rem;
+  }
+  .lp .mbk-screen .db-tr:not(.db-tr--fn) > :nth-child(3),
+  .lp .mbk-screen .db-tr:not(.db-tr--fn) > :nth-child(5) { display: none; }
+}
+
+/* ---------------- Concile dashboard (shown on the laptop screen) ---------------- */
+/* Mirrors apps/dashboard: sidebar from src/main.tsx, data browser from
+   src/features/data-browser.tsx. */
+.lp .db {
+  display: grid;
+  grid-template-columns: 196px 1fr;
+  height: 100%;
+  background: var(--background);
+  font-size: 0.78rem;
+}
+
+/* --- sidebar --- */
+.lp .db-side {
+  border-right: 1px solid var(--color-rule);
+  background: var(--card);
+  padding: 0.85rem 0.7rem;
+  overflow: hidden;
+}
+.lp .db-brand { font-weight: 700; font-size: 0.86rem; margin-bottom: 0.9rem; }
+.lp .db-bolt { color: var(--color-accent); }
+.lp .db-sec {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+  margin: 0.9rem 0 0.35rem;
+}
+.lp .db-nav {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  color: var(--color-ink-2);
+}
+.lp .db-nav--on { background: var(--color-accent); color: var(--color-accent-ink); }
+.lp .db-badge {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  color: var(--color-muted);
+  padding: 0 0.4rem;
+  font-size: 0.62rem;
+  font-variant-numeric: tabular-nums;
+}
+.lp .db-nav--on .db-badge {
+  background: color-mix(in srgb, var(--color-accent-ink) 22%, transparent);
+  color: var(--color-accent-ink);
+}
+
+/* --- main pane --- */
+.lp .db-main { padding: 0.95rem 1.1rem; display: flex; flex-direction: column; min-width: 0; }
+.lp .db-head { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.7rem; }
+.lp .db-title { font-size: 0.95rem; font-weight: 600; margin: 0; }
+.lp .db-live { margin-left: auto; display: inline-flex; align-items: center; gap: 0.35rem; font-family: var(--font-mono); font-size: 0.66rem; color: var(--color-accent); }
+.lp .db-live i { width: 6px; height: 6px; border-radius: 50%; background: var(--color-accent); }
+
+.lp .db-btn {
+  display: inline-flex; align-items: center;
+  border-radius: 6px;
+  padding: 0.18rem 0.5rem;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+.lp .db-btn--primary { background: var(--color-accent); color: var(--color-accent-ink); }
+.lp .db-btn--sec { background: color-mix(in srgb, var(--foreground) 8%, transparent); color: var(--color-ink-2); }
+.lp .db-btn--del { background: color-mix(in srgb, #c0503c 16%, transparent); color: #c0503c; }
+.lp .db-btn.is-off { opacity: 0.4; }
+.lp .db-x { padding-inline: 0.36rem; }
+
+/* --- filter row --- */
+.lp .db-filter { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.7rem; }
+.lp .db-select,
+.lp .db-value {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  padding: 0.18rem 0.45rem;
+  font-size: 0.68rem;
+  color: var(--color-ink-2);
+}
+.lp .db-value { color: var(--color-muted); min-width: 92px; }
+
+/* --- table --- */
+.lp .db-table { border: 1px solid var(--color-rule); border-radius: 8px; overflow: hidden; }
+.lp .db-tr {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 76px 104px 84px 84px;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.38rem 0.6rem;
+  border-bottom: 1px solid var(--color-rule);
+}
+.lp .db-tr:last-child { border-bottom: none; }
+.lp .db-tr--head {
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--color-muted);
+}
+.lp .db-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp .db-mono { font-family: var(--font-mono); font-size: 0.66rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp .db-dim { color: var(--color-muted); }
+.lp .db-acts { display: flex; justify-content: flex-end; gap: 0.3rem; }
+
+/* A row that just arrived over the live subscription. */
+.lp .db-tr.is-fresh { animation: db-land 1.4s ease-out; }
+@keyframes db-land {
+  0% { background: color-mix(in srgb, var(--color-accent) 26%, transparent); }
+  100% { background: transparent; }
+}
+
+.lp .db-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 0.7rem;
+  font-size: 0.68rem;
+  color: var(--color-muted);
+}
+.lp .db-page { display: flex; gap: 0.3rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp .db-tr.is-fresh { animation: none; }
+}
+
+/* ---------------- Browser chrome around the dashboard ---------------- */
+.lp .bw { height: 100%; display: flex; flex-direction: column; background: var(--card); }
+.lp .bw-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0 0.75rem;
+  height: 38px;
+  border-bottom: 1px solid var(--color-rule);
+  background: color-mix(in srgb, var(--foreground) 4%, var(--card));
+  color: var(--color-muted);
+}
+.lp .bw-dots { display: inline-flex; gap: 0.35rem; }
+.lp .bw-dots i { width: 10px; height: 10px; border-radius: 50%; }
+.lp .bw-dots .is-red { background: #ed6a5e; }
+.lp .bw-dots .is-amber { background: #f4bf4f; }
+.lp .bw-dots .is-green { background: #61c554; }
+
+.lp .bw-nav,
+.lp .bw-tools { display: inline-flex; align-items: center; gap: 0.6rem; opacity: 0.75; }
+.lp .bw-bar svg { flex: none; }
+.lp .bw-tools { margin-left: 0.2rem; }
+
+/* the address pill, centred like Safari's */
+.lp .bw-url {
+  flex: 1;
+  /* A flex item defaults to min-width:auto, so the pill refuses to shrink past
+     its text and pushes the toolbar icons off the bar on a narrow screen. */
+  min-width: 0;
+  max-width: 320px;
+  margin-inline: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  height: 23px;
+  /* Room for the reload glyph, which is positioned over the pill's right edge. */
+  padding-inline: 1.5rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+  font-size: 0.68rem;
+  position: relative;
+}
+/* Safari truncates a long URL rather than widening the bar. So does this. */
+.lp .bw-host {
+  color: var(--color-ink-2);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lp .bw-reload { position: absolute; right: 0.4rem; opacity: 0.7; }
+
+.lp .bw-view { flex: 1; min-height: 0; }
+
+/* ---------------- Dashboard: nav buttons, panes, charts ---------------- */
+/* Chart-only series colour. Deliberately not --primary: that measures 2.93:1 on
+   the light surface and sits at lightness 0.75 in dark, outside the 0.48-0.67
+   band. Both steps below were validated against their own surface. */
+.lp .db { --db-series: #c16e2d; }
+.dark .lp .db { --db-series: #cc7c37; }
+
+/* the nav items are real controls now */
+.lp .db-nav {
+  width: 100%;
+  font: inherit;
+  font-size: 0.78rem;
+  text-align: left;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+}
+/* restate the active state: the reset above shares its specificity and comes
+   later, so `background: transparent` would otherwise win and leave the active
+   item's light ink on a light surface, i.e. invisible */
+.lp .db-nav--on,
+.lp .db-nav--on:hover { background: var(--color-accent); color: var(--color-accent-ink); }
+.lp .db-nav:hover { background: color-mix(in srgb, var(--foreground) 6%, transparent); }
+.lp .db-nav--on:hover { background: var(--color-accent); }
+.lp .db-nav:focus-visible { outline: 2px solid var(--db-series); outline-offset: 1px; }
+.lp .db-cap { text-transform: capitalize; }
+
+/* --- KPI row --- */
+.lp .db-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 0.8rem; }
+.lp .db-kpi {
+  border: 1px solid var(--color-rule);
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.lp .db-kpi-l { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-muted); }
+.lp .db-kpi-v { font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.lp .db-kpi-d { font-size: 0.62rem; color: var(--db-series); font-variant-numeric: tabular-nums; }
+
+/* --- charts --- */
+.lp .ch { margin: 0 0 0.75rem; }
+.lp .ch-cap {
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-size: 0.68rem; color: var(--color-muted); margin-bottom: 0.3rem;
+}
+.lp .ch-now { font-size: 0.8rem; color: var(--foreground); font-variant-numeric: tabular-nums; }
+.lp .ch-now span { font-size: 0.62rem; color: var(--color-muted); font-weight: 400; }
+
+.lp .ch-plot { position: relative; }
+.lp .ch-svg { display: block; width: 100%; height: 132px; overflow: visible; }
+.lp .ch-grid { stroke: var(--color-rule); stroke-width: 1; }
+.lp .ch-line { stroke: var(--db-series); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.lp .ch-cross { stroke: var(--color-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.lp .ch-dot {
+  position: absolute; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--db-series);
+  /* 2px surface ring so the marker stays legible over the fill */
+  box-shadow: 0 0 0 2px var(--card);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.lp .ch-tip {
+  position: absolute; top: -4px; transform: translate(-50%, -100%);
+  background: var(--foreground); color: var(--background);
+  border-radius: 5px; padding: 0.12rem 0.4rem;
+  font-size: 0.62rem; white-space: nowrap; pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.lp .ch-bars { display: flex; align-items: flex-end; gap: 3px; }
+.lp .ch-bar {
+  flex: 1;
+  min-height: 2px;
+  /* 4px rounded data-end, anchored to the baseline */
+  border-radius: 4px 4px 0 0;
+  background: color-mix(in srgb, var(--db-series) 55%, transparent);
+  transition: background 0.12s;
+}
+.lp .ch-bar:hover,
+.lp .ch-bar.is-on { background: var(--db-series); }
+.lp .ch-axis { display: flex; justify-content: space-between; font-size: 0.58rem; color: var(--color-muted); margin-top: 0.2rem; }
+
+/* --- functions pane --- */
+.lp .db-tr--fn { grid-template-columns: minmax(0, 1fr) 84px 64px 60px; }
+.lp .db-kind {
+  border-radius: 4px; padding: 0.06rem 0.34rem; font-size: 0.6rem;
+  font-family: var(--font-mono);
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  color: var(--color-muted);
+}
+.lp .db-kind.is-mutation { background: color-mix(in srgb, var(--db-series) 18%, transparent); color: var(--db-series); }
+
+/* --- logs pane --- */
+.lp .db-logs {
+  border: 1px solid var(--color-rule); border-radius: 8px;
+  padding: 0.5rem 0.6rem; font-family: var(--font-mono); font-size: 0.66rem;
+  color: var(--color-ink-2); overflow: hidden;
+}
+.lp .db-logline { padding: 0.12rem 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp .ch-bar { transition: none; }
+}
+
+/* ------------------------------------------------------------------
+   Section kickers
+
+   `.k` was only ever styled under `.cell` and inside the code blocks, so the
+   kickers in `.fc-head`, `.demo-head` and `.stp-copy` rendered as plain body
+   text. Same treatment as the bento's, applied once where they all live.
+   ------------------------------------------------------------------ */
+.lp .fc-head .k,
+.lp .demo-head .k,
+.lp .stp-copy .k,
+.lp .cmt-head .k {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-accent);
+}
+
+/* ------------------------------------------------------------------
+   Comparison matrix
+
+   The Aceternity mechanic without the Aceternity dependency: hovering any cell
+   lights its whole column, and our column carries the highlighted-plan tint
+   their pricing blocks use. Both are driven from one piece of React state.
+   ------------------------------------------------------------------ */
+.lp .cmt {
+  position: relative;
+  margin-top: var(--space-xl);
+}
+
+/* Scroll affordance. Below the breakpoint the table is wider than the screen,
+   and a cleanly clipped column edge looks like a design decision rather than
+   something you can drag. The fade says otherwise, and the hint says it in
+   words for anyone who reads before they swipe. */
+.lp .cmt-hint {
+  display: none;
+  margin: 0 0 var(--space-sm);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  text-align: center;
+}
+.lp .cmt::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: var(--space-xl);
+  width: 3rem;
+  pointer-events: none;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  background: linear-gradient(to right, transparent, var(--color-paper));
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease-out);
+}
+.lp .cmt.is-scrollable::after { opacity: 1; }
+.lp .cmt-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  /* the sticky first column needs a paper backdrop to sit on while the rest
+     of the table slides under it */
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-md);
+}
+.lp .cmt-table {
+  width: 100%;
+  /* Forces the horizontal scroll rather than crushing nine axis labels. 56rem
+     is picked so the table still fits inside the wrap at a 1024px viewport;
+     58rem overflowed it by 2px and left the table jiggling at that one width. */
+  min-width: 56rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--text-sm);
+}
+.lp .cmt-cap,
+.lp .cmt-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- header row --- */
+.lp .cmt-h {
+  padding: var(--space-md) var(--space-sm);
+  background: var(--color-paper);
+  border-bottom: 1px solid var(--color-rule);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-ink);
+  text-align: center;
+  white-space: nowrap;
+  transition: background var(--dur) var(--ease-out);
+}
+.lp .cmt-h.is-us {
+  color: var(--color-accent);
+}
+.lp .cmt-badge {
+  display: block;
+  margin-top: 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+/* --- axis (sticky first column) --- */
+.lp .cmt-axis {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  width: 17rem;
+  padding: var(--space-md) var(--space-md);
+  background: var(--color-paper);
+  border-bottom: 1px solid var(--color-rule);
+  border-right: 1px solid var(--color-rule);
+  text-align: left;
+  font-weight: 550;
+  color: var(--color-ink-2);
+  line-height: 1.35;
+}
+.lp .cmt-axis--head {
+  z-index: 3;
+}
+.lp .cmt-table tbody tr:last-child .cmt-axis,
+.lp .cmt-table tbody tr:last-child .cmt-c {
+  border-bottom: 0;
+}
+
+/* --- value cells --- */
+.lp .cmt-c {
+  padding: var(--space-md) var(--space-sm);
+  border-bottom: 1px solid var(--color-rule);
+  text-align: center;
+  vertical-align: middle;
+  transition: background var(--dur) var(--ease-out);
+}
+.lp .cmt-ico {
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin: 0 auto;
+  color: var(--color-muted);
+}
+.lp .cmt-c.is-yes .cmt-ico { color: var(--color-accent); }
+.lp .cmt-c.is-no .cmt-ico { color: color-mix(in srgb, var(--color-muted) 55%, transparent); }
+.lp .cmt-note {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: var(--text-xs);
+  line-height: 1.35;
+  color: var(--color-muted);
+}
+
+/* the "this is us" column, marked out the way a recommended plan is. The page
+   palette is near-greyscale, so a tint alone would read as an arbitrary shaded
+   band. The vertical rules do most of the work and the fill only warms it. */
+.lp .cmt-c.is-us,
+.lp .cmt-h.is-us {
+  background: color-mix(in srgb, var(--color-accent) 7%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+.lp .cmt-h.is-us {
+  border-top: 1px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.lp .cmt-table tbody tr:last-child .cmt-c.is-us {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
+/* the column spotlight. It sits on top of the tint, so our column still reads
+   as ours while it is lit. */
+.lp .cmt-c.is-lit,
+.lp .cmt-h.is-lit {
+  background: color-mix(in srgb, var(--color-ink) 7%, var(--color-paper));
+}
+.lp .cmt-c.is-us.is-lit,
+.lp .cmt-h.is-us.is-lit {
+  background: color-mix(in srgb, var(--color-accent) 15%, var(--color-paper));
+}
+
+.lp .cmt-foot {
+  margin-top: var(--space-md);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  text-align: center;
+}
+.lp .cmt-foot a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.lp .cmt-foot a:hover { text-decoration: underline; }
+
+@media (max-width: 720px) {
+  .lp .cmt-hint { display: block; }
+  /* a narrower axis so two product columns fit on screen at once, which is the
+     minimum for the table to read as a comparison at all */
+  .lp .cmt-axis { width: 9.5rem; padding-inline: var(--space-sm); }
+  .lp .cmt-table { min-width: 44rem; font-size: var(--text-xs); }
+  .lp .cmt-c,
+  .lp .cmt-h { padding-inline: var(--space-xs); }
+  .lp .cmt-h { white-space: normal; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp .cmt-c,
+  .lp .cmt-h,
+  .lp .cmt::after { transition: none; }
+}
+
+/* ------------------------------------------------------------------
+   FAQ accordion
+
+   Open and close by animating grid-template-rows from 0fr to 1fr. That gets a
+   real height transition with no measurement, no ResizeObserver and no layout
+   read, which matters here because motion's in-view work already proved
+   unreliable in this Next setup (see Reveal.tsx).
+   ------------------------------------------------------------------ */
+.lp .faq {
+  max-width: 52rem;
+  margin-inline: auto;
+  border-top: 1px solid var(--color-rule);
+}
+.lp .faq-item {
+  border-bottom: 1px solid var(--color-rule);
+}
+.lp .faq-q {
+  margin: 0;
+  font-size: inherit;
+}
+.lp .faq-btn {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  padding: var(--space-lg) var(--space-xs);
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-ink);
+  transition: color var(--dur) var(--ease-out);
+}
+.lp .faq-btn:hover { color: var(--color-accent); }
+.lp .faq-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.lp .faq-item.is-open .faq-btn { color: var(--color-accent); }
+
+.lp .faq-sign {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border: 1px solid var(--color-rule);
+  border-radius: 50%;
+  color: var(--color-muted);
+  transition: border-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+}
+.lp .faq-sign svg { width: 16px; height: 16px; }
+.lp .faq-btn:hover .faq-sign,
+.lp .faq-item.is-open .faq-sign {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+/* plus turns into minus: the vertical stroke collapses on its own centre */
+.lp .faq-sign-v {
+  transform-origin: 8px 8px;
+  transition: transform var(--dur-snap) var(--ease-snap);
+}
+.lp .faq-item.is-open .faq-sign-v { transform: scaleY(0) rotate(90deg); }
+
+.lp .faq-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 260ms var(--ease-out);
+}
+.lp .faq-item.is-open .faq-panel { grid-template-rows: 1fr; }
+.lp .faq-panel-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+.lp .faq-panel-inner > :first-child { padding-top: 0; }
+.lp .faq-panel-inner p {
+  padding: 0 var(--space-xs) var(--space-md);
+  font-size: var(--text-base);
+  color: var(--color-muted);
+  line-height: 1.65;
+}
+.lp .faq-panel-inner code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: var(--color-ink-2);
+  background: color-mix(in srgb, var(--color-ink) 8%, transparent);
+  border-radius: 4px;
+  padding: 0.08em 0.32em;
+}
+.lp .faq-panel-inner .tlink {
+  display: inline-block;
+  margin: 0 var(--space-xs) var(--space-lg);
+}
+
+@media (max-width: 600px) {
+  .lp .faq-btn { font-size: var(--text-base); padding-block: var(--space-md); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp .faq-panel,
+  .lp .faq-sign-v,
+  .lp .faq-btn { transition: none; }
+}
+
+/* ------------------------------------------------------------------
+   Pillars
+
+   The architectural differentiators, one numbered row each. Rows rather than
+   another card grid: the page already runs FeatureCards as a 3-up grid and the
+   bento below, and a third grid would read as more of the same field. Each row
+   pairs the claim on the left with something concrete on the right, because
+   "database agnostic" means nothing next to a list of the four that ship.
+   ------------------------------------------------------------------ */
+.lp .plr {
+  display: grid;
+  /* no gap: each row already carries its own block padding and a top rule, and
+     a grid gap on top of both left a ~120px trench between every row */
+  margin-top: var(--space-xl);
+}
+.lp .plr-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  /* start, not center: the two columns are rarely the same height, and centring
+     left the evidence floating in the middle of its own row */
+  align-items: start;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  padding: var(--space-xl) 0;
+  border-top: var(--rule) solid var(--color-rule);
+}
+.lp .plr-row:first-child { border-top: 0; padding-top: 0; }
+
+/* Alternate which side the evidence sits on. Five identical rows read as a
+   list; alternating keeps the eye moving, and the numbered rail means you can
+   still tell where you are. */
+.lp .plr-row:nth-child(even) .plr-copy { order: 2; }
+.lp .plr-row:nth-child(even) .plr-ev { order: 1; }
+
+.lp .plr-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+.lp .plr-n {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  /* the number is a position marker, not a heading, so it stays quiet */
+  letter-spacing: 0.04em;
+}
+.lp .plr-copy h3 {
+  font-size: var(--text-2xl);
+  margin-bottom: var(--space-sm);
+  max-width: 20ch;
+}
+.lp .plr-copy p {
+  color: var(--color-muted);
+  font-size: var(--text-base);
+  line-height: 1.65;
+  max-width: 48ch;
+  margin-bottom: var(--space-md);
+}
+.lp .plr-copy code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  color: var(--color-ink-2);
+  background: color-mix(in srgb, var(--color-ink) 8%, transparent);
+  border-radius: 4px;
+  padding: 0.08em 0.3em;
+}
+
+/* --- evidence panel --- */
+.lp .plr-ev {
+  display: grid;
+  gap: var(--space-md);
+  min-width: 0;
+}
+.lp .plr-code {
+  background: var(--color-graphite);
+  border: var(--rule) solid var(--color-graphite-rule);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.lp .plr-file {
+  padding: var(--space-xs) var(--space-md);
+  border-bottom: var(--rule) solid var(--color-graphite-rule);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+.lp .plr-code pre {
+  margin: 0;
+  padding: var(--space-md);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.7;
+  color: var(--color-code-fg);
+  white-space: pre;
+}
+.lp .plr-code .k { color: var(--color-accent); }
+.lp .plr-code .f { color: var(--tok-str); }
+.lp .plr-code .s { color: var(--accent-foreground); }
+.lp .plr-code .c { color: var(--tok-comment); }
+/* the one added line in the schema example, marked the way a diff would */
+.lp .plr-code .add {
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  box-shadow: -0.35rem 0 0 color-mix(in srgb, var(--color-accent) 16%, transparent);
+  border-radius: 2px;
+}
+.lp .plr-caption {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  border-top: var(--rule) solid var(--color-graphite-rule);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+.lp .plr-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+  gap: var(--space-xs);
+}
+.lp .plr-chips li {
+  border: var(--rule) solid var(--color-rule);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-paper-2);
+  transition: border-color var(--dur) var(--ease-out);
+}
+.lp .plr-chips li:hover {
+  border-color: color-mix(in oklch, var(--color-accent) 45%, var(--color-rule));
+}
+.lp .plr-chips b {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 550;
+  color: var(--color-ink);
+}
+.lp .plr-chips span {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  line-height: 1.35;
+}
+
+@media (max-width: 900px) {
+  .lp .plr-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-lg);
+    padding: var(--space-lg) 0;
+  }
+  /* the alternation is meaningless in one column, and leaving it on would put
+     the evidence above its own claim on every other row */
+  .lp .plr-row:nth-child(even) .plr-copy { order: 0; }
+  .lp .plr-row:nth-child(even) .plr-ev { order: 0; }
+  .lp .plr-copy h3 { max-width: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp .plr-chips li { transition: none; }
+}

@@ -19,9 +19,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The versions-only probe below diffs against origin/<base>. A
+          # shallow clone has no merge base, so that diff exits fatal, the
+          # probe reads empty as "nothing but version bumps", and typecheck,
+          # tests and the docs check are all skipped. CI then passes having
+          # run almost nothing.
+          fetch-depth: 0
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.11
+      # The vitest lane runs under Node, not Bun, and parts of it load the
+      # experimental `node:sqlite`. Without this the runner's default Node is
+      # used, which is not the version .nvmrc pins and which crashed the
+      # storage suite with SIGBUS.
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
       - uses: actions/cache@v4
         with:
           path: |
@@ -46,6 +60,9 @@ jobs:
           fi
       - run: bun install --frozen-lockfile
       - run: bun run build
+      - name: docs prose stays wrapped
+        run: bun run check:docs-wrap
+        if: steps.diffkind.outputs.versions_only != 'true'
       - run: bun run typecheck
         if: steps.diffkind.outputs.versions_only != 'true'
       - run: bun run test

@@ -1,0 +1,793 @@
+/* v14 — the v1 landing wearing the v2 skin.
+ *
+ * Three layers, in this order:
+ *   1. the v2 surface: black page, quarter-point grid, hairline rules
+ *   2. the v2 chrome: the editorial header and footer
+ *   3. a re-skin of v1, applied through the tokens v1 already declares on .lp
+ *      rather than by editing any of its markup
+ *
+ * Layer 3 is the whole trick. v1's CSS resolves every colour, radius and face
+ * through a token, so redefining those tokens inside .hp restyles the entire
+ * landing without touching a single component. That also means the two halves
+ * stay separable: delete this file and v1 comes back unchanged.
+ *
+ * Specificity note: v1's page imports landing.css itself, and route CSS loads
+ * after layout CSS, so every override here is written as `.hp .lp ...` to sit
+ * one class above the rules it replaces. */
+
+.hp {
+  /* Every colour here is an alias. The values live in app/global.css, which is
+     the one block anyone edits to change the theme.
+
+     This used to be eighteen literals plus a second set of eighteen for light
+     mode. The twin set existed only because a literal cannot know what theme it
+     is in; these resolve through tokens that already carry both, so the light
+     block is gone rather than converted. */
+  --hp-bg: var(--background);
+  --hp-surface: var(--card);
+  --hp-surface-2: var(--muted);
+  --hp-text: var(--foreground);
+  --hp-muted: var(--muted-foreground);
+  /* A fourth text rank, quieter than muted. shadcn has no token for it, so it
+     is mixed toward the page rather than picked. */
+  --hp-dim: color-mix(in srgb, var(--muted-foreground) 62%, var(--background));
+
+  /* The signal.
+   *
+   * v2 allowed itself a single colour and spent it like currency. The blue went
+   * when the palette was rebuilt on the theme tokens, and nothing replaced it,
+   * so the page went achromatic and read as a wireframe of itself.
+   *
+   * It is --primary now, not a colour of its own. That is a change in reach as
+   * well as in plumbing: --color-accent in landing.css resolves to --primary
+   * across about 74 rules, so buttons, active states, hover borders and card
+   * accents all carry it, not just the handful of places this token was first
+   * introduced for. If that reads as too much colour, the dial is --primary's
+   * chroma in global.css, not this line, and not reverting rules one by one.
+   *
+   * It is only ever a foreground here: the shell prompt, the benchmark units,
+   * the arrow on hover, the focus ring. There were companion --hp-signal-ink
+   * and --hp-signal-wash tokens for painting it as a block behind text, which
+   * is what the marked phrase in the hero used. That was removed, and they went
+   * with it rather than sitting here unreferenced. */
+  --hp-signal: var(--primary);
+
+  /* The line weights and washes now live in global.css, where the per-theme
+     alphas are set. The names are kept because the rest of this file and every
+     component below it already reads them. */
+  --hp-grid: var(--rule-grid);
+  --hp-line: var(--rule-1);
+  --hp-line-2: var(--rule-2);
+  --hp-line-3: var(--rule-3);
+  --hp-frame: var(--rule-frame);
+  --hp-shadow: var(--shadow-page);
+  --hp-wash: var(--wash-1);
+  --hp-wash-2: var(--wash-2);
+  --hp-wash-3: var(--wash-3);
+
+  --hp-max: 1440px;
+  --hp-pad: clamp(1.25rem, 3vw, 3rem);
+
+  --hp-sans: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
+  --hp-mono: var(--font-jetbrains-mono, ui-monospace), "SF Mono", monospace;
+
+  --hp-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --hp-dur: 220ms;
+
+  background: var(--hp-bg);
+  color: var(--hp-text);
+  font-family: var(--hp-sans);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+.hp *,
+.hp *::before,
+.hp *::after { box-sizing: border-box; }
+
+/* ---------------- page shell + grid ---------------- */
+
+.hp-page {
+  position: relative;
+  max-width: var(--hp-max);
+  margin-inline: auto;
+  border-inline: 1px solid var(--hp-line);
+  overflow-x: clip;
+}
+
+/* ---------------- the pixel field ----------------
+ *
+ * Fixed to the viewport, not sized to the document: this page is over twelve
+ * thousand pixels tall, and a canvas that size would be both a huge drawing
+ * buffer and a veil that scrolls away. Fixed means one screen of GL, held still
+ * while the page moves across it.
+ *
+ * The scrim is what makes the rest readable. The raw shader peaks near full
+ * violet in places, and body copy at 14.5px cannot sit on that. */
+.hp-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.hp-veil .pixel-blast-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.hp-veil-scrim {
+  position: absolute;
+  inset: 0;
+  /* The page ground at alpha, not a colour of its own: black over the canvas
+     on the dark theme, white over it on light. Deriving it from --background is
+     what lets the light override below disappear. */
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--background) 12%, transparent),
+    color-mix(in srgb, var(--background) 42%, transparent)
+  );
+}
+
+/* The page rides above the veil. */
+.hp-page { position: relative; z-index: 1; }
+
+/* The grid is inset to v1's own container, not to the page, so the three lines
+   land on the quarter points of the column the content actually occupies. */
+.hp-gridlines {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  /* The children are positioned in percentages of this box, and percentages
+     resolve against the padding box, so padding here would not move them.
+     Subtracting the gutter from the width is what actually lands the lines on
+     the content column rather than on the container edge. */
+  width: 100%;
+  max-width: calc(76rem - 2 * clamp(1.25rem, 5vw, 3rem));
+  margin-inline: auto;
+  z-index: 0;
+  pointer-events: none;
+}
+.hp-gridlines i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--hp-grid);
+}
+.hp-gridlines i:nth-child(1) { left: 25%; }
+.hp-gridlines i:nth-child(2) { left: 50%; }
+.hp-gridlines i:nth-child(3) { left: 75%; }
+
+.hp-page > header,
+.hp-page > main,
+.hp-page > footer { position: relative; z-index: 1; }
+
+/* ---------------- v2 chrome: header ---------------- */
+
+.hp-head {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 2.4vw, 2.2rem);
+  height: 68px;
+  padding-inline: var(--hp-pad);
+  border-bottom: 1px solid var(--hp-line);
+}
+.hp-mark {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  color: var(--hp-text);
+  text-decoration: none;
+}
+.hp-mark svg { width: 15px; height: 15px; }
+.hp-nav { display: flex; gap: clamp(0.9rem, 1.8vw, 1.7rem); font-size: 13px; }
+.hp-head-right { margin-left: auto; display: flex; align-items: center; gap: 1rem; font-size: 13px; }
+.hp-stars { display: flex; align-items: center; gap: 0.35rem; color: var(--hp-muted); }
+.hp-stars svg { width: 14px; height: 14px; }
+.hp-btn {
+  padding: 0.42rem 0.8rem;
+  border: 1px solid var(--hp-line-2);
+  color: var(--hp-text);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background var(--hp-dur) var(--hp-ease);
+}
+.hp-btn:hover { background: var(--hp-surface-2); }
+/* Also a <button>, for the theme control, which needs the chrome reset that
+   an <a> does not. */
+.hp-icon {
+  color: var(--hp-muted);
+  display: flex;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  transition: color var(--hp-dur) var(--hp-ease);
+}
+.hp-icon:hover { color: var(--hp-text); }
+.hp-icon svg { width: 15px; height: 15px; }
+.hp-burger { display: none; }
+.hp-link {
+  color: var(--hp-muted);
+  text-decoration: none;
+  transition: color var(--hp-dur) var(--hp-ease);
+}
+.hp-link:hover { color: var(--hp-text); }
+
+/* ---------------- v2 chrome: footer ---------------- */
+
+.hp-foot { border-top: 1px solid var(--hp-line); }
+/* The footer sits in v1's container, not the page's, so its four columns start
+   on the same three lines the grid draws. No column gap: the gutter is padding
+   inside each cell, which is what puts the edges exactly on the quarter
+   points instead of half a gutter away from them. */
+.hp-foot-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 64px 0;
+  width: 100%;
+  max-width: 76rem;
+  margin-inline: auto;
+  padding: 96px clamp(1.25rem, 5vw, 3rem);
+}
+.hp-foot-col { padding-right: 40px; }
+.hp-foot-col h3 {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--hp-dim);
+  margin: 0 0 24px;
+}
+.hp-foot-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.7rem; }
+.hp-foot-col a { font-size: 13px; }
+.hp-sub { display: flex; align-items: center; border-bottom: 1px solid var(--hp-line-2); padding-bottom: 0.7rem; }
+.hp-sub input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  color: var(--hp-text);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 0.3rem 0;
+}
+.hp-sub input::placeholder { color: var(--hp-dim); }
+.hp-sub input:focus { outline: none; }
+.hp-sub button { background: none; border: 0; color: var(--hp-dim); cursor: pointer; display: flex; padding: 0.2rem; }
+.hp-sub button:hover { color: var(--hp-text); }
+.hp-sub svg { width: 14px; height: 14px; }
+.hp-social { display: flex; gap: 0.9rem; margin-top: 24px; }
+.hp-social a { color: var(--hp-muted); display: flex; }
+.hp-social a:hover { color: var(--hp-text); }
+.hp-social svg { width: 16px; height: 16px; }
+
+/* The band the particle wordmark fills.
+ *
+ * Taller than the cropped span it replaces, because this one is whole: the
+ * type is centred rather than run off the edge, so it needs room above and
+ * below the cap height instead of only beside it. The height stays ahead of
+ * the font ceiling in Wordmark.tsx at every width, which is what keeps the
+ * ascenders out of the overflow. */
+.hp-wordmark {
+  position: relative;
+  height: clamp(150px, 20vw, 280px);
+  overflow: hidden;
+  border-top: 1px solid var(--hp-line);
+}
+
+/* ---------------- the re-skin ----------------
+ *
+ * v1 declares its palette as aliases of the theme tokens on .lp. Redefining
+ * those tokens here repaints every section, tile, chart and code sample at
+ * once. Emerald and copper go; the surface becomes v2's black and white with
+ * one blue, which is the only colour v2 allows itself. */
+
+.hp .lp {
+  /* No --background, --foreground, --primary, --card, --border, --accent,
+     --accent-foreground or --muted-foreground here any more.
+
+     Those eight were the reason the landing ignored the palette entirely: they
+     redefined the shadcn tokens themselves with literals, so nothing in
+     global.css could reach this page. Deleting them is what makes a palette
+     swap arrive here.
+
+     --card in particular had to go rather than be rewired. It was
+     var(--hp-wash), and --hp-wash is now a mix OF --card, so keeping it would
+     make --card depend on itself. A circular custom property resolves to
+     nothing, panels render transparent, and neither the linter nor tsc says a
+     word about it. */
+
+  /* v1's own aliases, now derived rather than picked. */
+  --color-ink-2: color-mix(in srgb, var(--foreground) 92%, var(--background));
+  --color-graphite: var(--wash-1);
+  --color-graphite-rule: var(--rule-1);
+  --color-accent-ink: var(--primary-foreground);
+  --color-accent-wash: color-mix(in srgb, var(--foreground) 8%, transparent);
+
+  /* Code keeps its colour, because monochrome syntax reads as a quote block
+     rather than as code. These are offsets from --primary's hue now, so they
+     follow a palette swap instead of being four fixed values. */
+  --tok-key: var(--chroma-6);
+  --tok-str: var(--chroma-2);
+  --tok-punct: var(--muted-foreground);
+  --tok-comment: var(--muted-foreground);
+  --color-code-fg: var(--foreground);
+  --color-code-muted: var(--muted-foreground);
+
+  /* Square corners, one face. v1's display font was Outfit; v2 sets everything
+     in Inter and reserves the mono for code, so the display alias collapses
+     onto the body face. */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --font-display: var(--hp-sans);
+  --font-body: var(--hp-sans);
+  --font-mono: var(--hp-mono);
+
+  background: transparent;
+}
+
+/* Section rules and tile edges become the same hairline as the page grid, so
+   the card grids read as a ruled sheet rather than as stacked boxes. */
+.hp .lp { --color-rule: var(--rule-1); }
+
+/* Square corners, everywhere.
+ *
+ * v1 sets most radii from the tokens above, but around twenty rules use literal
+ * pixel values (6px fields, 10px inner panels, 999px pills), and chasing each
+ * one by name would miss the next component someone adds. So: flatten every
+ * descendant, then give back the handful of pieces that are meant to be
+ * circles. v2 does the same thing by hand — square badges and chips, round
+ * window dots. */
+.hp .lp *,
+.hp .lp *::before,
+.hp .lp *::after { border-radius: 0 !important; }
+
+.hp .lp .fc-tdot,
+.hp .lp .stp-node,
+.hp .lp .ch-dot,
+.hp .lp .faq-sign,
+.hp .lp .db-live i,
+.hp .lp .bw-dots i,
+/* the editor showcase and the dashboard panels are rendered inside .lp too, and
+   their window chrome is round in v2 */
+.hp .lp .ed-dots i,
+.hp .lp .pui-dots i,
+.hp .lp .pui-chip.is-live::before { border-radius: 50% !important; }
+
+/* Tiles sit on the page rather than floating above it: no lift, no glow, one
+   hairline edge, exactly as v2 frames its screenshots. */
+.hp.hp .lp .cell,
+.hp.hp .lp .fc-card,
+.hp.hp .lp .pill-card {
+  background: var(--hp-wash);
+  backdrop-filter: blur(2px);
+  border-color: var(--hp-line);
+  box-shadow: none;
+}
+
+/* backdrop-filter is the worst case for these tiles, because what sits behind
+   them is a canvas that repaints continuously: every repaint forces each tile to
+   re-sample and re-blur its backdrop. At blur(2px) over a dot field the effect is
+   nearly invisible anyway, so weak hardware keeps the wash and loses the blur.
+   PixelBlast sets data-quality once it knows what it is running on. */
+:root[data-quality='low'] .hp.hp .lp .cell,
+:root[data-quality='low'] .hp.hp .lp .fc-card,
+:root[data-quality='low'] .hp.hp .lp .pill-card {
+  backdrop-filter: none;
+}
+.hp.hp .lp .cell:hover,
+.hp.hp .lp .fc-card:hover,
+.hp.hp .lp .pill-card:hover {
+  background: var(--hp-wash-2);
+  border-color: var(--hp-line-2);
+  box-shadow: none;
+}
+
+/* The steps rail rides the middle grid line.
+ *
+ * The block spans the content column, so the middle hairline falls at its 50%.
+ * The rail sits 17.5px into the right column (half of the 36px node, less half
+ * the 1px rule), so that column has to start at 50% minus the rail offset minus
+ * the gap. Then the page grid runs down through the steps as their spine
+ * instead of beside it, and the numbered discs break it as they pass, because
+ * each disc is filled with the card colour.
+ *
+ * Above 821px, which is where v1 keeps the steps in two columns. Gating this at
+ * 1024px left the 821-1023 band with the rail 40px off the line, which is the
+ * offset pair this rule exists to remove. */
+@media (min-width: 821px) {
+  .hp.hp .lp .stp {
+    --stp-gap: clamp(2rem, 5vw, 4rem);
+    grid-template-columns: calc(50% - 17.5px - var(--stp-gap)) minmax(0, 1fr);
+    gap: var(--stp-gap);
+  }
+}
+
+/* The components list starts on the middle grid line.
+ *
+ * Same idea as the steps: the section spans the content column, so the middle
+ * hairline is its 50%, and the right column has to start there. v1 splits this
+ * row 0.85fr / 1.15fr, which lands the list 52px short of the line. Pinning the
+ * first column to `50% - gap` puts the list's left edge exactly on it, and the
+ * list still ends on the column's right edge.
+ *
+ * Above 900px only, which is where v1 keeps this row in two columns. */
+@media (min-width: 901px) {
+  .hp.hp .lp .cmp {
+    --cmp-gap: clamp(2rem, 5vw, 3.5rem);
+    grid-template-columns: calc(50% - var(--cmp-gap)) minmax(0, 1fr);
+    gap: var(--cmp-gap);
+  }
+}
+
+/* v10 masks the grid behind the centred heads with a painted black block. Over
+   the veil that reads as a rectangle of dead surface, and the grid is already
+   half-lost against a moving image, so the mask does not come across here. */
+
+/* The remaining opaque bands.
+ *
+ * These paint `--color-paper`, which is the page colour and has to stay opaque
+ * because v1 also uses that token as a text colour. Over a moving backdrop they
+ * read as solid boxes laid across it, so each one gets the same translucent
+ * wash the tiles use. The comparison table's header and axis keep a little more
+ * opacity than the rest, because they are sticky and scroll over their own
+ * rows. */
+.hp.hp .lp .strip,
+.hp.hp .lp .db { background: var(--hp-wash); }
+.hp.hp .lp .cmt-scroll,
+.hp.hp .lp .cmt-h,
+.hp.hp .lp .cmt-axis { background: var(--hp-wash-3); }
+
+/* The eyebrow label, set like v2's.
+ *
+ * `.k` does double duty in v1: an eyebrow in a section head, and a keyword span
+ * inside the code samples. This mirrors landing.css's own context list, because
+ * styling bare `.k` uppercases `import` and `export const` in every code block
+ * on the page. */
+.hp.hp .lp .fc-head .k,
+.hp.hp .lp .demo-head .k,
+.hp.hp .lp .stp-copy .k,
+.hp.hp .lp .cmt-head .k,
+.hp.hp .lp .cell .k {
+  font-family: var(--hp-sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  /* Dim, not the signal.
+
+     This carried --hp-signal for a while, which was fine when the signal was a
+     violet: a small accent arriving once per section. It stopped being fine the
+     moment --primary became ink, because the eyebrow then resolved to pure
+     white and a label became as loud as the heading it labels. Measured against
+     the pre-change build it was a jump from #555555 to #ffffff.
+
+     An eyebrow is a caption. It should sit under the heading, not beside it. */
+  color: var(--hp-dim);
+}
+
+/* The unit after a benchmark number: the "ms", the "%". The figure itself stays
+   white, because four violet numbers at 3.5rem is not a signal, it is a chart.
+   The unit is two characters and it is the part that says what the number
+   means.
+
+   StatNumber renders the suffix as a <b> inside .stat-n. The stat *tile*
+   (.cell--stat) that landing.css also styles is not on this page at all. */
+.hp.hp .lp .stat-n b {
+  color: var(--hp-signal);
+  font-weight: inherit;
+}
+
+/* Keywords in the code samples resolve through --color-accent, which is now
+   white. Point them at the same blue the other samples use so code reads the
+   same everywhere. */
+.hp.hp .lp .cmp-code .k,
+.hp.hp .lp .stp-code .k,
+.hp.hp .lp .plr-code .k { color: var(--tok-key); }
+
+/* Headings lose the display face and take v2's tighter tracking. */
+.hp.hp .lp h1,
+.hp.hp .lp h2,
+.hp.hp .lp h3 {
+  font-family: var(--hp-sans);
+  letter-spacing: -0.03em;
+}
+
+/* ---------------- the hero, taken from v2 ----------------
+ *
+ * v2's composition unchanged: 45/55, copy left, product right, both in flow.
+ * The editor is the primary image and takes the one deliberate overflow; the
+ * log card is the single supporting image and overlaps the image layer only.
+ * The hero's own bottom padding is what keeps both inside this section rather
+ * than letting them fall into the strip below, which is how the first version
+ * of this composition broke. */
+
+.hp-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  min-height: 720px;
+  padding-block: clamp(64px, 8vw, 112px) clamp(96px, 11vw, 168px);
+}
+/* The page container, not v1's 76rem column: this hero is v2's, and v2 measures
+   its 45/55 against the full 1440px page. Matching v2 exactly means matching
+   the box it was composed in. */
+.hp-hero-inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
+  gap: clamp(2.5rem, 6vw, 6rem);
+  align-items: center;
+  width: 100%;
+  max-width: var(--hp-max);
+  margin-inline: auto;
+  padding-inline: var(--hp-pad);
+}
+
+.hp-hero h1 {
+  margin: 0;
+  /* Sized so each sentence of the headline holds its own line.
+
+     12ch was tuned for "The backend to build the modern web", which wanted three
+     short lines. The headline is now two sentences of nearly equal length, "Your
+     entire backend." and "Realtime by default.", and at 12ch it split four ways
+     and cut the noun phrase in half. 20ch lets each sentence sit on one line.
+
+     text-wrap: balance is the safety net. If the words change again it evens the
+     lines out rather than leaving one orphan, which is what went wrong here. */
+  max-width: 20ch;
+  text-wrap: balance;
+}
+
+/* The hero's own size, at a specificity that actually wins.
+ *
+ * `.hp-hero h1` and `.lp h1` both score 0,1,1, so the tie broke on source order
+ * and landing.css loads after this file. The font-size declared below in the
+ * `.hp-hero h1` block therefore never applied: --text-display won, capping the
+ * hero at 3.9rem. This is the same `.hp .lp ...` pattern every other override in
+ * this file uses, and the block below should be read as dead on that property.
+ *
+ * 3.35rem, not 3.9rem, because a sentence of the headline has to fit one line.
+ * At 3.9rem the first sentence measured 639px in a 567px column, so it wrapped
+ * mid-phrase as "Your whole / backend, realtime / by default." Scaled down, both
+ * sentences fit and the line breaks where the sentence does.
+ *
+ * This is measured against the current headline, so re-measure if the words
+ * change. The check is the rendered line count, not the character count:
+ * capitals and wide letters cost more than the character total suggests. */
+.hp .hp-hero h1 {
+  font-size: clamp(2.2rem, 4.6vw, 3.35rem);
+  font-family: var(--hp-sans);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.032em;
+  color: var(--hp-text);
+}
+.hp-body {
+  margin: 0;
+  color: var(--hp-muted);
+  font-size: 14.5px;
+  line-height: 1.7;
+  max-width: 46ch;
+}
+.hp-hero-copy > * + * { margin-top: 40px; }
+.hp-hero-copy .hp-body { margin-top: 24px; }
+
+.hp-cmd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.05rem 0;
+  border-top: 1px solid var(--hp-line-2);
+  border-bottom: 1px solid var(--hp-line-2);
+  font-family: var(--hp-mono);
+  font-size: 13px;
+  color: var(--hp-text);
+}
+.hp-cmd button {
+  background: none;
+  border: 0;
+  padding: 0.2rem;
+  color: var(--hp-dim);
+  cursor: pointer;
+  display: flex;
+  transition: color var(--hp-dur) var(--hp-ease);
+}
+.hp-cmd button:hover { color: var(--hp-text); }
+.hp-cmd svg { width: 14px; height: 14px; }
+/* The shell prompt. One glyph, in the hero, where the eye already is. A prompt
+   is the one character on the page that is genuinely not prose, so it is the
+   cheapest possible place to spend the signal. */
+.hp-cmd .hp-prompt { color: var(--hp-signal); font-style: normal; }
+
+/* The second clause of the positioning line ("there is no cloud"). It sits
+   under the command rather than in the subhead so the subhead can stay one
+   idea, and it reads a step quieter than body copy because it is a
+   qualification, not the pitch. */
+.hp-hero-copy .hp-hero-note {
+  margin-top: 18px;
+  font-size: 13px;
+  color: var(--hp-dim);
+}
+
+.hp-hero-links { margin-top: 0 !important; }
+.hp-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 0;
+  border-bottom: 1px solid var(--hp-line-2);
+  color: var(--hp-text);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: border-color var(--hp-dur) var(--hp-ease);
+}
+.hp-arrow:hover { border-color: var(--hp-line-3); }
+.hp-arrow span:last-child {
+  color: var(--hp-dim);
+  transition: transform var(--hp-dur) var(--hp-ease), color var(--hp-dur) var(--hp-ease);
+}
+/* The glyph picks up the signal on hover, the label does not. Colouring the
+   whole link would make it a link colour, which is the one thing the budget
+   cannot afford: there are too many links. */
+.hp-arrow:hover span:last-child { transform: translate(2px, -2px); color: var(--hp-signal); }
+.hp-arrow:focus-visible { outline: 1px solid var(--hp-line-2); outline-offset: 3px; }
+
+/* Focus rings.
+ *
+ * Free colour: it appears only for keyboard users, one element at a time, and a
+ * ring that shares the page's neutral hairline is exactly as hard to find as
+ * the hairline. This also fixes a real accessibility problem rather than just
+ * spending the accent.
+ *
+ * The second block is not redundant. landing.css already rings these five in
+ * --color-accent, which resolves to white here, and .lp .tlink:focus-visible
+ * out-specifies a bare .hp a:focus-visible, so without it the generic rule below
+ * is silently overridden on exactly the elements people tab through most. Only
+ * the colour is taken; each keeps its own offset and radius. */
+.hp a:focus-visible,
+.hp button:focus-visible,
+.hp [tabindex]:focus-visible {
+  outline: 2px solid var(--hp-signal);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+.hp.hp .lp .btn:focus-visible,
+.hp.hp .lp .tlink:focus-visible,
+.hp.hp .lp .foot-links a:focus-visible,
+.hp.hp .lp .cmp-row:focus-visible,
+.hp.hp .lp .faq-btn:focus-visible,
+.hp.hp .hp-arrow:focus-visible {
+  outline-color: var(--hp-signal);
+}
+
+/* The screenshot frame: a real edge, not a grid hairline. */
+.hp-shot {
+  position: relative;
+  margin: 0;
+  border: 1px solid var(--hp-frame);
+  background: var(--hp-surface);
+  overflow: hidden;
+  box-shadow: var(--hp-shadow);
+}
+.hp-shot--bleed { width: calc(100% + 6%); }
+
+.hp-hero-art {
+  position: relative;
+  z-index: 1;
+  padding-bottom: 7%;
+}
+.hp-hero-art .hp-shot--editor { z-index: 2; }
+.hp-hero-art .hp-shot--log {
+  position: absolute;
+  z-index: 3;
+  right: -6%;
+  bottom: 0;
+  width: 52%;
+}
+
+/* v10 puts three blurred navy shapes behind the hero, from v2. On flat black
+   they read as almost-invisible geometry; over a moving backdrop they read as a
+   navy rectangle sitting on top of it, with an edge where the hero band ends.
+   The backdrop is the hero's lighting now, so the glow does not come across. */
+
+@keyframes hp-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.hp-rise { animation: hp-rise 620ms var(--hp-ease) both; }
+.hp-rise--2 { animation-delay: 140ms; }
+
+@media (max-width: 1024px) {
+  .hp-hero { min-height: 0; display: block; }
+  .hp-hero-inner { grid-template-columns: minmax(0, 1fr); }
+  .hp-hero h1 { max-width: 16ch; }
+  .hp-hero-art { padding-bottom: 0; margin-top: 64px; }
+  .hp-hero-art .hp-shot--log {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    margin-top: 24px;
+  }
+  .hp-shot--bleed { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-rise { animation: none; }
+}
+
+@media (max-width: 720px) {
+  .hp-gridlines { display: none; }
+  .hp-nav, .hp-head-right .hp-btn, .hp-stars { display: none; }
+  .hp-burger { display: flex; margin-left: auto; }
+  .hp-foot-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------------- light mode ----------------
+ *
+ * The same composition on white paper. Nothing about the layout, the grid, the
+ * hairlines or the square corners changes: only the two ends of the value
+ * scale swap, so this is the design seen in light rather than a second design.
+ *
+ * Written as one override block against the theme class on <html>, which is
+ * what the docs toggle already sets, so the route follows the site toggle
+ * instead of forcing a mode. Delete this block and v14 is dark again.
+ *
+ * The greys are the mirror of the dark set, not a fresh palette: --hp-muted
+ * lands at the same 5.7:1 on white that #8a8a8a holds on black, and --hp-dim
+ * at the same 2.8:1. The hierarchy between the three text weights is the one
+ * the dark side was drawn with.
+ *
+ * The product panels carry their own light set, at the foot of
+ * product-ui.css. They are the screenshots in this composition and the hero
+ * puts one of them beside the editor showcase, which follows the theme, so
+ * holding them dark would split one figure across two modes. */
+
+/* No light --hp-* block any more. Each one aliases a token in global.css
+   that already carries both themes, so a second set here would be the copy
+   that drifts. The per-theme alphas live beside those tokens. */
+
+/* No light .lp overrides either, for the same reason. The eight shadcn
+   tokens this block used to redefine are gone from the dark block too. */
+
+/* The backdrop over white.
+ *
+ * The shader was tuned against black, so it draws its light on a dark field.
+ * Fading it down on paper does not give the light version of that: it greys the
+ * page, because the field the shader spends most of its pixels on is the part
+ * that goes from black to mid grey.
+ *
+ * This used to be solved with filter: invert(1) hue-rotate(180deg), which flips
+ * the field to white and the light to dark and puts the hue back near enough.
+ * It worked, but it is a full-screen compositor pass on a fixed, viewport-sized
+ * canvas that repaints every frame, which is the most expensive place on the
+ * page to put one.
+ *
+ * So the colour is chosen per theme instead and the filter is gone. Nothing
+ * about the result moved: the shader emits one constant RGB for every pixel and
+ * varies only alpha, and the filter only ever touched RGB, so feeding the
+ * already-inverted colour in paints the same image. See Veil.tsx for the value
+ * and for why it also has to undo the shader's own sRGB conversion.
+ *
+ * The scrim then mirrors: same geometry, same alphas, white instead of black. */
+html:not(.dark) .hp-veil canvas {
+  opacity: 0.9;
+}
+/* No light .hp-veil-scrim override. The scrim derives from --background, which
+   is already white here. */

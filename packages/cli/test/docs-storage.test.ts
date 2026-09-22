@@ -10,7 +10,7 @@ import { join } from "node:path";
 
 describe("file-storage docs match reality", () => {
   const doc = readFileSync(
-    join(import.meta.dirname, "../../../website/content/docs/core-concepts/file-storage.mdx"),
+    join(import.meta.dirname, "../../../docs/core-concepts/file-storage.mdx"),
     "utf8",
   );
 

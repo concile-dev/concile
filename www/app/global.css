@@ -1,0 +1,442 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+@plugin 'tailwindcss-animate';
+
+@custom-variant dark (&:is(.dark *));
+@custom-variant light (&:is(.light *));
+@custom-variant system (&:is(.system *));
+
+/* ============================================================
+   The Concile palette. This block is the whole theme.
+
+   Neutral greyscale surfaces with one chromatic --primary. Edit the
+   values here and the docs, the blog and the shared marketing chrome
+   all follow; nothing downstream holds a colour of its own.
+
+   Two namespaces, one source. The shadcn tokens (--background,
+   --primary, ...) are the real values. The fumadocs tokens
+   (--color-fd-*) alias them so the docs UI tracks the same theme.
+   They used to be two hand-typed copies of the same numbers, which is
+   why the docs and the landing drifted apart whenever one was edited.
+
+   To try another palette, replace the shadcn values here with a block
+   from ui.shadcn.com/themes or tweakcn. Nothing else needs touching.
+
+   Known gap: the landing does NOT follow yet. app/(home)/home.css
+   overrides --background, --foreground, --primary and five more with
+   literals on .hp .lp, so it ignores this block. Fixing that means
+   converting the --hp-* tokens to aliases, which is its own change.
+
+   This header previously described a copper accent, #E0975A, that no
+   token in the file has ever held.
+   ============================================================ */
+:root {
+  --radius: 0.625rem;
+
+  /* ------------------------------------------------------------------
+     Neutral greyscale, matching payloadcms.com.
+
+     Their whole palette is achromatic: 51 colour tokens, every base step
+     R=G=B, no brand hue anywhere. The only chromatic values on the site are
+     semantic status colours. All the warmth in their hero comes from the
+     background video, not from the theme.
+
+     We keep the neutral surfaces and spend the colour on --primary instead,
+     since we have no hero video to carry it. The tokens that used to hold
+     that video's measured palette (--wave-*, --field-*, and the three
+     opacity values beside them) are gone: nothing referenced them, in CSS
+     or in TSX, after the hero they belonged to was replaced.
+
+     Lightness steps below are read off their base scale:
+       255 -> 100%   221 -> 88.4%   154 -> 66%    47 -> 25%
+       245 -> 96.5%  208 -> 84%     101 -> 47.3%  20 -> 11.5%
+       235 -> 93%    181 -> 75%      74 -> 36.8%   7 ->  4.5%
+     ------------------------------------------------------------------ */
+
+  /* shadcn layer — light */
+  --background: oklch(100% 0 0);
+  --foreground: oklch(18.7% 0 0);
+  --card: oklch(100% 0 0);
+  --card-foreground: oklch(18.7% 0 0);
+  --popover: oklch(100% 0 0);
+  --popover-foreground: oklch(18.7% 0 0);
+  /* Ink, not a hue. --primary drives buttons, active states, the marked phrase
+     and the focus ring, and here it is simply the darkest neutral, inverting to
+     the lightest one on the dark theme. The interface stays monochrome.
+
+     Swapping this for a chromatic value is the single edit that colours the
+     whole site, because everything downstream reads it. */
+  --primary: oklch(18.7% 0 0);
+  --primary-foreground: oklch(100% 0 0);
+  --secondary: oklch(96.5% 0 0);
+  --secondary-foreground: oklch(25% 0 0);
+  --muted: oklch(96.5% 0 0);
+  --muted-foreground: oklch(47.3% 0 0);
+  --accent: oklch(93% 0 0);
+  --accent-foreground: oklch(31% 0 0);
+  /* Destructive keeps its hue. Payload keeps chroma for status too: a neutral
+     palette is a brand decision, not a reason to make errors unreadable. */
+  --destructive: oklch(58% 0.21 25);
+  --border: oklch(88.4% 0 0);
+  --input: oklch(88.4% 0 0);
+  --ring: oklch(47.3% 0 0);
+
+  /* fumadocs layer.
+   *
+   * Aliases, not copies. These were the same sixteen values typed a second
+   * time, with nothing tying the two sets together, so editing one and not the
+   * other was silent and the docs drifted away from everything else.
+   *
+   * Declared once, here, and NOT repeated under .dark. Each one resolves
+   * through a shadcn token that .dark already redefines, so the docs follow
+   * the theme with no second block. A second block is the copy that drifts. */
+  --color-fd-background: var(--background);
+  --color-fd-foreground: var(--foreground);
+  --color-fd-card: var(--card);
+  --color-fd-card-foreground: var(--card-foreground);
+  --color-fd-popover: var(--popover);
+  --color-fd-popover-foreground: var(--popover-foreground);
+  --color-fd-muted: var(--muted);
+  --color-fd-muted-foreground: var(--muted-foreground);
+  --color-fd-secondary: var(--secondary);
+  --color-fd-secondary-foreground: var(--secondary-foreground);
+  --color-fd-border: var(--border);
+  --color-fd-primary: var(--primary);
+  --color-fd-primary-foreground: var(--primary-foreground);
+  --color-fd-ring: var(--ring);
+  --color-fd-accent: var(--accent);
+  --color-fd-accent-foreground: var(--accent-foreground);
+
+  /* ------------------------------------------------------------------
+     The semantic steps shadcn does not provide.
+
+     shadcn gives one --border and one --card. The landing uses four edge
+     weights and three translucent panel washes, so those extra steps are
+     derived here instead of being hardcoded in home.css. That file used to
+     hold them as literals, which is why it needed a whole second copy of
+     itself for light mode.
+     ------------------------------------------------------------------ */
+
+  /* Edge weights. These were rgba(black, a) on white and rgba(white, a) on
+     black, which is exactly a foreground mix, so they carry over without loss.
+     The alphas differ per theme on purpose: a black hairline on white reads
+     heavier than a white one on black at the same alpha. */
+  --rule-1: color-mix(in srgb, var(--foreground) 8%, transparent);
+  --rule-2: color-mix(in srgb, var(--foreground) 13%, transparent);
+  --rule-3: color-mix(in srgb, var(--foreground) 30%, transparent);
+  --rule-frame: color-mix(in srgb, var(--foreground) 14%, transparent);
+  --rule-grid: color-mix(in srgb, var(--foreground) 9%, transparent);
+
+  /* Panel washes. Translucent because they sit over the animated canvas. */
+  --wash-1: color-mix(in srgb, var(--card) 72%, transparent);
+  --wash-2: color-mix(in srgb, var(--card) 86%, transparent);
+  --wash-3: color-mix(in srgb, var(--card) 92%, transparent);
+
+  /* A shadow is an absence of light, not a colour from the palette, so this
+     stays black in both themes and only its strength changes. Deriving it from
+     --foreground would make it white on the dark theme, which is a glow. */
+  --shadow-page: 0 30px 70px rgb(0 0 0 / 0.1);
+
+  /* Syntax colours. Code cannot go monochrome the way the interface can: a
+     single-colour listing reads as a quote block rather than as code. So this
+     is the one part of the theme that stays chromatic while --primary is ink.
+
+     Six hues at one lightness and one chroma, so only the hue varies. Holding L
+     and C is what keeps them distinguishable from each other and readable on
+     the page at the same time.
+
+     --chroma-h is a real anchor rather than a reading of --primary's hue, and
+     that is deliberate. An achromatic --primary has no meaningful hue: the
+     browser serialises it with a floating-point crumb in the b channel, which
+     came out as roughly 112 degrees rather than 0. Anchoring a palette on that
+     is anchoring it on rounding noise. Two knobs are worth the honesty.
+
+     At 25 the ramp runs red, orange, yellow-green, green, blue, magenta, which
+     is close to how most editors colour code already. Move this one number to
+     rotate the whole palette; if --primary is ever given a hue and the code
+     should follow it, set this to the same value. */
+  --chroma-h: 25;
+  --chroma-l: 0.48;
+  --chroma-c: 0.15;
+  --chroma-1: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 0));
+  --chroma-2: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 40));
+  --chroma-3: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 80));
+  --chroma-4: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 130));
+  --chroma-5: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 200));
+  --chroma-6: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 300));
+}
+
+.dark {
+  /* shadcn layer — dark */
+  --background: oklch(4.5% 0 0);
+  --foreground: oklch(100% 0 0);
+  --card: oklch(11.5% 0 0);
+  --card-foreground: oklch(100% 0 0);
+  --popover: oklch(11.5% 0 0);
+  --popover-foreground: oklch(100% 0 0);
+  /* The same ink, inverted. Black primary on a black page would be invisible,
+     so the dark theme takes the lightest neutral and puts the dark one on top. */
+  --primary: oklch(100% 0 0);
+  --primary-foreground: oklch(4.5% 0 0);
+  --secondary: oklch(18.7% 0 0);
+  --secondary-foreground: oklch(93% 0 0);
+  --muted: oklch(18.7% 0 0);
+  --muted-foreground: oklch(66% 0 0);
+  --accent: oklch(25% 0 0);
+  --accent-foreground: oklch(84% 0 0);
+  --destructive: oklch(70% 0.19 22);
+  --border: oklch(25% 0 0);
+  --input: oklch(25% 0 0);
+  --ring: oklch(66% 0 0);
+
+  /* No --color-fd-* here on purpose. They alias the shadcn tokens in :root,
+     and every one of those is redefined above, so the docs are already dark.
+     Repeating them here is what made the two sets drift.
+
+     The --rule-*, --wash-* and --chroma-* steps are not repeated either: they
+     are built from --foreground, --card and --primary, all redefined above.
+     Only the values that genuinely differ by theme are listed below. */
+
+  /* Below about 7% a white hairline composites to #0e0e0e on black and reads
+     as nothing, so the dark ground needs its own alphas rather than the ones
+     tuned for paper. */
+  --rule-1: color-mix(in srgb, var(--foreground) 7.5%, transparent);
+  --rule-2: color-mix(in srgb, var(--foreground) 12%, transparent);
+  --rule-3: color-mix(in srgb, var(--foreground) 28%, transparent);
+  --rule-frame: color-mix(in srgb, var(--foreground) 16%, transparent);
+  --rule-grid: color-mix(in srgb, var(--foreground) 10%, transparent);
+
+  --wash-1: color-mix(in srgb, var(--card) 66%, transparent);
+  --wash-2: color-mix(in srgb, var(--card) 72%, transparent);
+  --wash-3: color-mix(in srgb, var(--card) 86%, transparent);
+
+  /* A black page can carry a heavy shadow because it has nowhere to go. White
+     cannot: at 0.8 the screenshots look like they are floating off the sheet. */
+  --shadow-page: 0 30px 70px rgb(0 0 0 / 0.8);
+
+  /* Lifted for the dark ground. Same hues, read against black instead of white. */
+  --chroma-l: 0.78;
+  --chroma-c: 0.13;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+/* No page-level horizontal scroll (clip, never hidden — preserves sticky). */
+html,
+body {
+  overflow-x: clip;
+}
+
+html > body[data-scroll-locked] {
+  margin-right: 0px !important;
+  --removed-body-scroll-bar-size: 0px !important;
+}
+
+/* ============================================================
+   Bridge the token layer into Tailwind so `bg-background`,
+   `text-primary`, `border-border` etc. exist as utilities and
+   follow light/dark automatically.
+   ============================================================ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --font-family-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular,
+    'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+  /* Marquee: speed and direction set per instance via CSS vars. */
+  --animate-scroll: scroll var(--animation-duration, 40s)
+    var(--animation-direction, forwards) linear infinite;
+
+  @keyframes scroll {
+    to {
+      transform: translate(calc(-50% - 0.5rem));
+    }
+  }
+}
+
+/* --- small semantic layout utilities --- */
+@utility col {
+  @apply flex flex-col;
+}
+@utility row {
+  @apply flex flex-row;
+}
+@utility center-center {
+  @apply flex items-center justify-center text-center;
+}
+/* break a section out of the container for a full-bleed effect */
+@utility pulled {
+  @apply -mx-2 md:-mx-6 lg:-mx-10 xl:-mx-20;
+}
+@utility scrollbar-hidden {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* --- structural column hairlines; the rule bleeds past the section so the
+       line reads as a continuous column through the page --- */
+.line-before,
+.line-after {
+  position: relative;
+  padding: 16px;
+}
+.line-before::before,
+.line-after::after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: -8rem;
+  bottom: -8rem;
+  width: 1px;
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+.line-before::before { left: 0; }
+.line-after::after { right: 0; }
+
+/* ============================================================
+   Shared marketing chrome (Navbar + Footer).
+   Uses fumadocs' --color-fd-* tokens so it follows the same
+   light/dark toggle as the docs.
+   ============================================================ */
+.nb {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid var(--color-fd-border);
+  background: color-mix(in srgb, var(--color-fd-background) 82%, transparent);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+}
+.nb-inner {
+  max-width: 76rem;
+  margin-inline: auto;
+  padding: 0.75rem clamp(1.25rem, 5vw, 3rem);
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+.nb-brand {
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  color: var(--color-fd-foreground);
+  text-decoration: none;
+}
+.nb-links { display: flex; gap: 1.1rem; margin-left: 0.5rem; }
+.nb-link {
+  font-size: 0.9rem;
+  color: var(--color-fd-muted-foreground);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.nb-link:hover, .nb-link.is-active { color: var(--color-fd-foreground); }
+.nb-right { margin-left: auto; display: flex; align-items: center; gap: 0.6rem; }
+.nb-icon, .nb-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--color-fd-border);
+  border-radius: 8px;
+  background: none;
+  color: var(--color-fd-muted-foreground);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.nb-icon:hover, .nb-stars:hover {
+  color: var(--color-fd-foreground);
+  border-color: var(--color-fd-foreground);
+}
+.nb-stars span::before { content: "★ "; color: var(--color-fd-primary); }
+.nb-cta {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--color-fd-primary-foreground);
+  background: var(--color-fd-primary);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.nb-cta:hover { opacity: 0.9; transform: translateY(-1px); }
+@media (max-width: 640px) {
+  .nb-links { display: none; }
+}
+
+.ft {
+  border-top: 1px solid var(--color-fd-border);
+  background: var(--color-fd-background);
+  padding: 3rem 0 1.5rem;
+}
+.ft-inner, .ft-bottom {
+  max-width: 76rem;
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 5vw, 3rem);
+}
+.ft-inner {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 2rem;
+}
+.ft-brand { font-size: 1.2rem; font-weight: 700; margin: 0; color: var(--color-fd-foreground); }
+.ft-tag { color: var(--color-fd-muted-foreground); font-size: 0.88rem; margin: 0.35rem 0 0.75rem; }
+.ft-license { font-size: 0.75rem; color: var(--color-fd-muted-foreground); }
+.ft-col { display: flex; flex-direction: column; gap: 0.5rem; }
+.ft-h {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-fd-foreground);
+  margin-bottom: 0.2rem;
+}
+.ft-col a {
+  color: var(--color-fd-muted-foreground);
+  text-decoration: none;
+  font-size: 0.88rem;
+  transition: color 0.15s ease;
+}
+.ft-col a:hover { color: var(--color-fd-primary); }
+.ft-bottom {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-fd-border);
+  font-size: 0.75rem;
+  color: var(--color-fd-muted-foreground);
+}
+@media (max-width: 720px) {
+  .ft-inner { grid-template-columns: 1fr 1fr; }
+  .ft-brand-col { grid-column: 1 / -1; }
+  .ft-bottom { flex-direction: column; gap: 0.4rem; }
+}

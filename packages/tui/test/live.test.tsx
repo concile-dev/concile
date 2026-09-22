@@ -7,8 +7,10 @@ import { test, expect } from "bun:test";
 import { createTestRenderer } from "@opentui/core/testing";
 import { createRoot } from "@opentui/react";
 import { App } from "../src/app";
+import { renderUntil, containsAll } from "./render-until";
 
-const settle = (ms = 250) => new Promise((r) => setTimeout(r, ms));
+// renderUntil polls the frame instead of sleeping a fixed interval, which is
+// what made this test machine-speed dependent.
 
 test("a commit to the visible table repaints it live", async () => {
   const listeners = new Set<(t: string[], ts: number) => void>();
@@ -44,27 +46,23 @@ test("a commit to the visible table repaints it live", async () => {
 
   const r = await createTestRenderer({ width: 100, height: 20 });
   createRoot(r.renderer).render(<App bridge={bridge} />);
-  await settle(120);
-  await r.flush();
-  await r.renderOnce();
+  await renderUntil(r, (f) => f.includes("concile"), { label: "shell" });
   r.mockInput.pressKey("2");
-  await settle();
-  await r.flush();
-  await r.renderOnce();
-
-  expect(r.captureCharFrame()).toContain("first message");
-  expect(r.captureCharFrame()).not.toContain("second message");
+  const opened = await renderUntil(r, (f) => f.includes("first message"), {
+    label: "messages table",
+  });
+  expect(opened).not.toContain("second message");
 
   // A mutation commits, touching `messages` — no key press, no refresh.
   rows = [...rows, { _id: "m2", author: "grace", body: "second message" }];
   count = 2;
   for (const cb of listeners) cb(["messages"], 42);
 
-  await settle(300);
-  await r.flush();
-  await r.renderOnce();
-
-  const frame = r.captureCharFrame();
+  // No key press and no refresh: the row must arrive from the subscription
+  // alone, so poll until it does rather than guessing how long that takes.
+  const frame = await renderUntil(r, containsAll("second message", "2 rows"), {
+    label: "live update",
+  });
   expect(frame).toContain("second message"); // the new row appeared on its own
   expect(frame).toContain("2 rows"); // and the count updated
   r.renderer.destroy();

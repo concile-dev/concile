@@ -1,0 +1,32 @@
+---
+title: Reactivity, not polling
+description: Why your app should update itself, and how Concile does it without melting your server.
+author: The Concile Team
+date: 2026-09-08
+---
+
+Most "real-time" apps are not real-time. They poll.
+
+The browser asks the server "anything new?" every few seconds. The server runs the same query again and sends back the same answer most of the time. It is wasteful, it is slow, and it still feels laggy. You wrote a timer and called it live.
+
+There is a better way.
+
+## The idea
+
+A query is a question about your data. "Give me the open tasks." "Give me this chat's messages." The answer only changes when the data it read actually changes.
+
+So Concile remembers what each live query read. When a write lands, it looks at what that write touched, and it re-runs only the queries whose answer could have changed. Everything else stays still. The client gets a push the instant the answer is different, and not one moment sooner.
+
+No timer. No wasted round trips. The screen changes because the data changed.
+
+## Why it stays cheap
+
+Polling costs grow with the number of clients times how often they ask. That is the wrong shape. It punishes you for being popular.
+
+Concile's cost grows with the number of writes, and each write only wakes the queries it affects. One container with a single core and 512 MB holds 2,000 live subscribers at about 12 percent CPU, and pushes land in roughly 100 milliseconds. These are measured numbers, not hopes.
+
+## What you write
+
+Nothing special. You write a normal query in TypeScript and read it with a hook. The reactivity is not a feature you bolt on. It is how the system works by default.
+
+That is the whole point. Live should be the easy path, not the hard one.

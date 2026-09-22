@@ -11,10 +11,12 @@ import { describe, it, expect } from "bun:test";
 import { createTestRenderer } from "@opentui/core/testing";
 import { createRoot } from "@opentui/react";
 import { App } from "../src/app";
+import { renderUntil, containsAll } from "./render-until";
 import type { TuiBridge, TuiEvent } from "../src/bridge";
 
-/** The React reconciler commits asynchronously; give it a tick before capturing. */
-const settle = () => new Promise((r) => setTimeout(r, 50));
+// Waiting is handled by renderUntil, which polls the frame instead of sleeping
+// a fixed 50ms. The old sleep was a guess about machine speed and expired on CI
+// before the activity area had painted.
 
 function makeBridge(): { bridge: TuiBridge; emit: (e: TuiEvent) => void } {
   const listeners = new Set<(e: TuiEvent) => void>();
@@ -44,11 +46,11 @@ describe("dashboard frame", () => {
     const { renderer, renderOnce, flush, captureCharFrame } = await createTestRenderer({ width: 100, height: 24 });
     const { bridge } = makeBridge();
     createRoot(renderer).render(<App bridge={bridge} />);
-    await settle();
-    await flush();
-    await renderOnce();
+    const shell = await renderUntil({ flush, renderOnce, captureCharFrame }, (f) => f.includes("quit"), {
+      label: "status bar",
+    });
 
-    const lines = captureCharFrame().split("\n");
+    const lines = shell.split("\n");
     expect(lines[0]).toContain("concile");
     expect(lines[0]).toContain("127.0.0.1:3210");
 
@@ -65,11 +67,11 @@ describe("dashboard frame", () => {
     const { renderer, renderOnce, flush, captureCharFrame } = await createTestRenderer({ width: 100, height: 24 });
     const { bridge } = makeBridge();
     createRoot(renderer).render(<App bridge={bridge} />);
-    await settle();
-    await flush();
-    await renderOnce();
-
-    const frame = captureCharFrame();
+    const frame = await renderUntil(
+      { flush, renderOnce, captureCharFrame },
+      containsAll("deployment", "9.9.9"),
+      { label: "deployment facts" },
+    );
     expect(frame).toContain("deployment");
     expect(frame).toContain("_dashboard");
     expect(frame).toContain("cxgr6-v…foI_"); // truncated key only — never the full secret
@@ -84,20 +86,19 @@ describe("dashboard frame", () => {
   it("renders host events in the activity area", async () => {
     const { renderer, renderOnce, flush, captureCharFrame } = await createTestRenderer({ width: 100, height: 24 });
     const { bridge, emit } = makeBridge();
+    const view = { flush, renderOnce, captureCharFrame };
     createRoot(renderer).render(<App bridge={bridge} />);
-    await settle();
-    await flush();
-    await renderOnce();
+    // Wait for the empty state before emitting, so the events cannot be sent
+    // into a screen that has not mounted its activity area yet.
+    await renderUntil(view, (f) => /waiting/i.test(f), { label: "empty activity area" });
 
-    // The screen coalesces host events on a ~frame tick before touching React,
-    // then React commits asynchronously — settle covers both hops.
     emit({ kind: "reload", ok: true, durationMs: 312, functions: 12, at: Date.now() });
     emit({ kind: "reload", ok: false, message: "SyntaxError in messages.ts", at: Date.now() });
-    await settle();
-    await flush();
-    await renderOnce();
-
-    const frame = captureCharFrame();
+    // Host events coalesce on a frame tick before reaching React, and React then
+    // commits asynchronously. Poll across both hops rather than guessing at them.
+    const frame = await renderUntil(view, containsAll("reload", "SyntaxError"), {
+      label: "activity area",
+    });
     expect(frame).toContain("reload");
     expect(frame).toContain("312ms");
     expect(frame).toContain("12 functions");

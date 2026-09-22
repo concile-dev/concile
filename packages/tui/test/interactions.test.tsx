@@ -7,8 +7,11 @@ import { test, expect } from "bun:test";
 import { createTestRenderer } from "@opentui/core/testing";
 import { createRoot } from "@opentui/react";
 import { App } from "../src/app";
+import { renderUntil } from "./render-until";
 
-const settle = (ms = 200) => new Promise((r) => setTimeout(r, ms));
+// Every wait below polls the rendered frame. The fixed setTimeout this
+// replaces was a guess about machine speed: it held locally and expired on CI
+// before the async table load had painted.
 
 let lastFilter: unknown = null;
 
@@ -54,54 +57,56 @@ function makeBridge() {
 async function boot(width = 110, height = 24) {
   const r = await createTestRenderer({ width, height });
   createRoot(r.renderer).render(<App bridge={makeBridge()} />);
-  await settle(120);
-  await r.flush();
-  await r.renderOnce();
+  await renderUntil(r, (f) => f.includes("quit"), { label: "shell" });
   return r;
 }
 
-async function step(r: Awaited<ReturnType<typeof boot>>, ms = 220) {
-  await settle(ms);
-  await r.flush();
-  await r.renderOnce();
+/** Render until `want` holds, so each key press lands on a settled screen. */
+async function step(
+  r: Awaited<ReturnType<typeof boot>>,
+  want: (frame: string) => boolean,
+  label: string,
+) {
+  return renderUntil(r, want, { label });
 }
+
+const openMessages = (f: string) => f.includes("first message here");
 
 test("⏎ inspects the selected row, J/K moves it, esc closes", async () => {
   const r = await boot();
   r.mockInput.pressKey("2");
-  await step(r);
+  await step(r, openMessages, "messages table");
 
   r.mockInput.pressEnter();
-  await step(r);
-  let frame = r.captureCharFrame();
+  let frame = await step(r, (f) => f.includes("document 1/2"), "inspector open");
   expect(frame).toContain("document 1/2");
   expect(frame).toContain("first message here");
 
   r.mockInput.pressKey("J");
-  await step(r);
-  frame = r.captureCharFrame();
+  frame = await step(r, (f) => f.includes("document 2/2"), "inspector moved");
   expect(frame).toContain("document 2/2");
   expect(frame).toContain("grace");
 
   r.mockInput.pressEscape();
-  await step(r);
-  expect(r.captureCharFrame()).not.toContain("document 2/2");
+  const closed = await step(r, (f) => !f.includes("document 2/2"), "inspector closed");
+  expect(closed).not.toContain("document 2/2");
   r.renderer.destroy();
 });
 
 test("f enters a filter and ⏎ sends it to the server as an equality condition", async () => {
   const r = await boot();
   r.mockInput.pressKey("2");
-  await step(r);
+  await step(r, openMessages, "messages table");
 
   r.mockInput.pressKey("f");
-  await step(r, 120);
+  await step(r, (f) => f.includes("filter:"), "filter prompt");
   r.mockInput.typeText("author=ada");
-  await step(r, 120);
-  expect(r.captureCharFrame()).toContain("filter: author=ada");
+  const typed = await step(r, (f) => f.includes("filter: author=ada"), "filter typed");
+  expect(typed).toContain("filter: author=ada");
 
   r.mockInput.pressEnter();
-  await step(r);
+  // The condition reaches the bridge, not the screen, so wait on that instead.
+  await step(r, () => Array.isArray(lastFilter) && lastFilter.length > 0, "filter sent");
   expect(lastFilter).toEqual([{ field: "author", op: "eq", value: "ada" }]);
   r.renderer.destroy();
 });
@@ -109,17 +114,19 @@ test("f enters a filter and ⏎ sends it to the server as an equality condition"
 test(": opens the palette, fuzzy-matches, and ⏎ jumps to the chosen table", async () => {
   const r = await boot();
   r.mockInput.typeText(":");
-  await step(r, 150);
-  expect(r.captureCharFrame()).toContain("screen");
+  const palette = await step(r, (f) => f.includes("screen"), "palette open");
+  expect(palette).toContain("screen");
 
   r.mockInput.typeText("conv");
-  await step(r, 150);
-  const frame = r.captureCharFrame();
+  const frame = await step(r, (f) => f.includes("conversations"), "palette filtered");
   expect(frame).toContain("conversations");
 
   r.mockInput.pressEnter();
-  await step(r);
-  const after = r.captureCharFrame();
+  const after = await step(
+    r,
+    (f) => !f.includes(" ⏎ go · esc cancel") && f.includes("conversations"),
+    "palette closed",
+  );
   expect(after).not.toContain(" ⏎ go · esc cancel"); // palette closed
   expect(after).toContain("conversations");
   r.renderer.destroy();

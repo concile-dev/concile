@@ -10,8 +10,7 @@ import { test, expect } from "bun:test";
 import { createTestRenderer } from "@opentui/core/testing";
 import { createRoot } from "@opentui/react";
 import { App } from "../src/app";
-
-const settle = (ms = 200) => new Promise((r) => setTimeout(r, ms));
+import { renderUntil } from "./render-until";
 
 const bridge = {
   deployment: {
@@ -55,16 +54,15 @@ test("opens on an app table with rows, groups internals under 'system'", async (
     width: 100,
     height: 20,
   });
+  const view = { flush, renderOnce, captureCharFrame };
   createRoot(renderer).render(<App bridge={bridge} />);
-  await settle(120);
-  await flush();
-  await renderOnce();
+  // Wait for the shell before sending input, or the keypress lands on nothing.
+  await renderUntil(view, (f) => f.includes("concile"));
   mockInput.pressKey("2");
-  await settle(300);
-  await flush();
-  await renderOnce();
-
-  const frame = captureCharFrame();
+  // The data browser is ready once a row from getTableData() is on screen. If
+  // it opened on an empty internal table instead, this times out and prints the
+  // frame, which is the regression this file exists to catch.
+  const frame = await renderUntil(view, (f) => f.includes("ada"));
   // Landed on auditLog (the first app table with rows) — not _storage.
   expect(frame).toContain("auditLog");
   expect(frame).not.toContain("no documents in");

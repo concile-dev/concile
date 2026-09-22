@@ -1,0 +1,747 @@
+---
+title: Scaling
+description: The tiered model - single-node free forever, plus a Postgres fleet and an object-storage substrate for multi-node write scale-out under a commercial entitlement.
+---
+
+{/* diataxis: explanation */}
+
+Instead of locking you into one fixed setup, concile actually runs in a series of flexible tiers.
+You can picture it like a building with three distinct floors. You just write your schema, queries,
+mutations, and subscriptions once on the ground floor. After that, your code runs flawlessly whether
+you're tinkering on a laptop with `concile dev`, running a single `concile serve` process, using a
+fleet of nodes sharing a Postgres database, or spreading out across nodes that only share an
+object-storage bucket.
+
+Moving up to the next floor is totally up to you at the infrastructure level. You just use a flag,
+an environment variable, or a schema annotation. This never changes how you write your queries or
+mutations!
+
+This page is all about the deployment side of things. We'll explore what each tier really is, what
+guarantees it provides or lets go of, all the flags and environment variables you'll need, and the
+real numbers backing up these claims. If you're looking for how to author write sharding (like
+`.shardKey()`, `shardBy`, and the runtime errors you might see), be sure to check out [Schema &
+tables](/docs/core-concepts/schema-and-tables#sharding-shardkeyfield) and
+[Mutations](/docs/core-concepts/mutations#sharding-shardby). Here, we're going to focus on what
+sharding means operationally so we don't just repeat those guides.
+
+## The tiered model
+
+| Tier | Shape | Storage | Scales |
+|---|---|---|---|
+| **0/1** | One process | Embedded SQLite, or Postgres | Nothing (one writer, always) |
+| **2 (fleet)** | N symmetric nodes | Shared Postgres | Reads (every tier); writes too, with sharding and multi-writer distribution |
+| **3 (object storage)** | N nodes, no database | An object-storage bucket (S3/R2/MinIO/GCS) + a local SQLite cache per node | Reads and writes, with no shared database at all |
+
+```mermaid
+flowchart TB
+  subgraph T1["Tier 0/1: one process"]
+    A1["concile serve"] --> D1[("SQLite or Postgres")]
+  end
+  subgraph T2["Tier 2: fleet"]
+    W["writer node"] --> PG[("shared Postgres")]
+    Y1["sync node"] --> PG
+    Y2["sync node"] --> PG
+  end
+  subgraph T3["Tier 3: object storage"]
+    N1["node"] --> OS[("S3 / R2 / MinIO")]
+    N2["node"] --> OS
+    N3["node"] --> OS
+  end
+```
+
+Tier 0/1 is completely free forever! You can find all the details about it in
+[Self-hosting](/docs/deploy/self-hosting), [Postgres](/docs/deploy/postgres), and [Deploy and
+build](/docs/deploy/deploy-and-build). In this tier, a single `concile serve` process acts as your
+sole writer. Every single mutation goes straight through it in a fully serializable way, meaning
+there's absolutely zero coordination overhead to worry about. For the vast majority of apps, this is
+exactly the setup you'll want. Tiers 2 and 3 come into play only when you've hit a genuine limit on
+your write throughput, you strictly need failover redundancy, or you're aiming to run without any
+managed database at all. We'll cover each of those in full below.
+
+## When to reach for which tier
+
+- **Start at Tier 0/1.** Honestly, most apps will never need more than one writer. You should only
+  look into a fleet or sharding when you've measured a real bottleneck in your write throughput or
+  need failover capability. Try not to jump into it preemptively!
+- **Reach for the fleet** when you need redundancy or want to handle more read capacity, assuming
+  you're already using Postgres or are willing to make the switch.
+- **Reach for sharding** if a specific table's write volume becomes your actual bottleneck. The
+  great thing is that this is an opt-in, per-table decision rather than a huge all-or-nothing switch
+  for your entire application.
+- **Reach for multi-writer distribution** when sharding alone just isn't cutting it (since that's
+  just parallel writes on a single node) and you want your write throughput to grow alongside your
+  node count.
+- **Reach for the object-storage substrate** if you want to scale out writes across multiple nodes
+  without dealing with a managed database in your deployment at all. The trade-off here is using a
+  newer, slightly less battle-tested setup in exchange for having one less piece of infrastructure
+  to look after.
+
+<Callout type="info" title="Five terms this page leans on">
+
+- **Shard**: An independent lane for commit serialization. Writes inside a single shard are
+  perfectly serializable, and different shards can commit side-by-side in parallel.
+- **Lease**: The record (like a Postgres row or an object-store manifest) that a writer needs to
+  keep renewing to hold onto its status as a shard's writer.
+- **Fence**: The safeguard that guarantees if a writer is evicted or gets stuck, its in-flight
+  commits are aborted safely rather than landing after it loses its lease.
+- **Frontier**: The high-water mark for a shard's committed timestamp. The visibility line across
+  the whole fleet is simply the minimum frontier across every single shard.
+- **Epoch**: A counter that gets bumped every time a shard changes hands. This helps us easily spot
+  and ignore any stale attempts from an old owner.
+
+Feel free to check out the [glossary](/docs/reference/glossary) for the complete list.
+
+</Callout>
+
+## Tier 2: the fleet (`@concile/fleet`)
+
+Running `concile serve --fleet` spins up a small, balanced fleet of `concile serve` processes that
+all share a single Postgres database. You won't find any coordinator service or primary/replica
+flags here! Every node runs the exact same command, and the fleet figures out who does what using a
+lease stored right in the database. The first node to grab a Postgres advisory lock becomes the
+**writer**, and all the rest automatically become **sync nodes**.
+
+### Starting a fleet node
+
+<Tabs items={['CLI flags', 'Environment variables']}>
+
+<Tab value="CLI flags">
+
+```bash
+CONCILE_ADMIN_KEY=secret concile serve \
+  --dir concile \
+  --database-url postgres://user:pass@host:5432/db \
+  --fleet \
+  --advertise-url http://10.0.0.5:3000
+```
+
+</Tab>
+
+<Tab value="Environment variables">
+
+This is super handy for container orchestration. Every node runs the identical command, and only the
+advertised address is different.
+
+```bash
+export CONCILE_ADMIN_KEY=secret
+export CONCILE_DATABASE_URL=postgres://user:pass@host:5432/db
+export CONCILE_FLEET=1
+export CONCILE_ADVERTISE_URL=http://10.0.0.5:3000
+concile serve --dir concile
+```
+
+</Tab>
+
+</Tabs>
+
+- **`--fleet` / `CONCILE_FLEET`** turns fleet mode on.
+- **`--database-url` / `CONCILE_DATABASE_URL`** must point at Postgres. Since SQLite doesn't
+  understand a shared lease across processes, running `--fleet` with SQLite (or no database URL at
+  all) will fail right away when booting.
+- **`--advertise-url` / `CONCILE_ADVERTISE_URL`** is the special URL *other* fleet nodes use to
+  communicate with this specific node. When a node becomes the writer, this URL gets recorded on the
+  lease so sync nodes know where to forward writes and proxy `httpAction`s. Just make sure every
+  node has its own unique value!
+- **The same `CONCILE_ADMIN_KEY` on every node.** Nodes use this key to authenticate with each
+  other's internal forwarding endpoints.
+- **A unique data directory per node.** A node keeps its local replica at `<dir>/fleet-replica.db`
+  alongside whatever `--data` or `CONCILE_DATA_DIR` you provided. We don't validate this, so if two
+  nodes share a directory, they'll quietly overwrite each other's replica files instead of giving
+  you a helpful error.
+- **`@concile/fleet` installed.** The `serve` command loads this using a dynamic `import()` (core
+  concile doesn't statically depend on it). If you try `--fleet` without the package installed,
+  it'll fail quickly and tell you exactly how to install it, rather than throwing a confusing
+  module-not-found error.
+
+Any misconfiguration fails quickly with a really helpful message. Whether you're missing a Postgres
+URL, an advertise URL, `@concile/fleet` isn't installed, or you accidentally combined `--fleet` with
+`--object-store`, it'll tell you exactly how to fix it and exit 1 before anything binds. If you
+don't use `--fleet` at all, you get the standard single-node behavior. You can find all the exact
+messages, plus every fleet flag and environment variable, in [the CLI
+reference](/docs/core-concepts/cli#concile-serve).
+
+When you run `serve`, its machine-readable startup line will add two new fields in fleet mode:
+`{"fleet":true,"role":"writer"}` (or `"sync"`). It only prints this once at boot, so you'll want to
+watch your logs or the dashboard to see if a node gets promoted later on!
+
+### What every request gets
+
+- **Any node serves any request.** A client can open its WebSocket/HTTP connection to *any* node!
+  Queries and subscriptions are always answered locally, meaning you never have to make a round trip
+  to Postgres just for a read (we'll explain the replica model below). If a mutation, action, or
+  `httpAction` request lands on a sync node, it gets transparently forwarded to the current writer
+  over an internal, securely authenticated endpoint. Your client never has to know or care which
+  node is actually the writer.
+- **Reactive updates cross the process boundary.** When the writer commits a change, it sends a
+  `NOTIFY` to Postgres. Meanwhile, every sync node's replica tailer is `LISTEN`ing (and it has a
+  1-second polling fallback just in case a `NOTIFY` is ever missed). The node applies the
+  newly-committed batch, figures out what needs to be invalidated, and then re-runs and pushes the
+  affected subscriptions. The write log acts as your absolute source of truth. If a notification is
+  missed, it just costs a tiny bit of latency, but you'll never actually miss an update!
+
+### Reads served from a local, verbatim-applied replica
+
+Every sync node runs a handy little **replica tailer** that follows the shared Postgres write log.
+It takes each committed batch and applies it verbatim onto a local file-backed SQLite replica at
+`<dir>/fleet-replica.db`. This is the exact same storage engine you'd use for single-node
+self-hosting, it's just being fed by the tail instead of local writes! From then on, all queries and
+subscriptions on that node are served entirely from this local file. The node only uses its Postgres
+connection to pull the next batch of committed writes, never to answer a read. This is the secret
+sauce that keeps your primary read load from growing as your fleet gets bigger.
+
+- **New nodes catch up before reporting ready.** When a node starts cold (or if its replica file was
+  deleted), it takes the time to replay the write log before its startup line prints `"ready":true`.
+  You'll never have to worry about a partial-ready state.
+- **Restarts resume, they don't replay.** If a node is restarted using the same data directory, it
+  simply reopens its replica and resumes right from its own last-applied position.
+- **The replica file is completely safe to delete.** Think of it as a rebuildable mirror, not a
+  source of truth. Feel free to delete it (along with its `-wal` and `-shm` sidecars) and restart.
+  If the file ever gets corrupted, like from a hard crash mid-write, the system detects it and
+  rebuilds it automatically.
+- **A replica reused against the wrong primary is caught and rebuilt automatically.** Every
+  deployment places a one-time identity stamp on the primary, and every replica mirrors that stamp
+  locally. If you ever copy a data directory between environments or attach it to a different
+  database, the node detects this the moment it boots. It will quietly delete the wrong data and
+  rebuild from the current primary, so there's absolutely nothing you need to clean up by hand!
+
+### Read-your-own-writes
+
+When a mutation succeeds on **any** node, you're guaranteed that an immediate follow-up read on
+**that same node** will see the write. This is true even on a sync node that's answering from its
+own local replica! Under the hood, the node waits for its replica to catch up to the mutation's
+commit before handing back the result, with a 5-second maximum wait time. If it hits that 5-second
+limit, the mutation will still return instead of hanging forever. In that very rare case, a read
+immediately following it might be a little stale.
+
+**This awesome feature covers `action` calls too**, including their inner writes. An action's own
+response doesn't have a single commit of its own, but the engine is smart enough to track the
+highest commit timestamp across everything it wrote via any inner `ctx.runMutation` or
+`ctx.runAction` calls. It recursively carries that timestamp right on the response! The forwarding
+node waits on that exact timestamp with the same 5-second bound. If an action doesn't perform any
+writes, it has nothing to wait on and returns the moment the handler finishes.
+
+### Reads survive a Postgres outage, but writes don't
+
+If your shared Postgres database suddenly becomes unreachable, don't panic! Sync nodes will happily
+keep answering queries, and subscriptions will continue pushing updates. They're reading straight
+from that local replica file, which doesn't need a thing from Postgres once it's caught up. However,
+writes aren't quite as tolerant. If a mutation is forwarded to the writer during an outage, it will
+fail visibly as a bounded failure instead of pretending to succeed or hanging indefinitely. We think
+this is much better than queuing them up or serving stale data. The moment Postgres comes back
+online, the writer will pick up committing again, and the entire fleet will reconverge
+automatically.
+
+<Callout type="warn" title="Read availability, not full high availability">
+
+If Postgres goes down, your reads and subscriptions on sync nodes will keep working perfectly.
+Writes, on the other hand, will not work until Postgres is back up and running.
+
+</Callout>
+
+### Backpressure and heartbeat
+
+If a client's connection can't keep up with pushed updates (maybe due to a slow network or a
+backgrounded tab), it won't just endlessly eat up the server's memory. Instead, its outbound updates
+queue up to a strict cap (1 MiB or 200 frames). Once it hits that cap, the server drops the newest
+update rather than queuing it indefinitely. Don't worry, a dropped update isn't lost data! The
+client SDK is smart enough to detect the resulting gap and automatically resyncs by re-subscribing
+its live queries from scratch the next time it hears from the server. Best of all, this requires
+absolutely zero app code on your part. If a connection is completely gone rather than just slow, a
+periodic heartbeat detects it and closes it to free up resources. While neither of these mechanisms
+is specific to fleet mode, they're especially important in a fleet where a single node might be
+fanning out to many more connections.
+
+### Failover timing and in-flight requests
+
+- **A dead writer** (like from a crash, `SIGKILL`, or a bad deploy) releases its Postgres session
+  and its advisory lock just as soon as Postgres notices the connection is gone. A sync node's
+  lease-acquire retry loop polls every 2 seconds or so. This means failover typically wraps up in a
+  couple of seconds, taking up to roughly 10 seconds in the worst case. We've proven this end-to-end
+  by hitting a live writer with `SIGKILL` and watching a sync node promote itself and start serving
+  writes seamlessly!
+- **A writer that's alive but stuck** (due to a GC pause, a frozen process, or a hung transaction)
+  is a completely different kind of failure. Because the process never exits, another node actually
+  has to notice and take over. Every writer's lease carries a time limit called
+  **`CONCILE_FLEET_LEASE_TTL_MS`** (defaulting to `15000`), which it has to keep renewing to stay
+  the writer. Once it stops renewing, another node simply waits out the limit and takes the lease
+  away by fencing it. Any commit the stuck writer had in flight at that exact moment is aborted
+  safely rather than being allowed to land, meaning a write is never left half-applied. The new
+  writer also terminates the stuck writer's database sessions so it can't wake up and quietly keep
+  writing. We measured this end-to-end with the TTL shortened to 4 seconds for testing, and takeover
+  completed about 4.5 seconds after the writer wedged! If the frozen writer ever revives, it
+  discovers its lease is gone and exits on its own. A process supervisor can then restart it,
+  allowing it to rejoin as an ordinary sync node.
+- Lowering `CONCILE_FLEET_LEASE_TTL_MS` makes a wedged-writer takeover much faster, but it comes at
+  the cost of a healthy writer needing to renew more often (which means a transient GC pause could
+  trigger an unnecessary failover). Raising it does the exact opposite. Just remember to set the
+  same value on every single node!
+- **The writer's Postgres connection has its own fixed limits completely independent of the lease.**
+  A single SQL statement is capped at 10 seconds, and an idle-in-transaction session is capped at 5
+  seconds. Either of these limits will cause the offending write to fail visibly instead of letting
+  it hang around.
+- **Any mutation or action in flight against the dying writer at the exact moment it dies will fail
+  visibly** to its caller. We don't magically migrate in-flight requests. You should simply retry
+  from the client or app the exact same way you'd handle any dropped connection.
+- Subscriptions on surviving nodes are completely untouched by a writer failing over. They'll just
+  keep streaming happily from their own local replica throughout the whole process!
+
+### Effectively-once forwarding
+
+Every single forwarded write (whether it's sync-node-to-writer or node-to-node under a multi-writer
+setup) carries a one-time marker. This marker is recorded atomically right alongside the write's
+commit. If the same forwarded write ever gets retried because the original response got lost on its
+way back to the caller, concile will instantly recognize the marker and just hand back the original
+result instead of mistakenly running the write a second time. To put it simply:
+
+- The body of your mutation's handler could technically run more than once if two retries of the
+  very same write end up racing each other concurrently. However, **the durable write itself, and
+  everything it fans out to, will always happen exactly once**, no matter how many concurrent
+  attempts are currently in flight.
+- What if there's a crash in the tiny window after a write commits but before its result is fully
+  recorded? Don't worry! A retry will still confirm that the write succeeded and when it happened,
+  even if it can't recover the exact return value. Just treat this the same as you would any other
+  response dropped after a successful write.
+- **Retry markers are kept around for a full hour.** If a retry happens to arrive after that
+  one-hour window, it will re-execute the write rather than just replaying the old result.
+
+The best part is that absolutely none of this changes how you write your mutations. It's all
+completely automatic on every forwarded write!
+
+### Ops surface
+
+Two plain Postgres tables give you direct visibility into your fleet's state:
+
+- **`fleet_nodes`**: This holds one heartbeated row per live node, tracking things like its
+  advertise URL and presence expiry.
+- **`shard_leases`**: This holds one row per shard to record exactly which node currently owns it.
+  In single-writer mode, every row will just point to the same node. Under multi-writer
+  distribution, different shards will point at different nodes (we'll cover this below).
+
+The `/api/health` endpoint also gets some cool additive fleet fields. You'll see a stringified
+frontier progress marker, how long it's been stuck, and exactly which shard is currently pinning it.
+This is super useful for spotting a stalled shard well before it ever becomes user-visible
+staleness!
+
+### Current limits
+
+- **By default, only one node writes at a time.** Sharded writes will definitely parallelize on that
+  one node, but they won't automatically spread across multiple nodes yet. You'll need to turn on
+  multi-writer distribution (which we cover below) to get that.
+- **A sync node's data-directory uniqueness isn't validated yet.** If you accidentally get this
+  wrong, both nodes' replica states will silently corrupt rather than failing fast, so please be
+  careful!
+- **You get read availability, not full HA.** Keep in mind that writes will still fail during a
+  Postgres outage.
+- **There's no autoscaler and no load balancer included.** You are responsible for starting and
+  stopping the nodes yourself, and you'll need to front the fleet with your own proxy.
+- **`ee/` licensing.** Be sure to see [License and entitlement](#license-and-entitlement) below for
+  all the details.
+
+## Write sharding: the Fenced Frontier model
+
+By itself, a fleet only gives you redundancy and read scale, since one node still acts as the single
+writer. Sharding is the magic that lets your writes actually parallelize! Just annotate a table with
+`.shardKey(field)` and a mutation that writes to it with `shardBy`. Suddenly, that table's writes
+will route across multiple independent shards instead of funnelling through one single bottleneck.
+
+```ts title="concile/schema.ts"
+import { defineSchema, defineTable, v } from "@concile/values";
+
+export default defineSchema({
+  messages: defineTable({
+    conversationId: v.id("conversations"),
+    author: v.string(),
+    body: v.string(),
+  })
+    .index("by_conversation", ["conversationId"])
+    .shardKey("conversationId"), // every message in a conversation lands on one shard
+});
+```
+
+```ts title="concile/messages.ts"
+export const send = mutation({
+  args: { conversationId: v.id("conversations"), author: v.string(), body: v.string() },
+  shardBy: "conversationId",
+  handler: (ctx, args) => ctx.db.insert("messages", args),
+});
+```
+
+If you're looking for the full authoring surface, you can find it in [Schema &
+tables](/docs/core-concepts/schema-and-tables#sharding-shardkeyfield) and
+[Mutations](/docs/core-concepts/mutations#sharding-shardby). That includes the `shardBy` resolver
+form, codegen cross-checks, and every single runtime-enforced rule. For example, a sharded mutation
+must declare a shard, every write in it must route strictly to that shard, the shard-key field is
+immutable after insert, a sharded mutation can only scan its own shard via an index led by the shard
+key, and it can freely insert into global tables but not replace or delete them. These rules fire
+identically whether you're on a laptop running `concile dev`, a single `concile serve`, or a full
+fleet! In fact, `concile dev` runs the full shard count (which is 8 by default) as separate virtual
+shards right in-process, meaning a shard mistake is just a dev-time error and never a production
+surprise. And if your app never declares `.shardKey` or `shardBy`, it remains byte-identical to how
+it was before at every single tier.
+
+### The protocol behind the guarantee: Fenced Frontier
+
+Sharding only works if a subscription spanning multiple shards can never show an effect before its
+cause, and if a wedged writer can never corrupt or fork a shard's history. Concile's design for this
+is called the **Fenced Frontier**. It keeps one global, monotone visibility line even though writes
+are happening on N independent per-shard writers! Here's how it works:
+
+- **Per-shard parallel OCC writers.** Within a single shard, mutations are completely serializable.
+  This is the exact same guarantee a single writer has always given, just partitioned N ways! Each
+  shard gets its very own commit ring and timestamp allocation, all handled safely inside the
+  commit's own Postgres transaction. That means there's no risky window where a timestamp is
+  allocated but unlanded.
+- **The lease, fence, and frontier all share one database row per shard.** Every commit atomically
+  advances that shard's `frontier_ts` right on the same row that holds its writer lease. Evicting a
+  wedged writer is actually just a fencing update on that row! Postgres's own row-locking serializes
+  this against any in-flight commit, so either the straggling commit lands first and gets counted,
+  or the fencer wins and the straggler's commit aborts safely. Because of this, a shard's history
+  can never fork, and no committed timestamp is ever silently skipped (even across a failover).
+- **One global visibility line: F = min(frontier_ts) across every shard.** Queries, subscriptions,
+  and pagination cursors are all evaluated right at F, which is a perfectly stable prefix of the
+  whole system. This means a subscription spanning multiple shards will always see a true consistent
+  snapshot, never a torn or causally inverted view. F is closed cooperatively using a periodic beat
+  plus commit-triggered notifications, rather than relying on a naive per-shard heartbeat. Because
+  of this, it advances promptly on a busy fleet but costs absolutely nothing when idle!
+
+```mermaid
+flowchart LR
+  S1["Shard 1, frontier_ts = 104"] --> F["F = min(frontier_ts) = 101"]
+  S2["Shard 2, frontier_ts = 101"] --> F
+  S3["Shard 3, frontier_ts = 108"] --> F
+  F --> Q["Queries and subscriptions read at F"]
+```
+
+### Consistency: what's serialized and what isn't
+
+- **Within a shard, everything is fully serializable.** This is completely unchanged from a single
+  writer's standard guarantee.
+- **A sharded mutation's reads of unsharded (global) tables get a stable snapshot at F, and they are
+  not serialized against concurrent global writes.** We made this trade-off deliberately. If we
+  tried serializing every shard's global reads against every other shard's global writes, we'd just
+  reintroduce the exact bottleneck that sharding is meant to remove! In practice, this does open a
+  very narrow write-skew window. For example, a permission you just revoked in a global
+  `permissions` or `users` table might still read as effective inside a sharded mutation for a brief
+  window (typically just tens of milliseconds). This is exactly the same class of lag you probably
+  already accept with a bearer token that isn't checked against a live revocation list on every
+  single API call. If a mutation's correctness strictly depends on a perfectly up-to-date global
+  read, you should just run it on the **default shard** instead by using a mutation with no
+  `shardBy`. The default shard owns every global document's read-modify-write and is fully
+  serializable against every other global write.
+- **Queries and subscriptions are completely untouched.** They will always read one consistent
+  snapshot across every shard. This strong guarantee actually predates sharding, and sharding
+  doesn't weaken it one bit!
+
+### Shard count: `CONCILE_FLEET_SHARDS`
+
+The shard count is actually a **deployment-wide constant**, meaning it isn't set per-table or
+per-app:
+
+- **Default: 8**, whether you're using `concile dev`, a single `serve`, or a full fleet.
+- **Set explicitly with `CONCILE_FLEET_SHARDS`** (using a positive integer) before your deployment's
+  very first boot. It reads this just once, persists it, and every subsequent boot just reads that
+  persisted value back.
+- **Immutable after first boot.** If you ever provide a `CONCILE_FLEET_SHARDS` value that disagrees
+  with what's already persisted, it will fail fast at boot rather than silently picking one. Pick a
+  generous number right up front if you expect to need write parallelism! Growing into a larger
+  number later is an offline operation (which we'll cover below), not a live one.
+
+### Changing shard count on a stopped fleet: `concile fleet reshard`
+
+```bash
+concile fleet reshard --shards 16 --database-url postgres://user:pass@host:5432/db
+```
+
+This handy command lets you change a **stopped** Postgres fleet's shard count from N to M. It's
+strictly for Postgres (`--database-url` or `CONCILE_DATABASE_URL` absolutely must resolve to a real
+Postgres URL) and it will flat-out refuse to run against a fleet that has any live nodes. You must
+stop every fleet node first!
+
+The reason this operation is both safe and remarkably fast is because a fleet shard is just a
+**logical commit-serialization lane over one shared Postgres database**, not a physical partition of
+your data. The routing system always recomputes which shard a document belongs to directly from its
+key, meaning nothing about a document's storage actually depends on the shard count. Resharding
+moves absolutely no rows! It just updates the persisted shard count and creates or deletes the
+per-shard lease rows to match. This all happens in one transaction, healing every remaining shard's
+frontier forward so your fleet comes back up fully consistent. After a successful reshard, just
+update `CONCILE_FLEET_SHARDS` (or unset it entirely) on every node before restarting your fleet. The
+command's own output will even tell you exactly the new count to use.
+
+### On a fleet: parallel commits on the writer
+
+By default, all of a sharded table's writes still funnel through whichever single node happens to
+hold the fleet writer role. But here's the cool part: that node commits across its shards **in
+parallel**! It uses separate per-shard connections to Postgres, so your write throughput immediately
+scales with your shard count, blowing past a single writer's usual ceiling even before you start
+spreading shard ownership across multiple nodes.
+
+### Group commit: a single-shard escape hatch
+
+Setting `CONCILE_GROUP_COMMIT=1` batches up any concurrent writes happening on a single shard (or on
+an unsharded fleet, which is essentially just a shard count of 1). This lets them share one Postgres
+round trip instead of each write paying its own network cost!
+
+<Callout type="info" title="Worth trying if a single shard is your write bottleneck">
+
+We measured a solid 1.6x improvement with 64 concurrent clients writing to a single shard!
+
+The default behavior actually depends on your topology. It defaults to off on a fleet node, while a
+single-node (non-fleet) Postgres deployment defaults to on (and SQLite defaults to off). Because a
+sharded fleet is already spreading commits across per-shard connections, it doesn't really get any
+extra benefit from also batching within a shard. It doesn't add extra risk either, since the
+idle-frontier closer treats a shard with an in-flight batch as busy and simply skips it!
+
+</Callout>
+
+### Multi-writer distribution: writes scale with node count
+
+Everything we've described above assumes the default topology: one writer, and every other node
+acting as a read replica. But just one simple environment variable completely changes that! You can
+have different shards owned and written by *different* nodes at the same time, meaning your write
+throughput scales up with your node count as well as your shard count.
+
+```bash
+export CONCILE_FLEET_MULTI_WRITER=1
+```
+
+Make sure you set this on **every** single node. There's no CLI flag for it, just the environment
+variable, and it's meant to be a whole-deployment setting. Mixing nodes with and without this set
+just isn't supported. Once you turn it on:
+
+- **Shard ownership is assigned automatically.** Every live node computes the exact same assignment
+  independently by looking at a small set of rows in the shared Postgres database. That means you
+  don't have to configure any shard-to-node mapping or manage a separate coordinator process!
+- **Placement converges quickly.** Within just a handful of seconds after a membership change (like
+  a node joining, leaving, or dying), everything balances out.
+- **Writers stay fully reactive to each other's commits.** A live subscription open against any
+  writer will keep seeing changes happening to every shard, not just the ones that specific node
+  owns.
+- **Failover happens on a per-shard basis.** Losing a writer node only temporarily stalls the
+  specific shards it owned, not the whole fleet's writes! The other nodes will just keep committing
+  to their own shards throughout the failover process. This uses the exact same
+  `CONCILE_FLEET_LEASE_TTL_MS` timing as single-writer failover.
+- **Adding a node is super fast.** Existing writers notice a healthy newcomer within just a couple
+  of beats and happily hand it its fair share of shards directly, without waiting for anything to
+  expire.
+- **Scheduled functions and crons always run on exactly one node.** They run on whichever node
+  happens to own the "default" shard (the one every unsharded table uses). If that node dies,
+  whichever node picks up the default shard automatically picks up the scheduled work too, so you
+  don't need any separate scheduler configuration!
+- **Reads scale perfectly on every node, even the writers!** In multi-writer mode, a writer node
+  keeps the exact same local replica a sync node does and answers its own reads right from it.
+  Writing is the only thing that goes straight to the shards a node owns. There is one tiny
+  eventually consistent corner to note: a bare one-off query fired immediately after a writer node's
+  own local write might run a beat before the write appears in its own replica. Keep in mind that
+  live subscriptions and forwarded writes are always read-your-own-writes; a raw race against your
+  own just-committed write on the same writer node is the only exception, and it converges within a
+  single replication beat anyway!
+
+### Measured numbers
+
+<Accordions type="single">
+
+<Accordion title="Multi-node write scale-out">
+
+Here's a look at real distributed write throughput using N `serve --fleet` writer nodes (with
+`CONCILE_FLEET_MULTI_WRITER=1`) over one shared Postgres. We tested this with 4 shards per node, and
+the driver routed every write directly to its shard's owner (you can check out
+`docs/dev/research/multinode-throughput.md` for the full harness):
+
+| nodes | shards | aggregate mut/s | scale vs. 1 node |
+|------:|-------:|----------------:|------------------:|
+| 1 | 4 | 675 | 1.00x |
+| 2 | 8 | 943 | 1.40x |
+| 3 | 12 | 1,180 | 1.75x |
+
+As you can see, multi-node write scale-out is absolutely real! The aggregate throughput rises with
+the node count, but it's sublinear. This is because every single node still commits to the exact
+same shared Postgres database, which means they end up contending on that one store's write path.
+The fleet perfectly parallelizes all the engine work (like the executor, OCC, and per-shard commit
+pipelines) across the nodes, making the store itself the true ceiling where diminishing returns kick
+in. True linear write scale-out requires the store to be sharded too, which is exactly what Tier 3
+does!
+
+</Accordion>
+
+<Accordion title="Connections and fan-out">
+
+- When we tested 10,000 concurrent subscribed WebSockets (clean) on one sync node, it used just 7.69
+  KB per connection with 0.4% idle CPU! The hot-fan-out push latency scales linearly at ~19 µs per
+  subscriber (p50 of 20, 95, and 194 ms at 1k, 5k, and 10k concurrent subscribers on one hot query).
+- A 1 vCPU / 512 MB fleet sync node easily holds 2,000 clean subscribers on the shipped Docker image
+  (~102 ms hot-push p50 using 11.9% of its CPU budget, 0.021 MB RSS per connection, and 100%
+  `QueryUnchanged` on reconnect). Capacity actually stayed flat across CPU tiers in this benchmark
+  simply because a Docker Desktop port-forward accept ceiling hit its limit first! So that was a
+  limitation of the harness, not the node's own capacity ceiling.
+- Cross-node fan-out is incredibly fast. A write on one fleet node reaches a live subscription on a
+  completely different node in 15 to 16 ms p50, and this stays flat across the number of connections
+  we tested. 100% of reconnects across nodes resolve as `QueryUnchanged` (and unchanged data costs
+  almost nothing to resume!). Also, hot-fan-out parallelizes across nodes sub-linearly but genuinely
+  (you'll see the per-node CPU drop as node count rises, rather than staying pinned).
+- There's no extra RSS tax for running as a fleet node versus a plain single-node `serve`, but there
+  is a very small, real idle CPU tax (around 2.5% to 3.2% per node) because the tailer and heartbeat
+  machinery have to run even when idle.
+
+</Accordion>
+
+</Accordions>
+
+## Tier 3: the object-storage substrate (`@concile/objectstore-substrate`)
+
+Tier 2's very own benchmark honestly calls out its ceiling: since every fleet node commits to the
+*same* Postgres database, multi-node write scale-out is real but sublinear. The shared store is
+exactly what gets contended, not the engine! Tier 3 fixes this by removing the shared database
+entirely.
+
+In Tier 3, storage and compute are completely separated. The object-storage bucket (whether it's S3,
+R2, MinIO, or any S3-compatible store) acts as a write-only durable log (made up of immutable
+per-shard segments plus periodic snapshots) and a fence. We use one compare-and-swap (CAS) updated
+manifest per shard that simultaneously acts as the lease, the fence, and the frontier. It's the
+exact same lease-fence-frontier identity that the Postgres fleet uses, just beautifully ported over
+to object storage. The bucket itself is never queried! Instead, each node materializes its shard's
+current state into a local, file-backed `docstore-sqlite` (which is the same storage engine every
+other tier uses) and runs the ordinary transactor and query engine against that local file, exactly
+like a fleet's replica tailer already does. This gives you a genuinely different deployment shape: a
+fully reactive, multi-node backend with no database required at all!
+
+### Starting an object-storage node
+
+```bash
+CONCILE_ADMIN_KEY=secret concile serve --dir concile \
+  --object-store s3://accessKey:secretKey@localhost:9000/my-bucket?region=us-east-1
+```
+
+- **`--object-store` / `CONCILE_OBJECT_STORE`** lets you select the backend by URL scheme! Use
+  `s3://`, `s3+http://`, or `s3+https://` for an S3-compatible bucket like AWS S3, MinIO, R2, or
+  GCS. For local development, you can just use `file://<path>` or a bare filesystem path for a
+  single-process store. If you try an unsupported scheme, it gets safely rejected rather than
+  silently falling back to the filesystem. Just note that this is mutually exclusive with `--fleet`,
+  so you'll have to pick one write-scaling story!
+- **`--shards N` / `CONCILE_FLEET_SHARDS`** (only for object-store boots) lets you size a
+  **multi-shard single-node writer**, meaning this node will own and write all N lanes itself. `N =
+  1` is the default single-shard path, which remains completely unchanged. This requires
+  `--object-store` and is invalid if you try combining it with `--replica` (since a replica is
+  always single-shard-per-lane but tails every lane the bucket has) or `--fleet`.
+- **`--replica` / `CONCILE_REPLICA`** boots your node as a **read-only replica** of an
+  object-storage bucket. It neatly materializes and tails every shard lane the bucket currently has
+  (which it figures out directly from the bucket's persisted globals). It serves queries and
+  subscriptions from its local materialized copy and rejects mutations with a friendly "read
+  replica" message. Naturally, this requires `--object-store`.
+- **`--writer-url` / `CONCILE_WRITER_URL`** (only for replica boots) allows a replica to **forward**
+  mutations and actions to a named writer instead of just rejecting them! This uses the exact same
+  write-forwarding model as the Postgres fleet over the engine's shared `WriteRouter` seam. If you
+  don't provide it, a replica simply rejects writes. Note that this isn't supported yet if the
+  bucket has more than one shard (check out [Current limits](#current-limits-1) below).
+- **`CONCILE_OBJECTSTORE_GC_MS`** controls the writer's background garbage-collection sweep cadence
+  (which defaults to around 60 seconds). It actively reclaims segments and snapshots that have
+  already been superseded by a newer snapshot.
+- **`--wake-url` / `CONCILE_WAKE_URL`** and **`--backstop-min-ms` / `CONCILE_BACKSTOP_MIN_MS`** make
+  up the *wake seam*. If your host stops the process between requests (like Cloudflare Containers
+  does), `--wake-url` gives every recurring driver a way to kindly ask the host to wake the process
+  up again. Meanwhile, `--backstop-min-ms` puts a floor on every driver's own backstop poll cadence
+  (`backstopMs = (d) => Math.max(d, n)`), so you aren't paying for a cold start more often than
+  absolutely necessary. If you leave these unset, they act as a no-op, and drivers will just stick
+  to their default 30s/60s cadences.
+
+If you want the full `--object-store` URL grammar (including schemes, credential resolution, and
+some great worked examples), it all lives over in [the CLI
+reference](/docs/core-concepts/cli#concile-serve).
+
+### What's actually shipped
+
+- **Object-first commit.** Every commit grabs its timestamp directly from the shard's manifest,
+  durably writes an immutable segment (`putImmutable`), and then advances the manifest using a CAS
+  (`casManifest`). This gives you the exact same lease-fence-frontier identity as the Postgres
+  fleet's `shard_leases` row, it's just realized as one object instead of a database row! If there's
+  a CAS conflict (meaning another writer moved the manifest first), the loser safely aborts and
+  fences itself.
+- **Snapshots, fast bootstrap, and GC.** Your shard will periodically snapshot its full current
+  state straight to the bucket. When a node opens a shard, it simply restores the very latest
+  snapshot and only has to replay the segments that came after it. This means the bootstrap cost is
+  beautifully proportional to state size plus the unsnapshotted tail, rather than the entire
+  history! A background garbage collection smoothly reclaims segments and snapshots once the current
+  snapshot has superseded them.
+- **Multi-shard, fence, and failover.** Here, the manifest *is* the lease! `acquire` bootstraps a
+  shard and then claims it using an epoch-CAS if it's unowned or if its lease has expired. It will
+  politely outright refuse a live lease held by another writer, meaning no ping-ponging and no
+  coordinator! `heartbeat` CAS-renews it, and a commit against a moved manifest will always
+  self-fence. If an owner crashes, its shard fails over to a new owner the moment its lease expires,
+  and the new owner bootstraps the full state entirely from the bucket.
+- **Replicas and cross-node reactivity.** The `ObjectStoreReplicaTailer` continuously polls a
+  shard's manifest, pulls any new segments, applies them verbatim to a local materialized copy, and
+  gracefully drives that node's own reactive fan-out. A mutation committed by a writer node fans out
+  live to a subscription open on a completely separate replica node, and there's no shared database
+  or shared process anywhere between them! A replica also publishes its own applied watermark so the
+  writer's GC knows to never reclaim a segment that a replica still needs.
+- **Production `serve` integration.** A recurring heartbeat driver automatically renews the writer's
+  lease on a handy timer. If it ever hits a fencing error, it stops the node from serving further
+  writes immediately. A graceful shutdown (`SIGTERM` or `SIGINT`) will call `relinquish()`, which is
+  a best-effort CAS-clear of the lease so another node can take over instantly rather than waiting
+  out the full lease TTL.
+
+### Changing shard count: `concile objectstore reshard`
+
+```bash
+concile objectstore reshard --object-store s3://... --dir concile --shards 4
+```
+
+Unlike the Postgres fleet's reshard, an object-storage shard has its very own physical, append-only
+log. This means that if a document's shard changes, it actually has to be physically moved between
+one lane's log and another's.
+
+<Callout type="warn" title="Non-atomic, and the deployment must be stopped">
+
+This is a genuinely different operation from the fleet reshard we covered earlier! It reads each
+source lane's current state, re-partitions every document based on the new shard count, writes each
+target lane fresh, and only then updates the bucket's persisted shard count as the final
+linearization point.
+
+You should absolutely treat it like any offline data migration. Stop the deployment, make a backup
+first, run the reshard, and then restart with a matching `--shards` parameter (or just leave it out,
+since the bucket's persisted count is authoritative anyway).
+
+</Callout>
+
+### Current limits
+
+- **Write-forwarding to a multi-shard bucket just isn't supported yet.** Running `--replica
+  --writer-url` against a bucket with more than one shard lane will fail fast at boot with a very
+  clear "not yet supported" error, rather than risking a latent per-lane timing hazard. Don't worry
+  though, per-lane forwarding is planned as future work!
+- **A real-cloud benchmark is treated as a documented manual run**, rather than a CI-gated number.
+  That's because it requires live cloud credentials (like AWS S3 or R2) instead of the local MinIO
+  or filesystem harnesses this substrate is otherwise thoroughly proven against.
+- **This is our newest tier.** Simply by construction, it currently has the least production mileage
+  of the three tiers.
+
+## License and entitlement
+
+Everything at Tier 0/1 (like single-node self-hosting on SQLite or Postgres, and the standalone
+binary) is totally free, completely unrestricted, and always will be! You can deploy anywhere on
+your own infrastructure with absolutely no key required.
+
+On the other hand, both `@concile/fleet` (Tier 2) and `@concile/objectstore-substrate` (Tier 3) are
+`ee/`-licensed packages. They are source-available under concile's separate, non-converting
+commercial license, rather than the FSL-1.1-Apache-2.0 license the rest of the repo uses. But good
+news: in the current phase, both are totally free to use in production with no license-key gate at
+all yet! The long-term intent, based on the project's business model, is that a future paid license
+will unlock the `license.has("scale")` capability that these packages rely on. It's the scaling
+capability that the key gates, never your deployment location. You can always deploy anywhere on
+your own infrastructure at any tier! The key just affects whether you can scale past a single
+writer. Keep in mind that core concile has no hard dependency on either `ee/` package. Both `serve
+--fleet` and `serve --object-store` load their package dynamically using `import()`, meaning a
+deployment that never opts into scale-out won't even resolve them.
+
+## Related
+
+- [Schema & tables](/docs/core-concepts/schema-and-tables#sharding-shardkeyfield) and
+  [Mutations](/docs/core-concepts/mutations#sharding-shardby): Everything you need to know about the
+  `.shardKey()` and `shardBy` authoring surface and its exact runtime-enforced rules.
+- [Self-hosting with Docker](/docs/deploy/self-hosting) and [Postgres](/docs/deploy/postgres): A
+  deep dive into the Tier 0/1 baseline that every tier on this page builds upon.
+- [Reactivity](/docs/core-concepts/reactivity): Learn about the range-precise invalidation model
+  that stays completely correct and unchanged across every tier we discussed.
+- [Cloudflare](/docs/deploy/cloudflare): A completely different, Cloudflare-native single-container
+  target, which is not the topology described on this page.
+- [Configuration reference](/docs/reference/configuration): Every single environment variable
+  mentioned on this page, perfectly organized in one table for you!

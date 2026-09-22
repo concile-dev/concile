@@ -1,0 +1,213 @@
+---
+title: Glossary
+description: Plain-language definitions of the terms used across the concile docs.
+---
+
+{/* diataxis: reference */}
+
+Here are some quick definitions for terms you'll see a lot in these docs. They are listed in
+alphabetical order. Feel free to click on any entry to dive deeper into the concept!
+
+### Action
+
+Think of an Action as a function that operates outside of the database transaction. This means it
+can do things like fetch data from the web, check the current time, or generate random numbers.
+Since Actions don't have a direct line to the database, they have to read and write data by using
+`ctx.runQuery` and `ctx.runMutation`. You can read more about them in
+[Actions](/docs/core-concepts/actions).
+
+### Component
+
+A Component is basically a pre-packaged backend feature. This could be a scheduler, workflows,
+authentication, triggers, or notifications. You can mix and match these into your project using
+`concile.config.ts`. Every component comes fully loaded with its own tables, functions, and
+background drivers. Check out [Components](/docs/components/overview) for more details.
+
+### DLR (Differential Log-Tail Reactivity)
+
+This is concile's clever trick for keeping subscriptions lightweight and cheap. Instead of starting
+from scratch and sending you the whole result every time a subscribed query updates, the engine just
+looks at what changed at the very end of the [MVCC log](#mvcc-log) and sends only those updates.
+Want to know how it works? See [Reactivity internals](/docs/contributing/architecture/reactivity).
+
+### Document
+
+A Document is just one record in a table, very much like a row in an SQL database. It's essentially
+a standard JSON style object, but it includes two special system fields: `_id` and `_creationTime`.
+For more on this, head over to [Schema and tables](/docs/core-concepts/schema-and-tables).
+
+### Epoch
+
+An Epoch is like a generation number that a writer grabs whenever it takes the [lease](#lease). If
+any commit tries to use an older epoch number, it gets rejected. This is a neat security measure to
+stop a node that lost its writer role from messing up the state. See [Scaling](/docs/deploy/scaling)
+to learn more.
+
+### Fan-out
+
+We use this term in two different ways. **Commit fan-out** happens when the engine lets every
+subscription know that a committed write just touched its [read set](#read-set--write-set). You can
+read about this in [Reactivity](/docs/core-concepts/reactivity). **Step fan-out**, on the other
+hand, is when a workflow runs a bunch of steps at the same time using `Promise.all` and waits for
+all of them to finish. Check out [Workflows](/docs/components/workflows) for the scoop on that.
+
+### Fence / fencing
+
+Blocking a stale writer from committing after it has lost the writer role, usually by checking its
+[epoch](#epoch) against the current one at commit time. Fencing is what makes failover safe. See
+[Scaling](/docs/deploy/scaling).
+
+### Frontier
+
+The timestamp up to which a client session (or a node) has observed committed writes. concile
+guarantees your session's frontier covers your own commits, so you never read your own write as
+stale. See
+[Reactivity](/docs/core-concepts/reactivity#the-frontier-guarantees-your-own-commit-is-never-stale).
+
+### Group commit
+
+Batching several concurrent commits into one physical database write, so they share a single fsync.
+It raises write throughput without changing any correctness guarantee. See
+[Postgres](/docs/deploy/postgres).
+
+### Idempotent
+
+This means it is completely safe to apply an operation multiple times because the final result stays
+exactly the same. In systems where messages are delivered at least once, like when a
+[trigger](/docs/components/triggers) redelivers a batch or an [outbox](#outbox-the-receipted-outbox)
+resends a mutation, having an idempotent handler is exactly what makes duplicate messages harmless.
+
+### Index
+
+Think of an index as an organized lookup system you set up for a table in your `schema.ts` file.
+Queries rely on it to quickly grab specific documents without having to sift through every single
+one. Also, index ranges help us track reads to make reactivity work smoothly. For more details,
+check out [Schema and tables](/docs/core-concepts/schema-and-tables).
+
+### Lease
+
+A lease acts as a temporary claim on a specific role. We store it in the database and keep it active
+with regular heartbeats. For example, in a server fleet, the writer role functions as a lease. If
+the node holding it goes down and stops sending heartbeats, another node simply steps in to take
+over. You can learn more in [Scaling](/docs/deploy/scaling).
+
+### MVCC log
+
+This is the append-only way concile saves your data. Instead of overwriting a document when you
+update it, concile just tacks on a brand new version along with a timestamp. Keeping this history
+around is exactly what allows us to create consistent snapshots, compare differences, and run
+[triggers](/docs/components/triggers). Dive into [Storage
+internals](/docs/contributing/architecture/storage) to read more about it.
+
+### Mutation
+
+This is basically a function that makes changes to the database. In fact, mutations are the only
+things allowed to write data. Each one runs as a single, isolated transaction, meaning all its
+writes either succeed together or fail completely. Take a look at
+[Mutations](/docs/core-concepts/mutations) for more details.
+
+### OCC (optimistic concurrency control)
+
+This involves running a transaction without locking anything upfront. When it is time to commit, the
+system just checks if another commit sneaked in and changed the data it was reading. If that
+happened, the transaction simply tries again. If not, it goes through. We call it "optimistic"
+because we assume these conflicts won't happen very often. Read more in
+[Transactions](/docs/contributing/architecture/transactions).
+
+### Optimistic update
+
+This is a handy client-side trick to make your user interface feel instant. When you trigger a
+mutation, the app makes a quick local guess about what will happen and updates your views right
+away. Once the real result comes back from the server, it seamlessly swaps out that guess. Check out
+[Optimistic updates](/docs/client/optimistic-updates) to see how it works.
+
+### Outbox (the Receipted Outbox)
+
+Think of this as a sturdy client-side waiting room for your mutations. It keeps them safe even if
+you lose your internet connection or refresh the page. Once you are back online, it sends them off
+in order. Plus, the server sends back receipts to guarantee that a resent mutation never
+accidentally runs twice. Learn more in [Offline sync](/docs/client/offline-sync).
+
+### Query
+
+This is a deterministic function that only reads data. Because it isn't allowed to write anything or
+call unpredictable APIs, the engine can track exactly what it reads and safely run it again whenever
+that underlying data changes. Take a look at [Queries](/docs/core-concepts/queries).
+
+### Reactive query / subscription
+
+This is a query that a client subscribes to using a WebSocket. Instead of the client constantly
+asking for updates, the server simply pushes a fresh result down the wire the moment a new write
+overlaps with what the query was reading. This push based approach is really the heart of concile.
+You can read more about it in [Reactivity](/docs/core-concepts/reactivity).
+
+### Read set / write set
+
+The read set refers to all the index ranges a query looks at while it runs, whereas the write set is
+everything a mutation actually changes. A subscription only needs to re-run when a new commit's
+write set overlaps with its read set. Check out [Reactivity](/docs/core-concepts/reactivity) for
+more details.
+
+### Seam
+
+Think of a seam as a carefully designed, narrow interface that lets you easily swap out one piece
+for another. This could be a storage adapter, a blob store, or even an email provider. By using
+seams, the engine doesn't need to care about which database or cloud platform it is running on. Dive
+into [System design](/docs/contributing/architecture/system-design) for the full picture.
+
+### Shard / shard key
+
+A shard is essentially a slice of your data that comes with its own [single writer](#single-writer).
+This means we can increase write capacity by just adding more shards instead of compromising on
+consistency. The shard key is simply the specific field in your schema that determines which shard a
+particular document belongs to. Check out [Scaling](/docs/deploy/scaling) to read more.
+
+### Single-writer
+
+This is the strict rule that exactly one process is allowed to commit writes at a time for each
+[shard](#shard--shard-key). It is precisely what enables concile to provide serializable
+transactions without needing complex distributed coordination for every single commit. You can dive
+deeper into this in [Transactions](/docs/contributing/architecture/transactions).
+
+### `.concile/`
+
+This folder holds your local working data, and most importantly, it stores the SQLite database file
+that is used when you run `concile dev`. It gets created automatically, so you should definitely add
+it to your `.gitignore` file. Just be careful not to confuse it with the `concile/` directory, which
+is where you actually write and commit your backend functions.
+
+### Syscall boundary
+
+This acts as the bridge between the code you write and the engine itself. Every time you call
+`ctx.db`, that request crosses the boundary as plain, serializable data. This design is what keeps
+your functions deterministic and ready to run securely inside a sandboxed environment. See
+[Execution internals](/docs/contributing/architecture/execution) for more information.
+
+### Tier
+
+A tier refers to a specific deployment shape, and the great thing is your same app code runs
+seamlessly across all of them.
+
+- **Tier 0**: This is a single process using embedded SQLite. It is the default setup and exactly
+  what runs when you use `concile dev`.
+- **Tier 1**: This setup involves a single process but connects to an external Postgres database.
+- **Tier 2**: Here we have a distributed fleet that features sharded writers along with a shared
+  Postgres store.
+- **Tier 3**: This is the pure object storage substrate layer. Nodes coordinate entirely through
+  object storage without relying on any shared database at all.
+
+For a deeper dive, check out [Scaling](/docs/deploy/scaling).
+
+### Transactor
+
+This is the specific part of the engine responsible for running mutations. It operates as a [single
+writer](#single-writer) loop that simply executes a mutation, checks for any [optimistic concurrency
+control](#occ-optimistic-concurrency-control) conflicts, and then finally commits the changes. You
+can read more in [Transactions](/docs/contributing/architecture/transactions).
+
+### UDF (user-defined function)
+
+A UDF is simply any function you write inside the `concile/` folder, whether it is a query, a
+mutation, an action, or an `httpAction`. You will notice the main documentation usually just calls
+them "functions", while our deeper internals pages refer to them as UDFs. Learn more in [Execution
+internals](/docs/contributing/architecture/execution).
