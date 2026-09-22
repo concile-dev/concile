@@ -10,43 +10,7 @@ import { test, expect } from "bun:test";
 import { createTestRenderer } from "@opentui/core/testing";
 import { createRoot } from "@opentui/react";
 import { App } from "../src/app";
-
-/**
- * Render repeatedly until the frame shows what we are waiting for.
- *
- * The screen fills from async bridge calls, so sleeping a fixed number of
- * milliseconds is really a guess about how fast the machine is. The guess held
- * on a laptop and failed on CI, where the rows had not arrived inside 300ms and
- * the assertion read an empty table. Waiting on the state instead of the clock
- * removes the guess: a slow machine just polls a few more times.
- *
- * On timeout it throws with the last frame, because "expected to contain 'ada'"
- * against a blank screen says nothing about which step stalled.
- */
-async function renderUntil(
-  view: {
-    flush: () => Promise<unknown>;
-    renderOnce: () => Promise<unknown>;
-    captureCharFrame: () => string;
-  },
-  want: (frame: string) => boolean,
-  // Under `bun test`'s 5s default, so this throws with the frame attached
-  // rather than the runner killing the test with a generic timeout. Still
-  // ~13x the fixed 300ms wait it replaces.
-  { timeoutMs = 4_000, stepMs = 25 } = {},
-): Promise<string> {
-  const deadline = Date.now() + timeoutMs;
-  for (;;) {
-    await view.flush();
-    await view.renderOnce();
-    const frame = view.captureCharFrame();
-    if (want(frame)) return frame;
-    if (Date.now() >= deadline) {
-      throw new Error(`renderUntil timed out after ${timeoutMs}ms. Last frame:\n${frame}`);
-    }
-    await new Promise((r) => setTimeout(r, stepMs));
-  }
-}
+import { renderUntil } from "./render-until";
 
 const bridge = {
   deployment: {
