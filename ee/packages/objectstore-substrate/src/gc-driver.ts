@@ -88,6 +88,9 @@ export function gcDriver(store: GcableStore, opts: GcDriverOpts): GcDriver {
   return {
     name: "objectStoreGc",
     start(c) {
+      // Cleared on every start: `stop()` sets it so an in-flight sweep can't resurrect the loop, and
+      // the runtime restarts drivers on the SAME instance after a `stopDriversOnly()`.
+      stopped = false;
       ctx = c;
       // Arm-only (no up-front sweep): gc reclaims superseded state, not fresh work — there is nothing
       // urgent to reclaim the instant a node boots, so the first sweep can wait for the normal cadence

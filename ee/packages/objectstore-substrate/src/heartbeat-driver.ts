@@ -141,6 +141,9 @@ export function leaseHeartbeatDriver(store: HeartbeatableStore, opts: LeaseHeart
   return {
     name: "leaseHeartbeat",
     start(c) {
+      // Cleared on every start: `stop()` sets it so an in-flight beat can't resurrect the loop, and
+      // the runtime restarts drivers on the SAME instance after a `stopDriversOnly()`.
+      stopped = false;
       ctx = c;
       // Unlike `receiptsReaper`'s `start()` (which fires an immediate sweep via `wake()`), this
       // driver only ARMS the first timer — the lease was just freshly `acquire()`'d by the caller

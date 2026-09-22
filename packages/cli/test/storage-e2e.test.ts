@@ -5,7 +5,7 @@
  *   • FS (hermetic, no container): the zero-config proxied-upload path — `generateUploadUrl` →
  *     `POST` bytes to our own `/api/storage/upload` endpoint → row flips `ready` → `getUrl` →
  *     `GET` the bytes (200 + Range 206) → `delete`.
- *   • S3 (the ship gate): a REAL `minio/minio` container — the presigned direct-to-bucket path:
+ *   • S3 (the ship gate): a REAL `quay.io/minio/minio` container — the presigned direct-to-bucket path:
  *     `generateUploadUrl` → `PUT` straight to the bucket (never through our server) →
  *     `POST /api/storage/confirm` → `getUrl` → follow the 302 to the signed bucket GET → orphan
  *     reap → `delete` blob reclaim. Gated on Docker like `postgres-e2e.test.ts`.
@@ -260,7 +260,7 @@ async function startMinio(): Promise<{ endpoint: string }> {
     `MINIO_ROOT_PASSWORD=${MINIO_PASS}`,
     "-p",
     "127.0.0.1::9000",
-    "minio/minio",
+    "quay.io/minio/minio",
     "server",
     "/data",
   ]);

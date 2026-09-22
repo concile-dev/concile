@@ -85,6 +85,9 @@ export function receiptsReaper(store: DocStore, opts?: { sweepMs?: number; ttlMs
   return {
     name: "receipts-reaper",
     start(c) {
+      // Cleared on every start: `stop()` sets it so an in-flight pass can't resurrect the loop, and
+      // the fleet restarts drivers on the SAME instance on default-shard re-acquisition (D5).
+      stopped = false;
       ctx = c;
       wake();
     },

@@ -133,6 +133,9 @@ export function globalReactivityPollerDriver(
   return {
     name: "global-reactivity-poller",
     start(c) {
+      // Cleared on every start: `stop()` sets it so an in-flight poll can't resurrect the loop, and
+      // the runtime restarts drivers on the SAME instance after a `stopDriversOnly()`.
+      stopped = false;
       ctx = c;
       if (!c.notifyWrites || !c.subscribedGlobalTables) {
         // Defensive: every real host wires these (see `runtime.ts`'s `driverCtx`), but a bespoke

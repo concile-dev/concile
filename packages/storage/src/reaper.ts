@@ -96,6 +96,9 @@ export function storageReaper(blobStore: BlobStore, opts?: { sweepMs?: number })
   return {
     name: "storage-reaper",
     start(c) {
+      // Cleared on every start: `stop()` sets it so an in-flight pass can't resurrect the loop, and
+      // the fleet restarts drivers on the SAME instance on default-shard re-acquisition (D5).
+      stopped = false;
       ctx = c;
       unsubscribeCommit = c.onCommit((inv) => {
         if (inv.tables.includes(STORAGE_TABLE)) wake();

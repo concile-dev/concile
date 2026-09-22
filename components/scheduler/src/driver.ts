@@ -218,6 +218,12 @@ export function schedulerDriver(): SchedulerDriver {
   return {
     name: "scheduler",
     start(c) {
+      // Cleared on every start, not left one-way. `stop()` sets it so an in-flight pass can't
+      // resurrect the loop after teardown, but the fleet restarts drivers on the SAME instance when
+      // a node re-acquires the default shard (D5, "drivers follow the default shard"). With the
+      // guard still set, `wake()` and `armSweep()` below return early: the driver re-subscribes to
+      // commits and then ignores every one of them, so nothing dispatches and nothing sweeps.
+      stopped = false;
       ctx = c;
       unsubscribeCommit = c.onCommit((inv) => {
         if (inv.tables.some((t) => t.startsWith("scheduler/"))) wake();
