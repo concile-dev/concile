@@ -303,7 +303,7 @@ async function startMinio(): Promise<{ endpoint: string; port: string }> {
     `MINIO_ROOT_PASSWORD=${MINIO_PASS}`,
     "-p",
     "127.0.0.1::9000",
-    "minio/minio",
+    "quay.io/minio/minio",
     "server",
     "/data",
   ]);

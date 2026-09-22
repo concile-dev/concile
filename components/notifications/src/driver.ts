@@ -169,6 +169,9 @@ export function notificationsDriver(config: NotificationsConfig): NotificationsD
   return {
     name: "notifications",
     start(c) {
+      // Cleared on every start: `stop()` sets it so an in-flight pass can't resurrect the loop, and
+      // the fleet restarts drivers on the SAME instance on default-shard re-acquisition (D5).
+      stopped = false;
       ctx = c;
       unsubscribeCommit = c.onCommit((inv) => { if (inv.tables.some((t) => t.startsWith("notifications/"))) wake(); });
       wake();

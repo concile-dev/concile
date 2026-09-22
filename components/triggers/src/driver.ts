@@ -262,6 +262,9 @@ export function triggersDriver(opts: TriggersOpts): TriggersDriver {
   return {
     name: "triggers",
     start(c) {
+      // Cleared on every start: `stop()` sets it so an in-flight pass can't resurrect the loop, and
+      // the fleet restarts drivers on the SAME instance on default-shard re-acquisition (D5).
+      stopped = false;
       ctx = c;
       validateHandlers(ctx, opts); // fail-fast — see ./boot.ts for why this can't be a literal boot step
       unsubscribeCommit = ctx.onCommit((inv) => {
