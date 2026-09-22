@@ -55,6 +55,16 @@ const maybeDescribe = HAS_EMBEDDED_PG ? describe : describe.skip;
  *  cleanup even if a test hangs or errors out. Each process is pushed immediately on spawn. */
 const allSpawnedProcesses: ServeProcess[] = [];
 
+/** Per-process stderr tail, kept from spawn onward. `waitForReadyOrExit` only buffers stderr until
+ *  the ready line; after that the stream flows to nobody and a node's fence/expiry/relinquish lines
+ *  are lost. A convergence timeout on CI then reports the partition and nothing else, which is
+ *  exactly what happened on 2026-09-23: "B holds every shard" with no way to tell a rendezvous
+ *  outcome from an expired presence row. Bounded so a chatty node cannot grow it unboundedly. */
+const STDERR_TAIL_LINES = 40;
+const stderrTails = new WeakMap<ServeProcess, string[]>();
+/** advertise URL per spawned process, so a diagnostic can find "the node that should own shard X". */
+const procAdvertiseUrls = new WeakMap<ServeProcess, string>();
+
 /** The currently-running embedded cluster for the in-flight test — reassigned per `it`, reachable
  *  by the suite's `afterAll` belt-and-braces cleanup. */
 let pgServer: EmbeddedPg | undefined;
@@ -214,7 +224,67 @@ function spawnFleetServe(
     { env: { ...process.env, CONCILE_ADMIN_KEY: ADMIN_KEY, ...extraEnv }, stdio: ["ignore", "pipe", "pipe"] },
   );
   allSpawnedProcesses.push(proc);
+  procAdvertiseUrls.set(proc, advertiseUrl);
+  // A second 'data' listener alongside `waitForReadyOrExit`'s: both receive every chunk, and this one
+  // stays attached for the process's whole life so the tail is there when a diagnostic needs it.
+  const tail: string[] = [];
+  stderrTails.set(proc, tail);
+  let partial = "";
+  proc.stderr.on("data", (chunk: Buffer) => {
+    partial += chunk.toString("utf8");
+    const lines = partial.split("\n");
+    partial = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      tail.push(line);
+      if (tail.length > STDERR_TAIL_LINES) tail.shift();
+    }
+  });
   return proc;
+}
+
+/** Everything a convergence timeout needs to be diagnosable after the fact: every lease and presence
+ *  row INCLUDING expired ones (the partition reader filters those out, which is the whole problem),
+ *  each row's remaining TTL against the server's `now()`, and for every node in `owners` its exit
+ *  status and stderr tail. Never throws: a diagnostic that fails must not mask the real error. */
+async function convergenceDiagnostic(pg: Client, owners: string[]): Promise<string> {
+  const out: string[] = [];
+  try {
+    const leases = await pg.query(
+      `SELECT shard_id, epoch, writer_url, (expires_at < now()) AS expired,
+              round(extract(epoch FROM (expires_at - now())) * 1000)::bigint AS ttl_ms
+         FROM shard_leases ORDER BY shard_id`,
+    );
+    out.push(
+      "  shard_leases (all rows, vs server now()):",
+      ...(leases.rows as Array<{ shard_id: string; epoch: string; writer_url: string | null; expired: boolean; ttl_ms: string }>).map(
+        (r) => `    ${r.shard_id}: epoch=${r.epoch} writer=${r.writer_url ?? "NULL"} ttl=${r.ttl_ms}ms${r.expired ? " EXPIRED" : ""}`,
+      ),
+    );
+    const nodes = await pg.query(
+      `SELECT advertise_url, epoch, (expires_at < now()) AS expired,
+              round(extract(epoch FROM (expires_at - now())) * 1000)::bigint AS ttl_ms
+         FROM fleet_nodes ORDER BY advertise_url`,
+    );
+    out.push(
+      "  fleet_nodes (presence, all rows):",
+      ...(nodes.rows as Array<{ advertise_url: string; epoch: string; expired: boolean; ttl_ms: string }>).map(
+        (r) => `    ${r.advertise_url}: epoch=${r.epoch} ttl=${r.ttl_ms}ms${r.expired ? " EXPIRED" : ""}`,
+      ),
+    );
+  } catch (e) {
+    out.push(`  (lease/presence dump failed: ${e instanceof Error ? e.message : String(e)})`);
+  }
+  for (const proc of allSpawnedProcesses) {
+    const url = procAdvertiseUrls.get(proc);
+    if (url === undefined || !owners.includes(url)) continue;
+    const tail = stderrTails.get(proc) ?? [];
+    out.push(
+      `  node ${url} (pid ${proc.pid}): exitCode=${proc.exitCode} signal=${proc.signalCode}; stderr tail (${tail.length} lines):`,
+      ...tail.slice(-15).map((l) => `    | ${l}`),
+    );
+  }
+  return out.join("\n");
 }
 
 async function stopServe(proc: ServeProcess | undefined): Promise<void> {
@@ -499,7 +569,12 @@ async function waitForConvergedPartition(pg: Client, owners: string[], timeoutMs
       if ([...held].every((u) => owners.includes(u)) && owners.every((u) => held.has(u))) return last;
     }
     if (Date.now() - start > timeoutMs) {
-      throw new Error(`partition did not converge to {${owners.join(", ")}} within ${timeoutMs}ms (last=${partitionSig(last)})`);
+      // `last` is the LIVE partition only (expired leases filtered out), which is why it cannot say
+      // whether a missing owner lost its leases or never got any. The diagnostic below can.
+      throw new Error(
+        `partition did not converge to {${owners.join(", ")}} within ${timeoutMs}ms (last=${partitionSig(last)})\n` +
+          (await convergenceDiagnostic(pg, owners)),
+      );
     }
     await sleep(200);
   }
