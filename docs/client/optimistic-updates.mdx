@@ -5,19 +5,11 @@ description: Instant local UI with exact rollback.
 
 {/* diataxis: how-to */}
 
-Every mutation makes a round trip. Your function runs on the server, commits, and the result comes
-back over the WebSocket. That's usually just a handful of milliseconds, but it's enough to feel
-sluggish on a chat send button or a todo checkbox.
+When you run a mutation, it takes a quick round trip. Your function executes on the server, saves the changes, and sends the result back through the WebSocket. Even though this only takes a few milliseconds, it can feel a bit sluggish if you're waiting for a chat message to send or a task to be checked off.
 
-`withOptimisticUpdate` lets you skip the wait. You render the predicted result the instant the user
-clicks, in the same tick, then swap to the real committed value with no flicker: the frame where your
-guess disappears is the same frame the real row appears.
+That is where `withOptimisticUpdate` comes in to save the day. It lets you skip the waiting game. You can show the expected result the very instant your user clicks. Then, it seamlessly swaps in the actual saved data without any annoying flickering. The moment your temporary guess goes away, the real data takes its place on the exact same frame.
 
-This page covers the whole v1 surface: `useMutation(...).withOptimisticUpdate(...)`, the
-`OptimisticLocalStore` your updater receives, and the reconciliation guarantee behind it. There's no
-`defineLocalMutators` registry, no pending or failed-queue accessors, and no optimistic support for
-actions (an action has no commit timestamp to gate a layer's removal on, see
-[Actions](/docs/core-concepts/actions)).
+In this guide, we will walk you through the entire v1 setup. We cover `useMutation(...).withOptimisticUpdate(...)`, the `OptimisticLocalStore` that your updater works with, and the behind the scenes magic that guarantees a smooth swap. Just keep in mind that we don't use a `defineLocalMutators` registry, pending or failed queue accessors, or optimistic support for actions since actions don't have a commit timestamp to help manage the layers. You can learn more about that in [Actions](/docs/core-concepts/actions).
 
 ## Chain `.withOptimisticUpdate` onto `useMutation`
 

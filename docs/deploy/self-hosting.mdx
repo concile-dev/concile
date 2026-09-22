@@ -5,28 +5,19 @@ description: concile serve and docker compose up, the baseline production self-h
 
 {/* diataxis: how-to */}
 
-Think of `docker compose up` as the one command that starts your whole backend: the sync engine,
-the HTTP API, any `httpAction` webhooks, and the dashboard, all in one container.
+Think of `docker compose up` as the single magic command that brings your entire backend to life. It spins up the sync engine, the HTTP API, any `httpAction` webhooks, and the dashboard, all bundled into one container.
 
-This is the baseline way to self-host concile. A generic `concile:latest` image runs
-`concile serve`, your app's `concile/` folder is mounted in, and its SQLite database sits on a
-named volume so data survives restarts.
+This is the standard way to self-host concile. We use a generic `concile:latest` image that runs `concile serve`. Your app's `concile/` folder gets mounted right in, and the SQLite database rests on a named volume to ensure your data sticks around between restarts.
 
-This page covers `serve` itself (what it hardens versus `dev`, and every flag and environment
-variable it reads), the shipped Docker setup and why its two non-obvious fixes exist, the
-immutable-image alternative, and what's deliberately left to a reverse proxy.
+On this page, we'll dive into `serve` itself, looking at how it differs from `dev` and reviewing all the flags and environment variables it uses. We'll also explore the included Docker setup, explain a couple of tricky fixes under the hood, check out the immutable-image option, and talk about what we intentionally leave for a reverse proxy to handle.
 
 ## `concile serve`: the production entrypoint
 
-`concile serve` is `concile dev` minus the file watcher and codegen-write, plus production
-hardening.
+Think of `concile serve` as the grown-up, production-ready sibling to `concile dev`. It skips the file watcher and codegen-write features to give you some serious, solid production hardening instead.
 
-Both share one boot core, `bootProject()` (`packages/cli/src/boot.ts`). It loads the project,
-composes components, opens the store, and builds the `EmbeddedRuntime` and `AdminApi` with
-byte-identical options either way: routes, drivers, boot steps, context providers, table numbers.
+Under the hood, they both run on the exact same boot core: `bootProject()` (found in `packages/cli/src/boot.ts`). This core handles loading the project, composing components, opening the store, and building out the `EmbeddedRuntime` and `AdminApi`. Whether you're in dev or serve mode, things like routes, drivers, boot steps, context providers, and table numbers are completely identical.
 
-Nothing about how your functions run (schedulers, workflows, actions, `httpAction`s, triggers) is
-`dev`-only or `serve`-only. Only the process-level behavior around that shared core differs:
+When it comes to how your functions run, like schedulers, workflows, actions, `httpAction`s, and triggers, there are no special features limited to just `dev` or `serve`. It's only the process-level behaviors wrapped around that shared core that actually change:
 
 | | `concile dev` | `concile serve` |
 |---|---|---|
@@ -38,19 +29,15 @@ Nothing about how your functions run (schedulers, workflows, actions, `httpActio
 
 ### Fail-fast checks, before anything binds
 
-`serveCommand` validates two things up front, before opening the store or binding a port, and exits
-`1` with a one-line, actionable message on either:
+Before it even tries to open the store or bind a port, `serveCommand` checks a couple of quick things. If either check fails, it exits with an error code of `1` and gives you a clear, actionable message:
 
-1. **`CONCILE_ADMIN_KEY` must be set and non-blank.** There is no default and no fallback. A
-   trimmed-empty value is treated as unset.
+1. **You must provide a `CONCILE_ADMIN_KEY`, and it can't be blank.** There aren't any defaults or fallbacks here, and if you just pass in spaces, it treats it as completely empty.
 
    ```text
    ✗ CONCILE_ADMIN_KEY is required for `serve`: set it to a strong secret.
    ```
 
-2. **`<dir>/_generated/server.ts` must already exist.** `serve` never runs codegen. That step
-   belongs in your build/CI pipeline, not on every production boot. Generate it and commit it
-   before deploying:
+2. **The `<dir>/_generated/server.ts` file needs to exist already.** Unlike dev mode, `serve` won't run codegen for you. That step is best left to your build or CI pipeline instead of running every time you boot up in production. Make sure to generate and commit this file before you deploy:
 
    ```bash
    concile codegen --dir concile
@@ -62,51 +49,35 @@ Nothing about how your functions run (schedulers, workflows, actions, `httpActio
 
 ### Binding and graceful shutdown
 
-`serve` binds `0.0.0.0` by default, versus `dev`'s loopback-only bind. It's meant to be reached from
-outside the container or host, and a reverse proxy or the Docker port mapping is what actually
-exposes it publicly.
+By default, `serve` binds to `0.0.0.0`, which is a bit different from `dev`'s loopback-only setup. We designed it this way so it can be reached from outside the container or host. To actually expose it to the public, you'll typically use a reverse proxy or Docker port mapping.
 
-`SIGTERM` and `SIGINT` both trigger the same idempotent shutdown sequence. It's safe to receive
-twice: a second signal while shutting down is a no-op.
+When it's time to stop, both `SIGTERM` and `SIGINT` kick off the exact same safe shutdown sequence. It's perfectly fine if it receives the signal twice. If a second signal comes in while it's already shutting down, it just ignores it quietly.
 
-1. Stop the fleet node, if running one (`--fleet`).
-2. `server.close()`: stops every registered driver (scheduler, triggers, reapers, wake heartbeats)
-   and closes listening sockets.
-3. Release any object-storage lease (`--object-store`), best-effort, bounded to 2 seconds so an
-   unreachable bucket can't hang shutdown past a container's grace period.
-4. `store.close()`: closes the database connection or file handle.
+1. It stops the fleet node if you happen to be running one with `--fleet`.
+2. It calls `server.close()`, which halts all registered drivers like the scheduler, triggers, reapers, and wake heartbeats, and securely closes any listening sockets.
+3. It tries its best to release any object-storage lease if you're using `--object-store`. It gives this about 2 seconds, just to ensure an unreachable bucket doesn't cause a hang during the container's grace period.
+4. It calls `store.close()` to properly shut down the database connection or file handle.
 5. `process.exit(0)`.
 
-This is what makes `docker compose down` / `docker stop` (which send `SIGTERM`, then `SIGKILL` after
-a grace period) a clean stop rather than a killed process. The store is closed before exit, not left
-in a torn state.
+This careful sequence is exactly why commands like `docker compose down` or `docker stop` result in a clean, graceful stop instead of an abruptly killed process. Those commands send a `SIGTERM` followed by a `SIGKILL` after a short grace period. Thanks to our shutdown steps, the store closes safely before exiting, ensuring your database is never left in a broken or torn state.
 
 ### What it serves
 
-One process answers everything on one origin: the sync WebSocket, `/api/run` and `/api/action` HTTP
-endpoints, `httpAction` routes from your app's `http.ts`, the always-on `/api/storage/*` file-serving
-routes, any component-contributed routes (for example `@concile/auth`'s OAuth callbacks), and,
-unless disabled, the dashboard SPA at `/_dashboard`.
+A single process handles everything on one origin. This includes the sync WebSocket, the `/api/run` and `/api/action` HTTP endpoints, your `httpAction` routes from `http.ts`, and the always-available `/api/storage/*` file-serving routes. It also takes care of any custom routes contributed by components, like OAuth callbacks from `@concile/auth`, and it even serves the dashboard SPA at `/_dashboard` unless you've turned it off.
 
 ### The dashboard is served key-less
 
-Unlike `dev`, which embeds its ephemeral admin key directly into the dashboard's HTML (safe, because
-that key only ever exists on loopback), `serve` calls `loadDashboard(undefined)`. The admin key is
-**never** baked into the HTML the browser receives.
+In `dev` mode, the ephemeral admin key is embedded right into the dashboard's HTML. That's perfectly safe since it only ever lives on your local loopback. But `serve` does things differently by calling `loadDashboard(undefined)`. This means the admin key is **never** baked into the HTML that gets sent to the browser.
 
-Instead, the dashboard SPA prompts you for the key on load. You paste in whatever you set
-`CONCILE_ADMIN_KEY` to, and it's used from then on to authenticate `/_admin` calls.
+Instead, when the dashboard SPA loads up, it will ask you for the key. Just paste in whatever secret you assigned to `CONCILE_ADMIN_KEY`, and it will handle authenticating your `/_admin` calls from then on.
 
-This matters because a `0.0.0.0`-bound `serve` is reachable by anyone who can reach the port.
-Embedding a persistent secret in served HTML would leak it to any visitor, not just the operator.
+This is a really important security measure. Because `serve` is bound to `0.0.0.0`, anyone who can reach that port could potentially access it. If we embedded a persistent secret directly into the HTML, it would be exposed to every single visitor, not just you as the operator.
 
 ## Flags and environment variables
 
-Every `serve` option can be set as a CLI flag or an environment variable. Where both exist, **the
-flag wins**.
+You can configure every `serve` option using either a CLI flag or an environment variable. If you happen to provide both, **the flag will always take priority**.
 
-`serve` reads env vars once at startup. There's no live reconfiguration, so restart to change any of
-these.
+Keep in mind that `serve` only reads environment variables once during startup. We don't support live reconfigurations right now, so if you need to change any of these settings, you'll just need to give the process a quick restart.
 
 | Flag | Env var | Default | What it does |
 |---|---|---|---|
@@ -121,21 +92,19 @@ these.
 | `--storage-endpoint <url>` | `CONCILE_STORAGE_ENDPOINT` | AWS default | Custom S3 endpoint (MinIO, R2, etc.), only meaningful alongside a bucket. |
 | `--web <dir>` | `CONCILE_WEB_DIR` | unset | Serve a static frontend (`index.html` + assets) at the site root, same origin as the sync WebSocket. |
 
-`CONCILE_ADMIN_KEY` is required and has no flag equivalent. That's deliberate: a secret belongs in
-the environment, not in a process argument list visible via `ps`.
+You'll notice that `CONCILE_ADMIN_KEY` is required but doesn't have a matching CLI flag. We did this on purpose! Secrets should live safely in your environment variables, not in a process argument list where anyone running `ps` could easily spot them.
 
 ## Docker: the baseline self-host path
 
 <Callout title="Before you start">
 
-You need a `concile/` directory with **committed `_generated/`**. `serve` fails fast without it, as
-covered above. Generate it before building the image:
+Make sure you have a `concile/` directory with your **committed `_generated/`** folder. As we mentioned earlier, `serve` will quickly fail if it can't find it. Just generate it before you build your image:
 
 ```bash
 concile codegen --dir concile
 ```
 
-You also need Docker and Docker Compose.
+You'll also need to have Docker and Docker Compose installed and ready to go.
 
 </Callout>
 
@@ -145,16 +114,13 @@ You also need Docker and Docker Compose.
 
 ### Set a strong admin key
 
-Put it in a `.env` file next to `docker-compose.yml`. Compose loads `.env` automatically:
+First things first, drop your key into a `.env` file right next to your `docker-compose.yml`. Docker Compose is smart enough to load `.env` files automatically for you:
 
 ```bash title=".env"
 CONCILE_ADMIN_KEY=$(openssl rand -hex 32)
 ```
 
-The shipped `docker-compose.yml` requires this at the environment-variable level
-(`CONCILE_ADMIN_KEY: ${CONCILE_ADMIN_KEY:?set CONCILE_ADMIN_KEY in a .env file}`). Compose
-itself refuses to start the container if the variable is unset, before `serve`'s own check ever
-runs.
+The `docker-compose.yml` file we provide actually enforces this at the environment-variable level using `CONCILE_ADMIN_KEY: ${CONCILE_ADMIN_KEY:?set CONCILE_ADMIN_KEY in a .env file}`. Because of this, Compose will kindly refuse to even start the container if the variable is missing, stopping things before `serve` even gets a chance to run its own checks.
 
 </Step>
 
@@ -166,7 +132,7 @@ runs.
 docker compose up
 ```
 
-The shipped `docker-compose.yml`:
+Here's a look at the `docker-compose.yml` file we include:
 
 ```yaml title="docker-compose.yml"
 services:
@@ -190,10 +156,7 @@ volumes:
   concile-data:
 ```
 
-This builds the `runner` stage of the repo `Dockerfile`, binds the container to `0.0.0.0:3000`,
-bind-mounts `./concile` **read-only** into `/app/concile`, and persists SQLite on the named
-`concile-data` volume at `/data/db.sqlite`. The container's command is exactly
-`serve --dir /app/concile --data /data/db.sqlite`.
+This configuration builds the `runner` stage from the repository's `Dockerfile`. It then binds the container to `0.0.0.0:3000`, bind-mounts your `./concile` folder **read-only** into `/app/concile`, and keeps your SQLite data safe on a named volume called `concile-data` at `/data/db.sqlite`. The exact command the container runs is simply `serve --dir /app/concile --data /data/db.sqlite`.
 
 ```mermaid
 flowchart LR
@@ -208,10 +171,7 @@ flowchart LR
 
 ### Open the dashboard
 
-`http://localhost:3000/_dashboard`. Paste the admin key from `.env` when prompted (see "The
-dashboard is served key-less" above for why it prompts instead of just working). The API itself is
-reachable at `http://localhost:3000`: sync WebSocket, `/api/*` HTTP, `httpAction` routes, all on the
-same origin.
+Head over to `http://localhost:3000/_dashboard`. When it asks, paste in the admin key you saved in your `.env` file. If you're wondering why it prompts you instead of just logging you in automatically, check out the 'The dashboard is served key-less' section above! Your API is ready and waiting at `http://localhost:3000`, handling the sync WebSocket, `/api/*` HTTP traffic, and your `httpAction` routes seamlessly on the same origin.
 
 </Step>
 
@@ -219,9 +179,7 @@ same origin.
 
 ### Confirm data survives a restart
 
-The SQLite database lives on the `concile-data` Docker volume, not inside the container's
-writable layer. `docker compose down && docker compose up` does not lose data. Only
-`docker compose down -v` (which explicitly deletes volumes) does.
+Your SQLite database is safely tucked away on the `concile-data` Docker volume rather than sitting in the container's temporary writable layer. This means you can run `docker compose down && docker compose up` without losing a single byte of data. The only time your data is removed is if you explicitly tell Docker to delete the volumes by running `docker compose down -v`.
 
 </Step>
 
@@ -257,24 +215,15 @@ docker compose up -d
 
 <Accordion title="Why the image works: two non-obvious fixes">
 
-The `Dockerfile`'s `runner` stage looks like a standard Turborepo/Bun slim-runner build (prune,
-install, build, non-root copy). But two fixes exist specifically because of how a **bind-mounted**
-app directory resolves modules and how a **fresh named volume** is owned. Both were caught only by
-running a real container, not by any host-based test.
+At a glance, the `runner` stage in our `Dockerfile` looks like your typical Turborepo or Bun slim-runner build, complete with prune, install, build, and a non-root copy. However, we've included two specific fixes to handle quirks with how a **bind-mounted** app directory resolves modules and how ownership is assigned on a **fresh named volume**. We actually only caught these issues by testing with a real container, since typical host-based tests missed them entirely.
 
 **1. Workspace packages are symlinked into the root `node_modules`**
 
-`turbo prune --docker` (used in the `prepare` stage) plus Bun's install keep workspace
-`@concile/*` package links **nested per-package**, for example
-`/app/packages/cli/node_modules/@concile/executor`, never at `/app/node_modules`.
+When we use `turbo prune --docker` in the `prepare` stage alongside Bun's install process, the workspace links for `@concile/*` packages end up nested within each individual package. For example, you might see them at `/app/packages/cli/node_modules/@concile/executor`, but they never make it up to the root `/app/node_modules`.
 
-That's fine for code living inside a workspace package. But your bind-mounted `/app/concile` is not
-under any package. Its bare `import "@concile/values"` (every `schema.ts`) and the
-`_generated/server` module's re-export of `@concile/executor` resolve by walking **up** to
-`/app/node_modules`, and find nothing there.
+This behavior is totally fine for code that lives inside a workspace package. However, your bind-mounted `/app/concile` isn't part of any package. When it tries a bare import like `import "@concile/values"` found in every `schema.ts`, or when the `_generated/server` module tries to re-export `@concile/executor`, it walks up the directory tree to `/app/node_modules` and sadly finds nothing.
 
-This broke the default bind-mount self-host path for every app until the `runner` stage was given
-an explicit fixup:
+This tiny detail broke the default bind-mount self-host path for every app. To fix it, we added an explicit workaround in the `runner` stage:
 
 ```dockerfile title="Dockerfile"
 RUN <<'EOF'
@@ -295,50 +244,32 @@ bun -e '
 EOF
 ```
 
-This walks every `packages/*` and `components/*` package's `package.json` and symlinks its
-`@concile/*` name straight into `/app/node_modules/`, so a mounted (or baked-in) `concile/`
-resolves its imports exactly the way it would in a normal workspace checkout.
+This handy little script walks through the `package.json` of every package in `packages/*` and `components/*`. It then symlinks the `@concile/*` name directly into `/app/node_modules/`. This clever trick ensures that a mounted or baked-in `concile/` folder resolves its imports exactly as it would if you were working in a standard workspace checkout.
 
 **2. `/data` is chowned to the non-root `bun` user before dropping privileges**
 
-The `runner` stage runs as the image's built-in non-root `bun` user (uid 1000), and `/data` is a
-`VOLUME`. A **fresh** named volume inherits the ownership of the directory it's mounted over at
-image build time: `root:root`, since the `COPY --chown=bun:bun` earlier in the stage only chowns
-the copied application files, not directories created afterward.
+The `runner` stage operates as the image's built-in, non-root `bun` user, which has a uid of 1000, while `/data` is set up as a `VOLUME`. Here's the catch: a **fresh** named volume inherits the ownership of whatever directory it's mounted over during the image build process. Because the `COPY --chown=bun:bun` step earlier only updates the ownership for the copied application files and not for directories created later, the volume ends up owned by `root:root`.
 
-Without an explicit fix, uid-1000 `bun` can't create `/data/db.sqlite` (`EACCES`), and the container
-crash-loops on the **very first** `docker compose up` under `restart: unless-stopped`. The fix runs
-while still root, before `USER bun`:
+Without a fix, the non-root `bun` user can't create the `/data/db.sqlite` file due to a permissions error (`EACCES`). This causes the container to enter a crash loop right away on the very first `docker compose up` if you're using `restart: unless-stopped`. To solve this, we run a quick fix while we still have root privileges, right before switching to `USER bun`:
 
 ```dockerfile title="Dockerfile"
 RUN mkdir -p /data /app/.concile-deploy && chown bun:bun /data /app /app/.concile-deploy
 USER bun
 ```
 
-(The same `RUN` also creates and chowns `/app/.concile-deploy`, the scratch directory
-`concile deploy`'s push target writes to. It's the same class of bug: `/app`'s directory node
-itself is still root-owned after the earlier `COPY` chowned only its *contents*.)
+(You might notice that the same `RUN` command also creates and changes the ownership for `/app/.concile-deploy`. This is a handy scratch directory that the push target for `concile deploy` needs to write to. It prevents the exact same type of bug where the `/app` directory itself remains root-owned because the earlier `COPY` only affected its internal contents.)
 
-Both fixes are guarded against regression by a text-assertion test
-(`packages/cli/test/docker-config.test.ts`) that checks for the symlink script and the `chown`
-line. But the underlying bugs were only found by actually running `docker compose up` against a
-real fixture app, not by any test that runs on the host.
+To make sure these fixes don't get accidentally removed, we protect them with a text-assertion test located at `packages/cli/test/docker-config.test.ts`. This test specifically looks for the symlink script and the `chown` line. That being said, we wouldn't have discovered the underlying bugs in the first place without actually running `docker compose up` against a real test app, proving that host-based testing doesn't always catch everything.
 
-**Both container deploy paths, the bind-mount path and the immutable-image path, have been
-smoke-verified end to end against a real container**: build, boot as non-root, `/api/health`, a
-committing mutation via `POST /api/run`, read-back, data surviving a container recreate on the
-volume, and the dashboard served key-less.
+**We've thoroughly smoke-tested both the bind-mount and immutable-image deploy paths end-to-end with a real container.** This includes testing the build process, ensuring it boots correctly as a non-root user, hitting the `/api/health` endpoint, committing a mutation through `POST /api/run`, reading the data back, verifying that data survives when the container is recreated on the volume, and finally, making sure the dashboard is properly served without a baked-in key.
 
 </Accordion>
 
 <Accordion title="Bake the app into an immutable image">
 
-The default compose file bind-mounts `concile/` at run time. That's convenient for local
-self-hosting, but the image alone isn't a deployable artifact: it's empty without the mount.
+By default, our compose file bind-mounts the `concile/` folder at run time. While this is super convenient for local self-hosting, the image itself isn't a fully deployable artifact on its own, as it sits empty without that mount.
 
-For an immutable image, one you can push to a registry and deploy elsewhere without carrying a
-separate `concile/` directory around, build a small wrapper `Dockerfile` on top of
-`concile:latest` that copies your app in instead of mounting it:
+If you want an immutable image that you can confidently push to a registry and deploy anywhere without needing to drag along a separate `concile/` directory, the solution is easy. Just create a lightweight wrapper `Dockerfile` on top of `concile:latest` that copies your app directly into the image instead of mounting it:
 
 ```dockerfile title="Dockerfile"
 FROM concile:latest
@@ -352,23 +283,15 @@ docker build -t myapp:latest .
 docker run -p 3000:3000 -e CONCILE_ADMIN_KEY=... -v concile-data:/data myapp:latest
 ```
 
-Because the root-`node_modules` symlink fixup above is part of the base `concile:latest` image
-(baked into the `runner` stage, not something the bind-mount does at run time), a `COPY`ed
-`concile/` resolves its `@concile/*` imports exactly the same way a mounted one does. No extra
-step is needed in the wrapper `Dockerfile`.
+Because we already baked the root `node_modules` symlink fix into the `runner` stage of the base `concile:latest` image, it's not relying on any runtime bind-mount magic. This means that a `COPY`ed `concile/` folder will resolve all of its `@concile/*` imports seamlessly, exactly like a mounted one would. You won't need to add any extra workarounds to your wrapper `Dockerfile` at all.
 
 </Accordion>
 
 <Accordion title="Multi-node and object-storage flags (advanced)">
 
-`serve` also accepts `--fleet`/`CONCILE_FLEET`, `--advertise-url`, `--object-store`,
-`--replica`, `--shards`, and related knobs. These select the multi-node write-scaling story
-(`ee/`-licensed) or the object-storage substrate. Both are their own tier above the single-node
-baseline this page covers. See [Scaling](/docs/deploy/scaling) and
-[Cloudflare](/docs/deploy/cloudflare) for those.
+You'll also notice that `serve` accepts a bunch of extra flags like `--fleet` or `CONCILE_FLEET`, `--advertise-url`, `--object-store`, `--replica`, and `--shards`. These special knobs help you configure the multi-node write-scaling capabilities, which require an `ee/` license, or set up the object-storage substrate. These features are a step above the basic single-node setup we're talking about here. If you're curious to learn more about them, feel free to dive into our [Scaling](/docs/deploy/scaling) and [Cloudflare](/docs/deploy/cloudflare) guides.
 
-`--fleet` and `--object-store` are mutually exclusive; neither is needed to self-host a single node
-with `docker compose up`.
+Just keep in mind that `--fleet` and `--object-store` don't play well together. They are mutually exclusive, and honestly, you don't need either of them to successfully self-host a single node using `docker compose up`.
 
 </Accordion>
 
@@ -376,21 +299,13 @@ with `docker compose up`.
 
 ## Using Postgres
 
-SQLite is the zero-config default. Point `serve` at Postgres instead with `--database-url` or
-`CONCILE_DATABASE_URL`. No other change to the compose file's shape is required beyond swapping
-the SQLite volume for the connection string.
+SQLite comes ready to go as our zero-configuration default. If you prefer to use Postgres, simply point `serve` to it using the `--database-url` flag or the `CONCILE_DATABASE_URL` environment variable. You won't need to drastically change your compose file either. Just swap out the SQLite volume for your Postgres connection string, and you're good to go.
 
-Postgres is a **single-node durability** upgrade (a managed database instead of a SQLite file on a
-volume) via a `pg_advisory_lock` single-writer guard, not multi-node scale-out. It needs no
-app-schema migrations as `schema.ts` evolves. See [Postgres](/docs/deploy/postgres) for the full
-compose example, the single-writer constraint, and its known limitations.
+Switching to Postgres offers a fantastic **single-node durability** upgrade by moving from a basic SQLite file to a fully managed database. It uses a `pg_advisory_lock` to act as a single-writer guard, though it's important to note this isn't for multi-node scale-out. The best part is you won't ever need to deal with app-schema migrations as your `schema.ts` evolves. Take a look at our [Postgres](/docs/deploy/postgres) guide to see a full compose example, read up on the single-writer constraint, and check out a few known limitations.
 
 ## Other platforms (Railway, Fly.io)
 
-Any platform that can run a long-lived process with WebSocket support and a persistent disk can
-host `concile serve`; Docker is the baseline, not a requirement. The checklist is always the
-same: set `CONCILE_ADMIN_KEY` as a platform secret (never in a config file), mount a persistent
-volume for the data directory, and point health checks at `GET /api/health`.
+Docker is a fantastic starting point, but it's not a strict requirement! Any platform capable of running a long-lived process with WebSocket support and a persistent disk can happily host `concile serve`. No matter where you deploy, the checklist remains identical. Always set your `CONCILE_ADMIN_KEY` securely as a platform secret rather than keeping it in a raw config file. Be sure to mount a persistent volume for your data directory, and point any health checks to `GET /api/health`.
 
 <Tabs items={['Railway', 'Fly.io']}>
 
@@ -410,7 +325,7 @@ source = "data"
 destination = "/app/data"
 ```
 
-Set `CONCILE_ADMIN_KEY` in the service's Railway variables. Railway terminates TLS for you.
+Just be sure to add your `CONCILE_ADMIN_KEY` in the service's Railway variables. Railway is great and handles TLS termination for you automatically.
 
 </Tab>
 
@@ -434,38 +349,27 @@ timeout = "2s"
 path = "/api/health"
 ```
 
-Set the secret with `fly secrets set CONCILE_ADMIN_KEY=...`, and start the process as
-`concile serve --dir ./concile --data /app/data/db.sqlite`. Fly terminates TLS at its edge.
+You can securely set your admin key by running `fly secrets set CONCILE_ADMIN_KEY=...`. After that, just start your process with `concile serve --dir ./concile --data /app/data/db.sqlite`. Similar to Railway, Fly manages the TLS termination right at its edge.
 
 </Tab>
 
 </Tabs>
 
-A managed Postgres on either platform works through the same `CONCILE_DATABASE_URL` as anywhere
-else. Both platforms also have an automated push path: `concile deploy --target railway` and
-`--target fly` shell out to the platform's own CLI (`railway up`, `fly deploy`) after refreshing
-codegen. See [Deploy and build](/docs/deploy/deploy-and-build#the-six-deploy-targets).
+Running a managed Postgres on either of these platforms works perfectly using the exact same `CONCILE_DATABASE_URL` setup you would use anywhere else. As an added bonus, both platforms feature an automated push path. Using `concile deploy --target railway` or `--target fly` will automatically run your platform's native CLI commands like `railway up` or `fly deploy` immediately after refreshing your codegen. For a deeper dive, check out our guide on [Deploy and build](/docs/deploy/deploy-and-build#the-six-deploy-targets).
 
 ## Reverse proxy / TLS
 
 <Callout type="warn" title="No built-in TLS">
 
-concile serves plain HTTP. `serve` has no TLS termination built in. Put a reverse proxy (nginx,
-Caddy, or Traefik) in front of the container to terminate TLS and forward to `concile:3000`.
+Because concile serves plain HTTP out of the box, the `serve` command doesn't have built-in TLS termination. To securely handle your traffic, you'll want to place a reverse proxy like nginx, Caddy, or Traefik in front of the container. This proxy can gracefully terminate the TLS connection and then forward the traffic along to `concile:3000`.
 
-The sync WebSocket and `httpAction` routes both proxy transparently over standard HTTP upgrade. No
-special configuration is needed beyond normal WebSocket passthrough in your proxy of choice.
+Good news though! Both the sync WebSocket and your `httpAction` routes will proxy transparently over a standard HTTP upgrade. You won't need to mess around with any special configuration beyond setting up normal WebSocket passthrough in whatever proxy you choose.
 
 </Callout>
 
 ## Related
 
-- [Postgres](/docs/deploy/postgres): swap the SQLite volume for a Postgres database, still
-  single-node.
-- [Deploy and build](/docs/deploy/deploy-and-build): `concile deploy` for live hot-swap onto a
-  running `serve` (no restart, `--allow-deploy` opt-in), and `concile build` for a single
-  self-contained binary instead of a runtime-based image.
-- [Scaling](/docs/deploy/scaling): when one `serve` process isn't enough, the multi-node fleet
-  story (`--fleet`) built on the same Postgres backend.
-- [Cloudflare](/docs/deploy/cloudflare): an alternative host if you specifically want Cloudflare's
-  edge/scale-to-zero economics.
+- [Postgres](/docs/deploy/postgres): Learn how to swap out the SQLite volume for a managed Postgres database while keeping things delightfully single-node.
+- [Deploy and build](/docs/deploy/deploy-and-build): Discover how `concile deploy` lets you do a live hot-swap onto a running `serve` process without any restarts using the `--allow-deploy` opt-in. We also cover `concile build` for creating a clean, self-contained binary instead of a traditional runtime-based image.
+- [Scaling](/docs/deploy/scaling): When a single `serve` process just isn't cutting it anymore, read up on our multi-node fleet architecture powered by the `--fleet` flag on top of the same reliable Postgres backend.
+- [Cloudflare](/docs/deploy/cloudflare): Check out this alternative hosting guide if you're particularly interested in taking advantage of Cloudflare's edge capabilities and scale-to-zero economics.

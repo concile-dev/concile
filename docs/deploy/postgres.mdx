@@ -5,19 +5,13 @@ description: Point concile at a Postgres database instead of SQLite, with no cod
 
 {/* diataxis: how-to */}
 
-SQLite is the zero-config default for `concile serve`. It's a single file, and it needs nothing
-else installed. Postgres is the opt-in alternative: the same reactive engine, the same app code, no
-code changes, but your data lands in a database your infrastructure already backs up, replicates,
-and monitors.
+SQLite is our awesome, zero-config default for `concile serve`. It runs completely from a single file, so you don't have to worry about installing extra software. But hey, if you prefer using Postgres, you can easily make the switch! You'll still get the exact same reactive engine and app code without rewriting a single line, but your data gets tucked away safely in a robust database that your infrastructure is likely already backing up, replicating, and monitoring for you.
 
-This page covers turning it on, what happens at boot, how it works under the hood, the
-single-writer guarantee, group commit, and how to think about its performance.
+In this guide, we'll walk you through how to turn it on, what happens behind the scenes when it boots up, the inner workings of the engine, our single-writer approach, group commits, and share a few thoughts on performance.
 
 ## Turning it on
 
-Point `serve` (or `dev`) at a Postgres database with `--database-url`, or set the
-`CONCILE_DATABASE_URL` environment variable instead. The flag wins if both are set. Leave both
-unset and you get SQLite exactly as before.
+To get started, just point your `serve` or `dev` command at a Postgres database using the `--database-url` flag. You can also use the `CONCILE_DATABASE_URL` environment variable. If you happen to set both, the flag takes priority. If you leave both blank, the system will happily stick with SQLite.
 
 <Tabs items={['Flag', 'Environment variable']}>
 
@@ -31,15 +25,11 @@ CONCILE_DATABASE_URL=postgres://user:pass@host:5432/db concile serve --dir conci
 
 </Tabs>
 
-Any string matching `postgres://` or `postgresql://` selects the Postgres backend. Anything else,
-including unset, falls back to SQLite. The same flag and env var work for `concile dev` and for a
-compiled `concile build` binary too: the storage backend is a boot-time choice, not something
-baked into your app code.
+Any connection string that starts with `postgres://` or `postgresql://` will automatically select the Postgres backend. Anything else will fall back to SQLite. It is wonderful that this choice happens at boot time, meaning it is not hardcoded into your application. This works perfectly for `concile dev` as well as any compiled `concile build` binary.
 
-## Docker Compose with a `postgres:16` service
+## Using Docker Compose with a `postgres:16` service
 
-Add a `postgres` service to `docker-compose.yml` and swap the SQLite volume for
-`CONCILE_DATABASE_URL`:
+If you are using Docker, you can simply add a `postgres` service to your `docker-compose.yml` file. Then, just swap out the SQLite volume for your `CONCILE_DATABASE_URL`:
 
 ```yaml title="docker-compose.yml"
 services:
@@ -72,102 +62,56 @@ volumes:
   postgres-data:
 ```
 
-`docker compose up` now persists to the `postgres-data` named volume instead of `concile-data`.
-Everything else in [Self-hosting](/docs/deploy/self-hosting), the admin key, the dashboard, restart
-persistence, works the same way.
+Now, when you run `docker compose up`, your app will save everything to the `postgres-data` named volume instead of the old `concile-data` one. Everything else from our [Self-hosting](/docs/deploy/self-hosting) guide, like the admin key, the dashboard, and restart persistence, works exactly the same!
 
 ## What happens at boot
 
-On every boot, whether the database is fresh or already has data in it, the engine runs
-`setupSchema()`. That's a set of idempotent `CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT
-EXISTS`, and `CREATE SEQUENCE IF NOT EXISTS` statements against a small, fixed set of internal
-tables (see [below](#no-app-schema-migrations)), never against your app's own tables. Your app has
-no tables at the Postgres level.
+Every time you boot the engine, it automatically runs `setupSchema()`. This handy process safely executes a series of "create if not exists" statements for our internal tables and sequences. Don't worry, it only touches a fixed set of internal tables (which we explain [below](#no-app-schema-migrations)) and never messes with your own app's tables.
 
-This is safe to run every single time you boot. An existing database with those objects already in
-place just no-ops through each statement.
+This process is perfectly safe to run on every boot. If the database already has these tables set up, the engine will quickly glide past those steps without making any changes.
 
-After the DDL, the engine takes the single-writer advisory lock (more on that
-[below](#the-single-writer-invariant)). The very first time it boots against a given database, it
-also seeds the commit-timestamp sequence from the existing data, or from `1` on a genuinely fresh
-database, so timestamps continue where they left off. There's no separate "initialize this database" step to
-run yourself. Pointing `serve` at a blank Postgres database is enough.
+Once the initial setup is complete, the engine claims a single-writer advisory lock. The very first time it connects to a database, it also sets up the commit-timestamp sequence so it can pick right up where it left off (or start fresh at `1`). The best part? There is no manual setup required from you. Just pointing `serve` at an empty Postgres database is all it takes!
 
 ## The single-writer invariant
 
-Exactly one concile engine may be connected to a given Postgres database at a time. On boot,
-inside `setupSchema()`, the engine takes a `pg_advisory_lock`, a session-level Postgres lock tied to
-that one pinned connection. A second `serve` or `dev` process pointed at the same database fails
-fast instead of silently corrupting state:
+To keep your data safe, only one concile engine can connect to a specific Postgres database at any given time. When it boots up, the engine secures a `pg_advisory_lock`, which is tied directly to its pinned connection. If another `serve` or `dev` process tries to connect to the same database, it will immediately fail and let you know, preventing any accidental data corruption:
 
 ```bash
 $ concile serve --dir concile --database-url postgres://...   # already running elsewhere
 Error: another Concile engine is already connected to this database (advisory lock held)
 ```
 
-This is a single-node durability story: Postgres as a stronger, externally-managed database for one
-writer, not clustering or multi-node write scale-out. Running two engines against the same Postgres
-database for high availability isn't supported on this path. See [Scaling](/docs/deploy/scaling) for
-`concile serve --fleet`, the multi-node story built on top of this same adapter.
+This setup gives you fantastic single-node durability. It allows you to use Postgres as a powerful, externally-managed database for one writer. However, it is not designed for clustering or running multiple engines simultaneously for high availability. If you are interested in multi-node scaling, be sure to check out the [Scaling](/docs/deploy/scaling) guide for details on `concile serve --fleet`.
 
 <Callout type="warn" title="Known limitations">
-  **Single pinned connection, no automatic reconnect.** The engine holds exactly one Postgres
-  connection for its lifetime, the same connection the single-writer lock and transaction pinning
-  depend on. If that connection drops (a network blip, a Postgres restart, a failover), the engine
-  does not transparently reconnect. Restart the concile process to re-establish it.
+  **Single pinned connection, no automatic reconnect.** The engine relies on exactly one Postgres connection for its entire lifespan. This connection handles the essential single-writer lock and transaction pinning. If the connection drops due to a network glitch or a database restart, the engine won't reconnect on its own. You will just need to quickly restart the concile process to get things back on track.
 
-  **An unclean process kill can briefly hold the lock.** A graceful shutdown (`SIGTERM`) releases the
-  advisory lock immediately, but an unclean kill (`SIGKILL`, a crash) may leave an immediate restart
-  briefly failing with "another engine already connected" until Postgres notices the dead session,
-  typically within seconds.
+  **An unclean process kill can briefly hold the lock.** If the process shuts down gracefully (`SIGTERM`), it lets go of the lock instantly. But if it crashes or is forcefully killed (`SIGKILL`), the lock might linger for a few seconds until Postgres realizes the session is gone. If you restart immediately, you might briefly see an error saying "another engine is already connected."
 
-  Neither of these is a clustering or HA limitation. Both are consequences of the single-node,
-  single-writer durability story above, not new constraints on top of it.
+  Keep in mind that these aren't limitations on clustering or high availability. They are simply natural outcomes of our single-node, single-writer design.
 </Callout>
 
 ## Going deeper
 
 <Accordions type="single">
 
-<Accordion title="Architecture: the PgClient seam">
+<Accordion title="Architecture: How we connect to Postgres">
 
-`@concile/docstore-postgres` implements `PostgresDocStore`, the Postgres analogue of the SQLite
-adapter's `DatabaseAdapter`: the same `DocStore` contract, a different storage substrate underneath.
-The engine itself never imports a Postgres driver directly. `PostgresDocStore` sits on a narrow,
-driver-agnostic `PgClient` seam whose core surface is `query`, `transaction`, `acquireWriterLock`,
-and `close`. This is the same "engine never imports a driver" discipline `docstore-sqlite` follows
-for SQLite. A leak of driver specifics out of the adapter package would be a design bug.
+The `@concile/docstore-postgres` package provides `PostgresDocStore`. Think of it as the Postgres equivalent to our SQLite adapter. It follows the exact same contract but uses a different database under the hood. To keep things clean, the core engine never directly imports a Postgres driver. Instead, `PostgresDocStore` relies on a simple, driver-independent interface called `PgClient` for things like queries, transactions, and locks. We use the same design pattern for SQLite, ensuring that driver-specific details never leak into the rest of the application.
 
-Two implementations of that seam ship, and the engine picks one automatically by runtime. Under
-Bun (the primary production runtime, including the compiled single binary), it uses `BunSqlClient`,
-built on Bun's native `Bun.SQL` and measured roughly 10 to 17% faster per query than the `pg`
-driver. Under Node, or any other non-Bun host, it uses `NodePgClient`, built on the
-[`pg`](https://node-postgres.com/) (node-postgres) driver. Both implement the full seam, both pass
-the same conformance suite, and nothing downstream of `PgClient` knows or cares which one it got.
+We actually ship two different implementations of this interface, and the engine automatically picks the best one for your setup. If you are using Bun, which includes our compiled single binary, it uses `BunSqlClient`. This is built on native `Bun.SQL` and is about 10 to 17% faster per query than the standard Node driver. If you are on Node or any other runtime, it falls back to `NodePgClient`, powered by the popular [`pg`](https://node-postgres.com/) driver. Both options are fully tested and behave exactly the same, so the rest of the system never needs to worry about which one is running.
 
-A few normalization details the clients handle so `PostgresDocStore` never has to think about the
-driver:
+These clients also handle some helpful data normalization behind the scenes:
 
-- Postgres `int8` (an MVCC timestamp column) decodes as a JS `bigint`, not a string.
-  `NodePgClient` installs a per-client type-parser override for that one OID rather than mutating
-  `pg`'s types globally; `BunSqlClient` passes `bigint: true` to `Bun.SQL`.
-- Postgres `bytea` (index keys, internal document ids) round-trips as `Uint8Array` in both
-  directions.
-- The writer lock and `transaction()` live on one pinned connection for the client's lifetime.
-  `BEGIN`/`COMMIT` must land on the same session, and the single-writer invariant is itself a
-  property of that one session. Reads are not confined to it: streaming index scans (see the next
-  section) run on a small bounded pool of extra connections, a `pg` read pool on Node and a
-  reuse pool of reserved `Bun.SQL` connections under Bun. (Tier 2 fleet sharding opens additional
-  per-shard commit connections. That's a multi-node concern covered in
-  [Scaling](/docs/deploy/scaling), not part of the single-node path this page describes.)
+- Postgres timestamp columns (`int8`) are automatically converted to JavaScript `bigint` values instead of strings.
+- Binary data (`bytea`), like index keys and document IDs, seamlessly converts back and forth to `Uint8Array`.
+- The writer lock and active transactions are securely pinned to a single connection for the lifetime of the client. This means `BEGIN` and `COMMIT` always happen on the same session, keeping our single-writer rule intact. Reads, on the other hand, are free to use a small pool of extra connections for fast, streaming index scans.
 
 </Accordion>
 
-<Accordion title="No app-schema migrations">
+<Accordion title="No more database migrations">
 
-The Postgres adapter is physically schemaless. Your app's tables, fields, and indexes are never
-represented as Postgres DDL. They're data inside a small, fixed set of internal tables that never
-change shape as `schema.ts` evolves:
+You will be happy to hear that our Postgres adapter doesn't use a traditional schema. The tables, fields, and indexes you define in your app are never actually converted into Postgres table structures. Instead, we store everything as data within a few fixed internal tables. These tables stay exactly the same even as your `schema.ts` evolves:
 
 ```text title="the whole physical schema (never grows)"
 documents  (table_id, internal_id, ts, prev_ts, value, shard_id)   -- one row per document revision
@@ -177,65 +121,35 @@ client_mutations (identity, client_id, seq, verdict, commit_ts, value_json, erro
 client_floors    (identity, client_id, pruned_through_seq, updated_at)  -- offline outbox receipts
 ```
 
-A table in your `schema.ts` is a `table_id` value. A field is a key inside the JSON blob in `value`.
-An index is a set of rows in `indexes`. Adding a table, adding a field, or changing an index needs no
-`ALTER TABLE`, no migration file, and no Postgres-side schema change at all. That's why the Postgres
-adapter is bounded in scope rather than an open-ended migrations project. There's nothing app-shaped
-to migrate.
+When you define a table in your app, it just becomes a `table_id`. Fields are just keys in the JSON blob, and indexes are just rows in the `indexes` table. This means you can add tables, create new fields, or change indexes without ever needing an `ALTER TABLE` command or a complex migration file. It keeps the Postgres adapter simple and focused, saving you from migration headaches.
 
-Reads over this log-shaped storage are set-based, not per-row round trips. `scan`/`count` use
-`SELECT DISTINCT ON (internal_id) ... ORDER BY internal_id, ts DESC` to resolve "the latest revision
-of every document" in one query. An index scan (what `.collect()`/`.paginate()` compile down to)
-uses `DISTINCT ON (key)` to find each key's latest visible index entry, `LEFT JOIN LATERAL` to
-resolve each entry's document in the same query, and filters tombstoned or deleted rows out before
-applying `LIMIT` (a raw SQL `LIMIT` there would count dead rows and silently return short pages).
-The OCC conflict check's "read the previous revision of N documents" step is similarly one round
-trip: a `VALUES` list of the N lookups, `LATERAL`-joined to each one's latest visible revision,
-instead of N separate queries.
+Reading from this log-based storage is incredibly efficient. We use set-based queries rather than checking rows one by one. For example, a `scan` uses a neat SQL trick to instantly find the latest revision of every document in a single query. Index scans resolve the right document and filter out deleted rows before limiting the results, ensuring you always get accurate pages. We even check for conflicts by fetching the latest revisions of multiple documents in one quick database trip.
 
 </Accordion>
 
-<Accordion title="Streaming index scans: fast paginated reads">
+<Accordion title="Fast, streaming reads">
 
-Paginated and limited reads (`.paginate()`, `.take(n)`, `.first()`) stream rows from a server-side
-Postgres cursor instead of materializing the whole index range up front. The moment the query
-engine stops consuming, because the page is full or the limit is hit, the cursor stops fetching.
-Measured at 100k rows on the paginated shape, that's about a 92% cut in p50 wall-clock and roughly
-1000x fewer rows fetched: the win is work avoided on the server, not just bytes saved on the wire.
+When you paginate or limit your reads using methods like `.paginate()`, `.take(n)`, or `.first()`, the engine streams the rows using a Postgres cursor instead of loading everything into memory at once. As soon as the page is full or the limit is reached, it stops fetching. In our tests with 100,000 rows, this approach cut the wait time by 92% and fetched roughly a thousand times fewer rows. It is a huge win for server performance, not just network bandwidth.
 
-This is on by default and needs no configuration. Set `CONCILE_PG_STREAM=0` (or `false`) to
-disable it; the adapter then falls back to the buffered read path, which returns identical results
-(the full docstore conformance suite runs over both paths to prove that). Under the hood,
-`NodePgClient` streams via `pg-cursor` with adaptive fetch batching, and `BunSqlClient` uses
-`DECLARE`/`FETCH` cursors, since `Bun.SQL` has no native cursor API. One honest caveat on the Bun
-side: a pooled streaming connection that dies while idle is only detected on its next use. That
-surfaces as one spurious error, after which the pool discards the connection and recovers on its
-own.
+This streaming feature is enabled by default, so you don't need to configure a thing. If you ever want to turn it off, just set `CONCILE_PG_STREAM=0` (or `false`), and the system will fall back to standard buffered reads. Don't worry, both methods return the exact same data!
 
 </Accordion>
 
-<Accordion title="Group commit: a free write-throughput win on Postgres">
+<Accordion title="Group commit: a simple performance boost on Postgres">
 
-Every commit through the single writer normally does its own `BEGIN`/insert/`COMMIT`, which on
-Postgres means its own `fsync`. Group commit batches multiple concurrent commits that land in the
-same short window into one shared transaction: one `fsync` amortized across all of them, without
-changing the atomicity or ordering guarantees of any individual commit.
+Normally, every commit through the single writer handles its own `BEGIN`, insert, and `COMMIT`. On Postgres, this means a separate disk sync (`fsync`) for each one. Group commit changes this by batching multiple concurrent commits from a short time window into one shared transaction. This way, we only pay the cost of one disk sync across all of them, while still keeping the exact same atomicity and ordering guarantees for every individual commit.
 
-Group commit defaults on for single-node Postgres and off for SQLite. `CONCILE_GROUP_COMMIT`
-overrides that default in either direction (`1`/`true`/`yes`, case-insensitive, forces it on; any
-other value, including `0`/`false`, forces it off):
+We have set group commit to be on by default for single-node Postgres and off for SQLite. If you ever need to change it, you can use the `CONCILE_GROUP_COMMIT` environment variable. Setting it to `1`, `true`, or `yes` turns it on, while anything else turns it off.
 
 ```bash
-# force it off even against Postgres
+# Turn it off even for Postgres
 CONCILE_GROUP_COMMIT=0 concile serve --database-url postgres://... --dir concile
 
-# force it on even against SQLite (rarely useful, see the measured cost below)
+# Turn it on even for SQLite (though this usually isn't helpful, as explained below)
 CONCILE_GROUP_COMMIT=1 concile serve --dir concile
 ```
 
-The store-conditional default exists because the win is store-dependent, not universal. Measured on
-real containerized `postgres:16` (`fsync=on`, `synchronous_commit=on`, genuine on-disk fsync per
-commit):
+We chose these defaults because the benefits really depend on the storage engine you are using. Here are the numbers from a real containerized `postgres:16` setup with true on-disk syncing enabled:
 
 | clients | group commit OFF | group commit ON | throughput gain | p50 OFF to ON |
 |---|---|---|---|---|
@@ -243,31 +157,19 @@ commit):
 | 8 | 1,213 ops/s | 1,686 ops/s | **+39%** | 6.55 to 4.50 ms |
 | 64 | 1,206 ops/s | 1,907 ops/s | **+58%** | 52.95 to 33.25 ms |
 
-At one client it's byte-identical latency: the "batch of 1 when idle" design adds no wait when
-there's nothing to batch with. At real concurrency it's a strict throughput and latency win. The
-same batching measures as roughly an 8% throughput loss on SQLite: an in-memory, CPU-bound store has
-no fsync to amortize, so group commit there is pure pipeline overhead with nothing to pay for it.
-That's the whole reason the default is per-store rather than one global switch.
+With just one client, the latency is practically identical. Our system is smart enough to skip batching when there is nothing to batch with. But as concurrency grows, group commit delivers a huge win in both throughput and latency.
+
+On the flip side, we saw about an 8% drop in throughput when running this on SQLite. Since SQLite runs in memory and is CPU-bound with no per-commit disk sync, group commit just adds overhead without any real benefit. That is exactly why we tailor the default setting to your chosen database.
 
 </Accordion>
 
-<Accordion title="Choosing Postgres vs. SQLite">
+<Accordion title="Choosing between Postgres and SQLite">
 
-SQLite is the right default for local development and for a single-node deployment that doesn't
-need an externally-managed database. It's zero configuration, there's no separate service to run,
-and it's measurably the faster single-node store: an in-memory, CPU-bound commit path with no
-network round trip or fsync-per-commit cost.
+If you are developing locally or running a simple single-node deployment, SQLite is typically your best bet. It requires zero configuration, you do not need to run a separate service, and it is noticeably faster since everything runs in memory without network or disk-sync overhead.
 
-Postgres is the right choice when you want durability, backups, monitoring, and replicas managed by
-infrastructure you already operate, or when you're headed toward the multi-node fleet in
-[Scaling](/docs/deploy/scaling) (which requires Postgres as its shared substrate). It's still a
-single-writer store at this tier. Postgres doesn't make concile's transactor multi-writer by
-itself. You scale writes by sharding or by adding fleet nodes (Tier 2), never by adding threads
-against one Postgres connection.
+Postgres is a fantastic choice when you need enterprise features like backups, monitoring, and replication managed by your existing infrastructure. It is also required if you plan to scale up to a multi-node fleet later on (see [Scaling](/docs/deploy/scaling)). Just keep in mind that at this single-node tier, Postgres still uses a single-writer setup. Switching to Postgres will not magically make the transactor multi-writer. If you need to scale your writes, you will want to look at sharding or adding fleet nodes rather than just throwing more threads at a single Postgres connection.
 
-Either way, write throughput is single-writer-bound and essentially flat across concurrency. That's
-the OCC single-writer transactor's architectural signature, not a Postgres-specific artifact.
-Measured on the same write-throughput benchmark (embedded Postgres, 3s/cell, insert workload):
+In both databases, write throughput remains fairly constant even as concurrency increases. This is a core part of our optimistic concurrency control design, not a quirk of Postgres. Here is a look at the write throughput on an embedded Postgres setup with an insert workload:
 
 | concurrent clients | SQLite ops/s | SQLite p50 / p99 | Postgres ops/s | Postgres p50 / p99 |
 |---|---|---|---|---|
@@ -275,32 +177,17 @@ Measured on the same write-throughput benchmark (embedded Postgres, 3s/cell, ins
 | 8 | 46,553 | 0.019 / 0.041 ms | 4,617 | 1.643 / 2.678 ms |
 | 64 | 46,157 | 0.019 / 1.527 ms | 4,472 | 14.018 / 20.209 ms |
 
-Going from 1 to 8 to 64 concurrent clients barely moves either store's ops/s. Only tail latency
-grows, as extra clients queue behind the one serial writer instead of adding capacity. Postgres is
-roughly an order of magnitude slower than SQLite here, and it's fsync-bound: the commit's real cost
-is the disk sync, not the engine's own work. That's exactly why group commit is the effective lever
-on Postgres and not on SQLite. If your write volume genuinely exceeds what one Postgres writer
-delivers, the answer is [Scaling](/docs/deploy/scaling)'s sharding and fleet options, not tuning this
-adapter further.
+Notice how jumping from 1 to 64 concurrent clients barely changes the operations per second for either database. What does increase is the tail latency, as extra clients have to wait their turn behind the single writer. Postgres is understandably slower here because it has to wait for disk syncs, whereas the engine itself does very little work. This is exactly why group commit makes such a big difference on Postgres but not on SQLite. If your app is pushing more write volume than one Postgres writer can handle, check out our [Scaling](/docs/deploy/scaling) guide for sharding and fleet options.
 
 </Accordion>
 
-<Accordion title="How this is proven correct">
+<Accordion title="How we know it works">
 
-`PostgresDocStore` is checked against the same shared conformance suite SQLite runs: the identical
-set of `DocStore` assertions executed against both `SqliteDocStore` and `PostgresDocStore` (backed by
-an in-process PGlite Postgres for fast, hermetic runs), so the two backends are provably behaviorally
-interchangeable, not just similar by inspection.
+We test `PostgresDocStore` using the exact same conformance suite as our SQLite implementation. Both `SqliteDocStore` and `PostgresDocStore` (powered by an in-process PGlite Postgres for quick, isolated runs) pass the identical set of `DocStore` checks. This means the two backends are truly interchangeable in their behavior, not just similar in theory.
 
-On top of that, a real-container ship gate spins up an actual `postgres:16` Docker container and
-drives the real `concile serve` production entrypoint (spawned as the real CLI binary, not an
-in-process harness) through: a mutation commit, its reactive fan-out to a WebSocket subscription
-opened before the write, a read-back via a second query, a second `serve` process rejected fast by
-the single-writer lock while the first is still up, and, after stopping the first, a third `serve`
-process on the same database seeing the earlier row still there.
+To be extra sure, our automated tests spin up a real `postgres:16` Docker container and run the actual `concile serve` production binary through its paces. It tests a full cycle: committing a mutation, broadcasting it via WebSockets, reading it back, and making sure a second `serve` process gets safely blocked by the single-writer lock. Finally, it stops the first process and verifies that a third one can boot up and still see the data.
 
-That's the same bar every self-host deploy path in this repo is held to: proven through the shipped
-entrypoint, not just unit-tested in isolation.
+We hold every deployment path to this standard. We test the real shipped binary, not just an isolated unit test.
 
 </Accordion>
 
@@ -308,9 +195,7 @@ entrypoint, not just unit-tested in isolation.
 
 ## Related
 
-- [Self-hosting with Docker](/docs/deploy/self-hosting): the baseline `concile serve` and
-  `docker compose up` this backend swaps into, unchanged: admin key, dashboard, restart persistence.
-- [Scaling](/docs/deploy/scaling): `concile serve --fleet`, multiple nodes sharing this same
-  Postgres backend for multi-node write scale-out and live failover.
-- [Configuration reference](/docs/reference/configuration): the full flag/env table, including
-  `CONCILE_DATABASE_URL` and `CONCILE_GROUP_COMMIT` alongside every other setting.
+- [Self-hosting with Docker](/docs/deploy/self-hosting): The baseline `concile serve` and
+  `docker compose up` setup that this backend drops right into. Your admin key, dashboard, and restart persistence all work exactly the same.
+- [Scaling](/docs/deploy/scaling): Learn about `concile serve --fleet`, which lets multiple nodes share this Postgres backend for scaled out writes and live failover.
+- [Configuration reference](/docs/reference/configuration): A complete list of flags and environment variables, including `CONCILE_DATABASE_URL` and `CONCILE_GROUP_COMMIT`.

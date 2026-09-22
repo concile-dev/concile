@@ -5,19 +5,11 @@ description: Email, SMS, in-app, and push.
 
 {/* diataxis: explanation */}
 
-Think of a notification as just another row in a table. `@concile/notifications` is an opt-in
-component that sends messages across four channels: **email**, **SMS/WhatsApp**, an in-app
-**inbox**, and mobile/web **push**. Each channel goes through a swappable provider adapter, so
-you're never locked into one vendor.
+Think of a notification as just another row in a table. `@concile/notifications` is a handy opt-in component that fires off messages across four different channels: **email**, **SMS/WhatsApp**, an in-app **inbox**, and mobile or web **push**. Each channel works with a swappable provider adapter, so you are never locked into relying on just one vendor.
 
-Its headline feature is a **reactive in-app inbox**. A notification is a row in a live-queried
-table, so a user's inbox and unread count update in real time. No dedicated realtime service, no
-polling, no separate push infrastructure to run.
+Its real standout feature is the **reactive in-app inbox**. Because a notification is just a row in a live-queried table, a user's inbox and unread count update instantly. That means you don't need a dedicated realtime service, you don't have to deal with polling, and there's no separate push infrastructure to maintain.
 
-Once you understand `email`, you already understand the rest. Every channel shares one send path,
-one preference gate, one retry/backoff/dead-letter machine, and one topic fan-out mechanism.
-There's no separate "push system" or "SMS system" to learn: the differences between channels are a
-handful of branches inside otherwise shared code.
+Once you get how `email` works, you pretty much understand the rest. Every channel shares the exact same send path, preference gate, retry and backoff systems, dead-letter machine, and topic fan-out mechanism. There is no separate push or SMS system to figure out since the differences between channels just come down to a few small branches inside the shared code.
 
 This is a long page. Jump to what you need:
 

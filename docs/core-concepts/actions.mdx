@@ -5,28 +5,19 @@ description: "Fetch, timers, and randomness: side effects that run outside the t
 
 {/* diataxis: explanation */}
 
-[Queries](/docs/core-concepts/queries) and [mutations](/docs/core-concepts/mutations) are
-deterministic on purpose. That's what makes reactivity and OCC conflict replay trustworthy: rerun
-the same handler on the same inputs and you get the same result, every time.
+We intentionally made [queries](/docs/core-concepts/queries) and [mutations](/docs/core-concepts/mutations) totally deterministic. That determinism is the magic behind reliable reactivity and smooth OCC conflict replays. Basically, if you run a handler with the same inputs, you'll get the exact same result, guaranteed, every single time.
 
-But real apps need to call third-party APIs, send an email, generate a true random id, or wait on a
-timer. None of that can be deterministic. An action is where you do it.
+However, real-world apps often need to do things like calling a third-party API, sending an email, generating a truly random ID, or waiting on a timer. You just can't do those things deterministically. And that is exactly where actions come in to save the day!
 
-Think of an action as the engine's one escape hatch from the determinism rule. It gives up a
-transaction, `ctx.db`, and reactivity. In exchange, it gets native `fetch`, `Date`, `Math.random()`,
-and timers. Understanding that trade is the whole model.
+You can think of an action as your escape hatch from the strict rules of determinism. It gives up the transaction, `ctx.db`, and reactivity. In exchange, it gives you full access to native `fetch`, `Date`, `Math.random()`, and timers. Getting a handle on this trade off is a big part of understanding the whole model.
 
 ## Actions run outside the transaction
 
-A query or a mutation runs inside `transactor.runInTransaction`. It gets a consistent snapshot, the
-engine tracks every table and range it reads and writes, and on conflict the engine can safely
-replay the handler because it's a pure function of its inputs.
+When you run a query or a mutation, it happens inside `transactor.runInTransaction`. It gets a consistent snapshot, which means the engine keeps track of every table and range it reads or writes. If a conflict pops up, the engine can safely replay the handler because it behaves just like a pure function of its inputs.
 
-An action runs outside all of that. There's no snapshot, no read set, no write set, and no commit
-for the action itself. That also means an action's result is never subscribed to: only a query's
-read set can drive a reactive subscription, and an action has none.
+Actions are a different story since they run completely outside of that system. An action has no snapshot, no read set, no write set, and no commit of its own. As a result, you cannot subscribe to an action's result. Reactive subscriptions need a query's read set to work, and actions do not have one.
 
-Structurally, this shows up as `ActionCtx` having no `ctx.db`. Not a restricted one. An absent one.
+You will notice this structural difference right away because `ActionCtx` lacks a `ctx.db` property. It is not hidden or restricted, it just is not there.
 
 ```ts
 export interface ActionCtx {
@@ -36,13 +27,9 @@ export interface ActionCtx {
 }
 ```
 
-There's nothing to read or write directly. All data access goes through the three `runX` methods
-below.
+Since you cannot read or write data directly, all of your data access needs to happen through the three `runX` methods shown above.
 
-Every call to an action is a fresh, independent top-level run. Calling an action a second time,
-whether from the client, the scheduler, or another function, doesn't resume or join anything from
-the first call. Each invocation gets its own `ActionCtx`, its own outer try/catch, and (if it calls
-`runMutation`) its own separate commits.
+Whenever you call an action, it kicks off a completely fresh and independent top level run. If you call the action a second time from the client, the scheduler, or somewhere else, it will not resume or join the first call. Every single invocation gets a brand new `ActionCtx`, its own try/catch block, and its own isolated commits if it happens to call `runMutation`.
 
 ## Defining an action
 
@@ -63,37 +50,24 @@ export const sendReminder = action({
 });
 ```
 
-`args` and `returns` validators work exactly as they do for queries and mutations (see
-[Queries](/docs/core-concepts/queries) and [Mutations](/docs/core-concepts/mutations)). Declare
-`args`, and the engine validates a call's arguments before the handler ever runs, rejecting a
-mismatch with an `ArgumentValidationError` (surfaced to an HTTP caller as a 400). This validation is
-opt-in per function, and applies to actions exactly like it applies to queries and mutations. The one
-function type it doesn't apply to is `httpAction` (below): its input is a raw `Request`, not typed
-args, so there's nothing to validate against.
+The `args` and `returns` validators function just like they do for queries and mutations, which you can read about in [Queries](/docs/core-concepts/queries) and [Mutations](/docs/core-concepts/mutations). By declaring `args`, you tell the engine to check the arguments before the handler even starts. If something does not match, it throws an `ArgumentValidationError`, which looks like a 400 error to anyone calling via HTTP. You can opt into this validation on a per function basis, and it works exactly the same for actions. The one exception to this is `httpAction`, which we will cover later. Because it takes a raw `Request` instead of typed arguments, there is really nothing to validate against.
 
-A function reference can be either a typed `api.tasks.sendReminder`-style reference from the
-generated `api`/`internal` objects, or its bare `"module:export"` path string, as used above.
+For a function reference, you can use a typed reference like `api.tasks.sendReminder` from the generated `api` or `internal` objects. Alternatively, you can just use a bare string path like `"module:export"`, as shown in the example above.
 
 ### Native non-determinism is allowed
 
-Inside an action's handler, capabilities that queries and mutations block all work normally, because
-nothing here needs to replay identically on conflict:
+Inside an action handler, you can freely use all the tools that queries and mutations usually block. Since we do not need to worry about replaying identically during a conflict, you are welcome to use:
 
-- `fetch` for real network calls to any URL.
-- `Date.now()` / `new Date()` for real wall-clock time, not the transaction's fixed snapshot time.
-- `Math.random()` / `crypto.randomUUID()` for real entropy, not the seeded deterministic RNG queries
-  and mutations get.
-- `setTimeout`/`setInterval` and other timers.
+- `fetch` for making real network calls to any URL.
+- `Date.now()` or `new Date()` for getting actual wall clock time, rather than relying on the transaction's fixed snapshot time.
+- `Math.random()` or `crypto.randomUUID()` for true randomness, instead of the seeded deterministic random number generator used in queries and mutations.
+- `setTimeout`, `setInterval`, and any other timer functions.
 
-This is the direct trade for giving up `ctx.db`. An action can safely do anything a normal async
-TypeScript function can do, because the engine never has to re-run it to resolve a conflict. There's
-no conflict to resolve, since it never opened a transaction of its own.
+This freedom is exactly what you get for trading away `ctx.db`. An action can safely do anything a standard async TypeScript function can do, simply because the engine never needs to rerun it to fix a conflict. Since it never opened a transaction in the first place, there are no conflicts to resolve.
 
 ## Reaching the database: runQuery, runMutation, runAction
 
-An action has no direct database access, so it orchestrates through three methods on `ctx`. Each one
-starts a brand-new, independent top-level run of the target function: its own transaction for a
-query or mutation, or its own action execution for a nested action.
+Since actions lack direct access to the database, they handle everything using three specific methods on `ctx`. Every time you use one of these methods, it kicks off a completely new and independent top level run for the target function. This means you get a fresh transaction for a query or mutation, or a separate action execution if you are nesting an action.
 
 <TypeTable
   type={{
@@ -130,37 +104,23 @@ export const checkout = action({
 
 <Callout type="warn" title="Actions can't group writes atomically">
 
-Because each `runMutation` call is its own commit, there's no way to group several writes into one
-atomic transaction from inside an action. If `checkout` above called `runMutation` twice, say,
-`orders:markPaid` and then `inventory:decrement`, and the process crashed between them, the first
-write is durable and the second never happened. There's no rollback spanning both.
+Since every `runMutation` call acts as its own separate commit, you will not be able to group several writes into a single atomic transaction from inside an action. Think about the `checkout` example above. If it called `runMutation` twice, say doing `orders:markPaid` and then `inventory:decrement`, and the process happened to crash in the middle, the first write would save, but the second one would fail. There is no way to roll back across both calls.
 
 </Callout>
 
-If several writes must succeed or fail together, put them in a single mutation and have the action
-call that one mutation once. Actions are for orchestrating non-deterministic work around your data.
-Grouping writes is what a mutation's own transaction is for.
+When you need a bunch of writes to all succeed or fail together, bundle them up into a single mutation and just have the action call that one mutation. Actions are really designed to orchestrate non deterministic work around your data. If you need to group writes, a mutation's transaction is the perfect tool for the job.
 
-`runQuery`/`runMutation`/`runAction` also reach internal (`_`-prefixed) functions: a module or export
-path with any `:`-separated segment starting with `_` (for example, `"reminders:_send"`). The public
-entry points below (client calls and `POST /api/run`) reject a `_`-prefixed path outright. The only
-way to reach one is from inside another function via these three methods, or from the scheduler. This
-is the mechanism for writing a function that's meant to be called only by your own action, workflow,
-or trigger code, never directly by a client.
+You can also use the `runQuery`, `runMutation`, and `runAction` methods to reach internal functions that have a `_` prefix. These are basically modules or export paths where any segment starts with an underscore, like `"reminders:_send"`. Keep in mind that public entry points like client calls or `POST /api/run` will flat out reject any path with an underscore prefix. The only way to access them is from inside another function using those three methods, or by going through the scheduler. This is a great way to write functions that are strictly for your own actions, workflows, or trigger code, keeping them hidden from direct client access.
 
 <Callout title="Only ActionCtx has these methods">
 
-Queries and mutations have no `runQuery`/`runMutation`/`runAction` at all. That escape hatch exists
-solely on `ActionCtx`, precisely because an action is already outside any transaction and has
-somewhere to delegate to. A query or mutation can only read or write through its own `ctx.db`. It
-cannot call into another function.
+You will not find `runQuery`, `runMutation`, or `runAction` available in queries or mutations. This escape hatch is strictly for `ActionCtx`. That makes sense because an action is already operating outside of a transaction and needs a way to delegate work. A query or mutation is limited to reading or writing through its own `ctx.db` and is not allowed to call other functions.
 
 </Callout>
 
 ## Where an action can be called from
 
-An action isn't reachable through the reactive subscription path. There's no read set, so there's
-nothing to subscribe to. But it's callable from everywhere else a query or mutation is:
+You cannot reach an action through a reactive subscription path. Since it does not have a read set, there is simply nothing to subscribe to. However, you can call an action from pretty much anywhere else that you would call a query or mutation:
 
 ```mermaid
 flowchart LR
@@ -175,7 +135,7 @@ flowchart LR
 
 <Tab value="Client">
 
-Over the same WebSocket sync connection as queries and mutations, with a plain non-reactive call:
+You can make a standard, non reactive call over the exact same WebSocket sync connection that queries and mutations use:
 
 ```tsx title="web/ReminderButton.tsx"
 import { useAction } from "@concile/client/react";
@@ -187,24 +147,17 @@ function ReminderButton({ taskId }: { taskId: string }) {
 }
 ```
 
-`useAction`, like `useMutation`, isn't reactive. It returns a plain async callback that resolves once
-the action finishes, unlike `useQuery`'s live subscription.
+Just like `useMutation`, `useAction` is not reactive at all. Instead of a live subscription like `useQuery`, it gives you a simple async callback that resolves when the action is completely finished.
 
-The underlying client method is `client.action(ref, args)`, returning `Promise<Value>`. On the wire,
-the client sends an `Action` message and waits for an `ActionResponse`. A failed action arrives as
-`{ type: "ActionResponse", success: false, error }`, and the client rejects the promise with
-`new Error(error)`.
+Under the hood, the client method being called is `client.action(ref, args)`, which gives you back a `Promise<Value>`. Over the network, the client sends an `Action` message and sits tight until it gets an `ActionResponse`. If an action fails, it comes back as `{ type: "ActionResponse", success: false, error }`, and the client will reject the promise using `new Error(error)`.
 
-`ActionResponse` frames, like `MutationResponse`, are undroppable. The sync session never discards
-one under backpressure, so a slow client still eventually learns its action's outcome instead of the
-connection silently losing the response.
+One great thing about `ActionResponse` frames, much like `MutationResponse` frames, is that they cannot be dropped. Even if things get backed up, the sync session will not throw them away. This means that even a really slow client will eventually get the outcome of its action, rather than having the connection drop the response quietly.
 
 </Tab>
 
 <Tab value="HTTP">
 
-`POST /api/run` with the action's path runs it directly, no WebSocket required. It's handy for a
-server-to-server call or a script:
+You can use `POST /api/run` along with the action's path to run it straight away without needing a WebSocket. This is super handy when you are dealing with server to server calls or scripts:
 
 ```bash
 curl -X POST http://localhost:3000/api/run \
@@ -212,47 +165,30 @@ curl -X POST http://localhost:3000/api/run \
   -d '{"path": "tasks:sendReminder", "args": {"taskId": "..."}}'
 ```
 
-The response is `{ value, committed, commitTs }` on success, or `{ error, code }` with the matching
-HTTP status on failure (an `ArgumentValidationError` comes back as 400, for example).
+If everything goes smoothly, you get `{ value, committed, commitTs }` back. If it fails, you will see `{ error, code }` paired with the appropriate HTTP status. For instance, an `ArgumentValidationError` will show up as a 400.
 
-`/api/run` dispatches to whichever function type is registered at that path. The same endpoint runs
-queries, mutations, and actions, and you don't declare the kind in the request. Send an
-`Authorization: Bearer <token>` header to pass an identity through, exactly like the WebSocket path
-does.
+The `/api/run` endpoint is smart enough to figure out which function type is registered at the given path. It uses the exact same endpoint for queries, mutations, and actions, so you do not even need to specify the type in your request. If you need to pass along user identity, just include an `Authorization: Bearer <token>` header, just like you would on the WebSocket side.
 
 </Tab>
 
 <Tab value="Another function">
 
-Any action, or recursively, an action it calls, can call another action with `ctx.runAction(ref,
-args)` (see the previous section). This is also the only way to invoke an internal (`_`-prefixed)
-action from outside the scheduler.
+You can have an action call another action using `ctx.runAction(ref, args)`, and that applies to nested actions too. Just refer back to the previous section for details. Keep in mind that this is the only way you can trigger an internal action starting with an underscore from outside the scheduler.
 
 </Tab>
 
 <Tab value="Scheduler">
 
-`ctx.scheduler.runAfter`/`runAt`, and a `cronJobs()` recurring schedule, run a target function later,
-exactly as if a client had called it, with no caller waiting on the result. The target can be a
-mutation or an action: the scheduler resolves which and dispatches accordingly. See
-[Scheduling](/docs/components/scheduling) for the full surface: delays, cron expressions, retry
-policy, and cascading cancellation.
+Using `ctx.scheduler.runAfter` or `runAt`, along with a `cronJobs()` schedule, lets you run a target function later on. It behaves exactly as if a client had called it, but without anyone waiting around for the result. You can target either a mutation or an action, and the scheduler will figure out which one it is and handle the dispatch. Be sure to check out [Scheduling](/docs/components/scheduling) to see everything you can do, like setting delays, writing cron expressions, configuring retry policies, and handling cascading cancellations.
 
-The dispatch guarantee differs by what failed, and the difference matters for actions specifically:
+The way the system handles failures depends entirely on what went wrong, and this distinction is especially important for actions:
 
 | what happened | scheduled mutation | scheduled action |
 |---|---|---|
-| handler threw an error | retried (jittered exponential backoff, then dead-lettered) | **not retried by default**: dead-lettered on the first failure, unless the job explicitly opted into retries |
-| process crashed mid-run | safely retried: a transaction either committed or it didn't | **not retried**: the job is dead-lettered (at-most-once) |
+| handler threw an error | retried (uses jittered exponential backoff, then dead lettered) | **not retried by default**: dead lettered right on the first failure, unless the job specifically asks for retries |
+| process crashed mid run | safely retried: a transaction either committed or it did not | **not retried**: the job is immediately dead lettered for at most once execution |
 
-Both action rows follow from the same fact: an action's side effects, like an email sent or a
-charge made, aren't transactional, so re-running one that already did external work could double
-the side effect. Retries for an action are an explicit opt-in (the scheduler's low-level
-`retry: { maxFailures }` option, which is also how a workflow step's `maxAttempts` works), and
-opting in is your statement that the action is idempotent. If
-you need "this multi-step process eventually finishes even if a node dies partway through," that's
-what the [Workflows](/docs/components/workflows) durable step journal is for, not a bare scheduled
-action.
+The behavior in both of the action rows comes down to one key detail. Since an action's side effects, like sending an email or processing a payment, are not transactional, re running an action could accidentally duplicate those effects. This is why retries for an action are strictly opt in. You can enable them using the scheduler's low level `retry: { maxFailures }` option, which works just like a workflow step's `maxAttempts`. By opting in, you are basically promising the engine that the action is safe to run multiple times. If you are looking for a guarantee that a multi step process will eventually finish even if a node crashes, you should look into the [Workflows](/docs/components/workflows) durable step journal rather than just using a simple scheduled action.
 
 </Tab>
 
@@ -260,47 +196,24 @@ action.
 
 ## Errors propagate to the caller
 
-An action's handler is a plain `async` function. Throwing from it, or returning a rejected promise,
-is how you signal failure. There's no commit to roll back, so an uncaught error simply propagates:
+An action handler is just a standard `async` function. To signal a failure, you just throw an error or return a rejected promise. Since there is no commit to roll back, any uncaught error simply bubbles up:
 
-- A client `useAction`/`client.action()` call's promise rejects with the thrown error's message.
-- `POST /api/run` responds with the corresponding HTTP status and `{ error, code }`.
-- A calling function's `ctx.runAction(...)` await throws the same error, so a parent action can
-  `try`/`catch` around a nested action or mutation call exactly like any other `await`.
-- A scheduled action's failure goes through the scheduler's retry/dead-letter path described above,
-  rather than surfacing to any waiting caller (there is none).
+- A promise from a client calling `useAction` or `client.action()` will reject and pass along the thrown error message.
+- Calling `POST /api/run` will give you a response with the relevant HTTP status and an `{ error, code }` payload.
+- If a function calls `ctx.runAction(...)` and awaits it, that await throws the exact same error. This means a parent action can wrap a nested action or mutation call in a `try`/`catch` block just like any other standard `await`.
+- If a scheduled action fails, it gets routed through the scheduler's retry and dead letter process we talked about earlier, instead of popping up for a waiting caller, since no one is actually waiting for it.
 
-Nothing about an action's own execution is ever partially applied. There's no partial commit to worry
-about, unlike a mutation. But if an action already called `ctx.runMutation` successfully and then
-threw (say, the reminder email's `fetch` failed after the earlier `runMutation` already committed),
-that earlier mutation's write is real and stays committed. Handle that ordering deliberately: do the
-risky non-deterministic work first, and commit the mutation only once you know it succeeded, rather
-than the other way around.
+An action's own execution is never partially applied. Unlike a mutation, you do not have to stress about partial commits. However, if an action successfully calls `ctx.runMutation` but throws an error right after, like if a network call fails after the mutation committed, that write is permanent and stays saved. You should think carefully about the order of operations here. Always do the risky and unpredictable work first, and only commit the mutation once you are sure the risky part succeeded.
 
 ## Component action-mode facades
 
-A composed component's context object, like `ctx.storage`, `ctx.scheduler`, or `ctx.workflow`, is
-built differently depending on whether the calling function is a mutation or an action. Only a
-mutation has a `ctx.db` for the in-transaction facade to write through.
+When you use a composed component's context object, such as `ctx.storage`, `ctx.scheduler`, or `ctx.workflow`, it actually gets constructed differently based on whether you are calling it from a mutation or an action. It is only in a mutation that you get a `ctx.db` for the in transaction facade to write through.
 
-Inside a mutation, a component's facade writes directly into the calling mutation's own transaction.
-`ctx.scheduler.runAfter(...)` inserting a job row commits (or rolls back) atomically with the rest of
-that mutation, for example.
+When you are inside a mutation, the component's facade writes straight into the calling mutation's transaction. For example, if you use `ctx.scheduler.runAfter(...)` to insert a job row, it will commit or roll back perfectly in sync with the rest of that mutation.
 
-Inside an action, there's no transaction to write into. So the same-named facade is instead built as
-an action-mode variant that delegates every read and write to that component's own internal
-(`_`-prefixed) mutations and queries, via `runQuery`/`runMutation`. This happens invisibly: a function
-body calling `ctx.scheduler.runAfter(...)` is portable between a mutation and an action without
-changing a line.
+Inside an action, you do not have a transaction to write into. Because of this, the identically named facade acts as an action mode variant. It delegates all its reads and writes to the component's internal mutations and queries, which use the underscore prefix, by calling `runQuery` and `runMutation`. This all happens behind the scenes. This means you can take a block of code calling `ctx.scheduler.runAfter(...)` and move it freely between a mutation and an action without altering a single line.
 
-`ctx.storage` is the clearest example of why this split exists. The action-mode facade is exactly
-four methods: `store`/`get`/`getUrl`/`getMetadata`. `getUrl` and `getMetadata` are metadata-only
-and appear on both variants with identical signatures (`delete` is a write, so it exists only on
-the mutation-mode facade). `store`/`get` do actual byte I/O against the blob backend, and are
-action-only: fetching or pushing bytes over the network is exactly the kind of non-determinism a
-mutation may never perform, so they simply don't exist on the mutation-mode facade's type. This is
-the same "no non-determinism in a transaction" rule as `fetch`, expressed as a capability that's
-structurally present in one context and absent in the other, rather than as a runtime check:
+Looking at `ctx.storage` gives you a great idea of why this split is necessary. The action mode facade consists of just four methods: `store`, `get`, `getUrl`, and `getMetadata`. Both `getUrl` and `getMetadata` deal solely with metadata, so they show up on both variants with the exact same signatures. On the other hand, `delete` is a write operation, meaning it only appears on the mutation mode facade. The `store` and `get` methods handle actual byte input and output against the blob backend, which makes them action only. Moving bytes over a network is exactly the kind of unpredictable work a mutation is not allowed to do, so those methods do not even exist on the mutation mode facade. This is basically the same rule that keeps `fetch` out of transactions. Instead of doing a check at runtime, the engine handles it by making the capability structurally available in one context and entirely absent in the other.
 
 ```ts title="concile/images.ts"
 export const resize = action({
@@ -314,17 +227,11 @@ export const resize = action({
 });
 ```
 
-`ctx.scheduler` and `ctx.workflow` follow the same pattern: `ctx.scheduler.runAfter`/`runAt`/`cancel`
-and `ctx.workflow.start`/`cancel`/`sendEvent` all work from an action, each delegating to an internal
-mutation under the hood, so scheduling or starting a workflow is available from action-orchestrated
-code exactly as it is from a mutation. See [File storage](/docs/core-concepts/file-storage),
-[Scheduling](/docs/components/scheduling), and [Workflows](/docs/components/workflows) for each
-facade's full surface.
+You will see the same pattern with `ctx.scheduler` and `ctx.workflow`. Methods like `ctx.scheduler.runAfter`, `runAt`, and `cancel`, along with `ctx.workflow.start`, `cancel`, and `sendEvent`, all work flawlessly from an action. Under the hood, they each delegate to an internal mutation. This means you can schedule tasks or kick off workflows from your action code exactly the same way you would from a mutation. Check out [File storage](/docs/core-concepts/file-storage), [Scheduling](/docs/components/scheduling), and [Workflows](/docs/components/workflows) to explore everything these facades have to offer.
 
 ## httpAction: the Request/Response variant
 
-`httpAction` is an action whose input and output are a raw Web `Request`/`Response` instead of typed
-JSON args and a return value:
+An `httpAction` is essentially an action that uses raw Web `Request` and `Response` objects for its input and output, rather than relying on typed JSON arguments and a standard return value:
 
 ```ts title="concile/http.ts"
 import { httpAction, httpRouter } from "./_generated/server";
@@ -336,30 +243,16 @@ export const receiveWebhook = httpAction(async (ctx, request) => {
 });
 ```
 
-Everything above about actions applies unchanged: no `ctx.db`, the same
-`runQuery`/`runMutation`/`runAction`, the same native `fetch` and clock.
+Everything we just discussed about actions still applies here perfectly. You still do not get a `ctx.db`, you use the same `runQuery`, `runMutation`, and `runAction` methods, and you still have access to the native `fetch` and clock functions.
 
-Two things differ. The I/O shape is `Request` in and `Response` out, instead of args in and a value
-out. And how it's invoked is different too: a `httpAction` isn't called by path through the sync
-connection or `/api/run` at all. It's routed by method and URL path through a conventional
-`http.ts`'s `httpRouter()`, which is how you expose a public webhook endpoint for a third party that
-can't speak the sync protocol.
+There are really only two main differences. First, the input and output shape uses `Request` and `Response` objects instead of typical arguments and a return value. Second, you invoke it differently. An `httpAction` is not called by its path over the sync connection or through `/api/run`. Instead, it gets routed by its HTTP method and URL path using a standard `httpRouter()` set up in `http.ts`. This is the exact method you would use to set up a public webhook endpoint for a third party service that does not understand the custom sync protocol.
 
-`httpAction` also has no `args` validator. There's no typed-args slot to validate: the handler parses
-its own `Request` body. See [HTTP & webhooks](/docs/core-concepts/http-and-webhooks) for routing,
-reserved paths, and the full webhook recipe.
+You also will not find an `args` validator in an `httpAction`. Because there is no typed arguments slot to validate against, the handler has to take care of parsing its own `Request` body. For more details on routing, reserved paths, and how to put together a complete webhook, take a look at the [HTTP & webhooks](/docs/core-concepts/http-and-webhooks) guide.
 
 ## No non-determinism in a transaction: the rule this all exists to enforce
 
-Zoom out and everything above is one rule wearing different clothes. A query or a mutation must be
-deterministic, because its correctness depends on being safely re-runnable: a mutation on OCC
-conflict, a query whenever a subscription's read set is invalidated.
+If you take a step back, you will realize that everything we have covered is basically just one golden rule applied in various ways. A query or a mutation absolutely must be deterministic. Its correctness relies entirely on the ability to safely rerun it, whether that is a mutation handling an OCC conflict or a query updating after a subscription's read set gets invalidated.
 
-`fetch`, `Date.now()`, `Math.random()`, and timers are all blocked inside a query or mutation handler
-for the same reason: none of them would replay to the same result. An action is where that
-constraint lifts, in exchange for giving up the one thing determinism buys you: a transaction, a
-read/write set, and reactivity.
+Functions like `fetch`, `Date.now()`, `Math.random()`, and timers are strictly blocked inside query or mutation handlers for a very good reason. None of them can guarantee the exact same result if the handler needs to replay. An action is the special place where this constraint is lifted, but you have to trade away the things determinism provides, specifically a transaction, a read and write set, and reactivity.
 
-Reach for a query to read, a mutation to write, and an action only for the part of your logic that
-genuinely needs the network, the clock, real randomness, or a timer. Keep that part as small as you
-can, and orchestrate the actual data changes through `runMutation` calls to real mutations.
+As a best practice, you should stick to a query for reading data, a mutation for writing data, and only use an action for the specific logic that truly requires network access, the clock, true randomness, or a timer. Try to keep that non deterministic portion as small as possible, and let real mutations handle the actual data changes via `runMutation` calls.

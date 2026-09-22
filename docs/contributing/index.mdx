@@ -6,25 +6,25 @@ icon: Compass
 
 {/* diataxis: explanation */}
 
-This section is for a different reader than the rest of the docs. It's for people who want to work *on* concile itself: reading the engine source, fixing a bug, adding a storage adapter, or writing a new component. If you just want to use concile in your app, go to [Get Started](/docs/get-started/what-is-concile) or [Core Concepts](/docs/core-concepts/schema-and-tables) instead.
+This section is meant for a different audience than the rest of the docs. It's for anyone who wants to dive into the inner workings of concile: reading the engine source, squashing bugs, adding new storage adapters, or building fresh components. If you're just looking to use concile in your own app, you'll probably want to head over to [Get Started](/docs/get-started/what-is-concile) or [Core Concepts](/docs/core-concepts/schema-and-tables) instead.
 
-## concile in one breath
+## concile in a nutshell
 
-concile is an open-source, self-hostable, reactive backend. You write ordinary TypeScript functions: queries, mutations, and actions. They run on the server inside a transaction.
+At its core, concile is an open-source, self-hosted, reactive backend. You just write standard TypeScript functions like queries, mutations, and actions, and they run on the server within a transaction.
 
-Every client subscribed to the data those functions touch gets pushed a fresh result over a WebSocket the instant it changes. You never write polling code, manual refetch calls, or cache-invalidation logic.
+Whenever the data those functions touch gets updated, every subscribed client instantly gets the fresh results over a WebSocket. This means you won't ever have to write polling code, manual refetch calls, or messy cache-invalidation logic again.
 
-It aims for a best-in-class developer experience with no vendor lock-in. Run it on your own laptop, your own server, or your own cloud account.
+We're aiming for an amazing developer experience without any vendor lock-in. You can run it on your laptop, your own server, or directly in your cloud account.
 
-## The one idea everything else serves
+## The core idea behind it all
 
-Before anything else clicks, get this one primitive:
+Before getting into the weeds, there's one fundamental concept you should understand:
 
-- A **query** is a read-only function. While it runs, the engine quietly notes exactly what it read: which tables, which rows, which ranges. This is the **read set**.
-- A **mutation** is the only kind of function allowed to write. When it commits, the engine notes exactly what it wrote: the **write set**.
-- Every live subscription is just a query plus its read set, sitting around waiting. Whenever a mutation commits, the engine checks whether that write set overlaps any subscription's read set. If it does, that query re-runs and the new result gets pushed to whichever clients are subscribed to it. If it doesn't, the subscription is left alone. It costs nothing.
+- A **query** is a read-only function. As it runs, the engine quietly keeps track of exactly what it reads, including tables, rows, and ranges. We call this the **read set**.
+- A **mutation** is the only function that can write data. When it commits a change, the engine records exactly what was written. This is the **write set**.
+- Every active subscription is essentially just a query and its read set hanging out and waiting. Whenever a mutation commits, the engine checks if its write set overlaps with any subscription's read set. If it does, the query runs again, and the updated result is pushed to all subscribed clients. If there is no overlap, the subscription stays as is, costing absolutely nothing.
 
-That's it. There's no polling loop, no manually declared cache keys, no pub/sub topics you have to wire up by hand. "Did what I just wrote touch what you're watching?" is the entire reactivity model.
+And that's really all there is to it. You don't have to worry about polling loops, manually declaring cache keys, or wiring up pub/sub topics by hand. The entire reactivity model boils down to one question: "Did the data I just wrote touch the data you are currently watching?"
 
 ```mermaid
 flowchart LR
@@ -35,32 +35,32 @@ flowchart LR
     X -->|yes| P["push fresh result to<br/>subscribed clients"]
 ```
 
-Nearly every architecture page in this section is really just an answer to one question: how do we make this one idea correct and fast? How the read/write sets get recorded is the [query engine](/docs/contributing/architecture/query-engine). How commits stay safe under concurrency is the [transactor](/docs/contributing/architecture/transactions). How the overlap check is actually implemented and pushed to clients is the [reactivity](/docs/contributing/architecture/reactivity) page, the one page in this section worth reading most carefully. Where the bytes physically live is the [storage](/docs/contributing/architecture/storage) page.
+Almost every architecture page in this section tries to answer one main question: how do we make this single idea both accurate and blazingly fast? If you're curious about how read and write sets are recorded, check out the [query engine](/docs/contributing/architecture/query-engine). To understand how commits remain safe during concurrent operations, read about the [transactor](/docs/contributing/architecture/transactions). The details of how the overlap check is implemented and pushed out to clients are covered in the [reactivity](/docs/contributing/architecture/reactivity) page, which is probably the most important page in this section to read closely. Finally, if you want to know where the bytes are physically stored, head over to the [storage](/docs/contributing/architecture/storage) page.
 
-If you want the user-facing version of this same idea first, that's [Core Concepts: Reactivity](/docs/core-concepts/reactivity).
+If you'd prefer to see the user-facing side of this concept first, check out [Core Concepts: Reactivity](/docs/core-concepts/reactivity).
 
-## The shape of the system, in three sentences
+## System overview in three points
 
-1. **One language, end to end.** The CLI, the server engine, and the client SDK are all TypeScript. There's no Rust core, no second language to context-switch into when you go from writing a query to debugging the engine that runs it.
-2. **Storage is hidden behind one narrow seam.** The engine never imports a database driver directly. It talks to an abstract `DocStore`/`DatabaseAdapter` interface, and the exact same engine logic runs unmodified on embedded SQLite (the zero-config default) or Postgres (for networked, durable self-hosting).
-3. **The same app code scales up without a rewrite.** Today that means a single self-contained binary or container (what this project calls Tier 0/1) that runs happily on a $5 VPS. A distributed, multi-node fleet (Tier 2) is designed for, and partly built in, the `ee/` tree, but isn't yet a shipped, general-purpose product surface. See the status note below.
+1. **It's one language, end to end.** The CLI, server engine, and client SDK are all written in TypeScript. You won't find a hidden Rust core or have to context-switch into another language when moving from writing a query to debugging the engine.
+2. **Storage is kept neatly tucked away.** The engine never directly imports a database driver. Instead, it communicates with an abstract `DocStore`/`DatabaseAdapter` interface. This means the exact same engine logic runs without any changes on embedded SQLite (our zero-config default) or Postgres (for when you need durable, networked self-hosting).
+3. **Your app code scales up without needing a rewrite.** Right now, that looks like a single self-contained binary or container (which we call Tier 0/1) that can happily run on a cheap $5 VPS. We're also designing and partially building a distributed, multi-node fleet (Tier 2) in the `ee/` tree, though it's not quite ready as a general-purpose product yet. You can read more about that in the status note below.
 
-## Where this architecture came from
+## The roots of our architecture
 
-concile is loosely inspired by [Convex](https://github.com/get-convex/convex-backend) and by a project called concave. To be precise about what that means for a contributor: the internal architecture notes under `docs/dev/` were written by *studying* Convex's and concave's published, documented behavior as reference material, never by copying their source. Both are source-available under a non-compete license (FSL), so this codebase treats them the way you'd treat a spec: read for ideas, reimplement from scratch.
+concile takes loose inspiration from [Convex](https://github.com/get-convex/convex-backend) and another project called concave. If you're contributing, here's what that actually means: the internal architecture notes in `docs/dev/` were put together by studying how Convex and concave publicly document their behavior. We never copy their source code. Both projects are source-available under a non-compete license (FSL), so we treat them much like a specification. We read them for ideas and then build our own version entirely from scratch.
 
-Two practical consequences worth knowing before you dive into the deeper architecture pages:
+There are two practical things to keep in mind before you jump into the more complex architecture pages:
 
-- Those internal notes are dense, expert-written, and occasionally describe *intent* rather than *what shipped*: a design that was proposed, then later built differently, deferred, or superseded.
-- The familiar *authoring style* (how you write a query or a schema) is not a promise to be a drop-in replacement for anything. concile's canonical imports are its own (`@concile/*`), and it has already grown capabilities its prior art doesn't have: durable workflows with saga/compensation, a Postgres adapter, a single-binary build. Compatibility with an existing project shows up as a migration on-ramp (`concile migrate`), not the product's identity.
+- The internal notes are dense and written by experts. Sometimes they describe what we *intended* to build rather than what actually shipped. You might find designs that were proposed but later built differently, put on hold, or replaced entirely.
+- While the authoring style might look familiar when you write a query or schema, we aren't promising a drop-in replacement for any other tool. concile uses its own canonical imports (`@concile/*`) and has already added features that earlier projects don't have, like durable workflows with saga/compensation, a Postgres adapter, and a single-binary build. If you need compatibility with an existing project, you'll find that in our migration tools (`concile migrate`), rather than as the core focus of the product.
 
 <Callout type="info">
-  This Contributing section is the reconciled, ships-are-real view. Where the internal `docs/dev/` notes and the shipped code disagree, the shipped code wins.
+  This Contributing section gives you the real, shipped view of things. If you ever notice a disagreement between the internal `docs/dev/` notes and the shipped code, the shipped code is always the source of truth.
 </Callout>
 
-## A map of this section
+## Navigating this section
 
-The Contributing tab has four groups of pages. Skim this before you go looking for something specific.
+The Contributing tab is broken down into four main groups of pages. It's a good idea to skim this before searching for something specific.
 
 ```mermaid
 graph TD
@@ -70,46 +70,46 @@ graph TD
     S --> D["Meta"]
 ```
 
-- **[Architecture](/docs/contributing/architecture/system-design)**: how the engine actually works, from the 30,000-foot view down to specific subsystems.
-  - [System design](/docs/contributing/architecture/system-design): the north star. Read this first.
-  - [Storage](/docs/contributing/architecture/storage): the append-only log and the storage seam.
-  - [Transactions](/docs/contributing/architecture/transactions): the single-writer commit protocol.
-  - [Reactivity](/docs/contributing/architecture/reactivity): the read-set/write-set overlap, in full. The concept most worth getting right.
-  - [Query engine](/docs/contributing/architecture/query-engine): how a query becomes an index scan and a recorded read set.
-  - [Execution](/docs/contributing/architecture/execution): how your function code actually runs, and the determinism boundary.
-  - [Runtimes](/docs/contributing/architecture/runtimes): embedded, fleet, and edge hosts for the same engine.
-- **[Codebase](/docs/contributing/codebase/monorepo)**: the practical tour.
-  - [The monorepo](/docs/contributing/codebase/monorepo): what lives where and why.
-  - [Development setup](/docs/contributing/codebase/development): clone, install, build, test, the dev loop.
-- **[Extending](/docs/contributing/extending/custom-component)**: the seams you can build against without touching the engine core.
-  - [A custom component](/docs/contributing/extending/custom-component): like `@concile/auth` or `@concile/scheduler`.
-  - [A custom storage adapter](/docs/contributing/extending/storage-adapter): a new database backend.
-  - [Custom providers](/docs/contributing/extending/providers): email, OAuth, or blob-store backends for existing components.
-- **Meta**: the [contributing guide](/docs/contributing/contributing-guide) (how a change actually gets proposed and landed) and [licensing](/docs/contributing/licensing) (the FSL license and the `ee/` split).
+- **[Architecture](/docs/contributing/architecture/system-design)**: This covers how the engine actually operates, from a high-level overview all the way down to individual subsystems.
+  - [System design](/docs/contributing/architecture/system-design): This is our north star. Start by reading this first.
+  - [Storage](/docs/contributing/architecture/storage): Details on the append-only log and the storage interface.
+  - [Transactions](/docs/contributing/architecture/transactions): A look at the single-writer commit protocol.
+  - [Reactivity](/docs/contributing/architecture/reactivity): Everything about read-set and write-set overlap. This is the concept you'll want to understand most clearly.
+  - [Query engine](/docs/contributing/architecture/query-engine): How a query transforms into an index scan and records a read set.
+  - [Execution](/docs/contributing/architecture/execution): How your function code truly runs, including the determinism boundary.
+  - [Runtimes](/docs/contributing/architecture/runtimes): Information on embedded, fleet, and edge hosts that run the same engine.
+- **[Codebase](/docs/contributing/codebase/monorepo)**: Your practical tour of the code.
+  - [The monorepo](/docs/contributing/codebase/monorepo): An overview of what lives where and the reasoning behind it.
+  - [Development setup](/docs/contributing/codebase/development): Instructions for cloning, installing, building, testing, and understanding the dev loop.
+- **[Extending](/docs/contributing/extending/custom-component)**: The specific areas you can build upon without needing to alter the core engine.
+  - [A custom component](/docs/contributing/extending/custom-component): Examples like `@concile/auth` or `@concile/scheduler`.
+  - [A custom storage adapter](/docs/contributing/extending/storage-adapter): How to create a new database backend.
+  - [Custom providers](/docs/contributing/extending/providers): Setting up email, OAuth, or blob-store backends for the components you already have.
+- **Meta**: You'll find our [contributing guide](/docs/contributing/contributing-guide) here, which explains how to propose and land changes, along with details on [licensing](/docs/contributing/licensing), including the FSL license and the `ee/` directory split.
 
-## Where to start reading
+## Where you should start reading
 
-If you're new here, read in this order:
+If you're new around here, we suggest reading in this order:
 
-1. **[System design](/docs/contributing/architecture/system-design)** first. It's the one-page synthesis of the whole architecture, and every other page assumes you've read it.
-2. **[Reactivity](/docs/contributing/architecture/reactivity)** next. Of everything in the system, this is the piece most likely to be misunderstood, and it's the one idea the whole product is built to protect.
-3. Then dive into whichever subsystem page matches what you're actually touching. You don't need to read all of Architecture front to back.
-4. Get the repo running via [development setup](/docs/contributing/codebase/development) so you can poke at things as you read.
-5. Before writing code for anything nontrivial, read the [contributing guide](/docs/contributing/contributing-guide). This project works spec-first (brainstorm, then a written plan, then implementation), and skipping straight to code for a real feature is the one workflow mistake that reliably costs the most time later.
+1. **[System design](/docs/contributing/architecture/system-design)** first. It provides a helpful one-page summary of the entire architecture, and the rest of the documentation assumes you've seen it.
+2. **[Reactivity](/docs/contributing/architecture/reactivity)** next. Out of everything in the system, this is the piece that gets misunderstood most often, but it's also the core idea our entire product is built around.
+3. From there, feel free to dive into whichever subsystem page makes sense for the parts of the code you're actually working on. You definitely don't have to read the whole Architecture section from beginning to end.
+4. Try getting the repo up and running using the [development setup](/docs/contributing/codebase/development) so you can experiment with the code as you read.
+5. Before you start writing code for anything major, please check out our [contributing guide](/docs/contributing/contributing-guide). We like to work spec-first on this project, which means we brainstorm and write out a plan before we start implementing. Jumping straight into coding a big feature usually ends up costing a lot of time in the long run.
 
-## How mature is this, honestly
+## Just how mature is this project
 
-Shipped and covered by end-to-end tests against the real running server, not just unit tests of internal mechanisms:
+Here is what has officially shipped and is fully covered by end-to-end tests running against a real server, not just isolated unit tests:
 
-- The reactive core.
-- Single-node/single-binary production tooling: `concile serve`, Docker self-host, live hot-deploy, a compiled standalone binary.
-- The Postgres adapter and file storage.
-- The six built-in components: auth, authz, scheduler, workflow, triggers, notifications.
+- The core reactive engine.
+- Production tools for a single node or single binary, including `concile serve`, self-hosted Docker images, live hot-deployments, and a standalone compiled binary.
+- The Postgres adapter and file storage system.
+- All six built-in components: auth, authz, scheduler, workflow, triggers, and notifications.
 
-Not there yet, so you calibrate correctly before relying on it:
+Here is what we haven't quite finished yet, so you know exactly what to expect before you rely on it:
 
-- Distributed Tier 2 multi-node write scale-out is designed and partly built under the source-available `ee/` tree. It isn't a finished, general product surface.
-- Full-text and vector search aren't built.
-- The function executor's internal syscall interface was designed from day one to be safe to send across a real V8 isolate boundary, but that isolation isn't wired up yet. Today's executor runs your functions in-process, trusting them, rather than sandboxing them.
+- We've designed and started building a distributed Tier 2 multi-node write scale-out in the source-available `ee/` directory, but it's not a finished, general-purpose feature yet.
+- We haven't built out full-text or vector search capabilities at this point.
+- When we built the function executor's internal syscall interface, we designed it to safely cross a real V8 isolate boundary. However, that isolation isn't fully connected just yet. Right now, the executor runs your functions directly in-process and trusts them, rather than placing them in a sandbox.
 
-None of these gaps affect the correctness of what has shipped. They're scope not yet reached.
+It is worth noting that none of these missing pieces impact the reliability or correctness of the features we have already shipped. They are simply things we haven't gotten around to building yet.

@@ -5,21 +5,14 @@ description: Run your frontend and the concile backend with one vite command, on
 
 {/* diataxis: how-to */}
 
-Normally a Vite app and a concile backend are two terminals: `vite` in one, `concile dev` in the
-other, plus a hand-written proxy so the browser can reach both. `@concile/vite` collapses that to
-one command. You run `vite`, and the plugin brings the backend up with it, on the same browser
-origin.
+Usually, working with a Vite app and a concile backend means juggling two separate terminals: one for `vite` and another for `concile dev`. You also have to set up a custom proxy just so your browser can talk to both. But with `@concile/vite`, you can collapse all of that into a single handy command! Just run `vite`, and our plugin automatically fires up the backend right alongside it, all on the same browser origin.
 
-One origin matters more than one terminal. The client connects to `${location.host}/api/sync`, so
-when the engine answers on the same host and port as your frontend, there is no proxy config to
-write and no CORS to think about. It just works.
+Having everything on one origin is actually a bigger deal than just saving you a terminal window. Since the client connects to `${location.host}/api/sync`, running the engine on the exact same host and port as your frontend means you can completely skip writing proxy configurations and forget about tricky CORS issues. It really just works right out of the box!
 
-The plugin has two modes behind the same `concile()` call:
+You'll find two helpful modes available through a simple `concile()` call:
 
-- **Proxy mode** (the default) spawns `concile dev` as a child process and wires Vite's proxy to
-  it. The backend behaves exactly as if you had started it yourself.
-- **Embed mode** boots the engine inside Vite's own process. No child process, no proxy hop: the
-  engine answers as Vite middleware, and the reactive WebSocket shares Vite's HTTP server.
+- **Proxy mode** (the default option) spins up `concile dev` as a child process and automatically hooks up Vite's proxy to it. Your backend runs exactly as it would if you started it manually.
+- **Embed mode** actually boots up the engine right inside Vite's own process. Because there is no child process and no proxy hop, the engine acts as seamless Vite middleware, and the reactive WebSocket easily shares Vite's HTTP server.
 
 ## Set up
 
@@ -29,9 +22,7 @@ The plugin has two modes behind the same `concile()` call:
 
 ### Install the plugin
 
-`@concile/vite` goes next to your existing dev dependencies. It needs `vite` 5 or newer, and it
-drives `@concile/cli` (already a dev dependency if you followed the
-[quickstart](/docs/get-started/quickstart)):
+`@concile/vite` goes right next to your existing dev dependencies. It needs `vite` 5 or newer, and it drives `@concile/cli` (which is already a dev dependency if you followed the [quickstart](/docs/get-started/quickstart)):
 
 <Tabs items={['npm', 'pnpm', 'bun']}>
 
@@ -64,7 +55,7 @@ export default defineConfig({
 });
 ```
 
-That's the whole configuration. No options are required.
+That's the entire configuration. You do not need to add any options.
 
 </Step>
 
@@ -76,15 +67,13 @@ That's the whole configuration. No options are required.
 npx vite
 ```
 
-The backend starts with the dev server. Its log lines appear in the same terminal, prefixed
-`[concile]`. Open your app at the Vite URL, and the engine's surfaces are there too, on the same
-origin:
+The backend starts up right along with the dev server. You will see its log lines appear in the same terminal, prefixed with `[concile]`. Open your app at the Vite URL, and you'll find the engine's surfaces are there too, all on the very same origin:
 
 - `/api/*` is the engine's HTTP API, and `/api/sync` is the reactive WebSocket.
 - `/_dashboard` is the [dashboard](/docs/deploy/local-dev#the-dashboard).
 - `/_admin/*` is the admin API the dashboard runs on.
 
-Everything else is your Vite app, untouched.
+Everything else is your Vite app, totally untouched.
 
 </Step>
 
@@ -96,33 +85,22 @@ Everything else is your Vite app, untouched.
 
 <Tab value="Proxy (default)">
 
-Proxy mode spawns `concile dev` as a child process on a free port and injects three entries into
-Vite's dev-server proxy: `/api` (WebSocket-aware, so `/api/sync` upgrades pass through), `/_dashboard`,
-and `/_admin`. Vite merges these with any `server.proxy` entries of your own, so your unrelated proxy
-rules are preserved.
+Proxy mode spawns `concile dev` as a child process on a free port and injects three entries right into Vite's dev-server proxy: `/api` (which is WebSocket-aware, so `/api/sync` upgrades pass through seamlessly), `/_dashboard`, and `/_admin`. Vite merges these with any `server.proxy` entries of your own, ensuring your unrelated proxy rules are kept perfectly intact.
 
-Because the child is the real `concile dev`, everything on the
-[local development](/docs/deploy/local-dev) page holds verbatim: codegen runs on start, the child
-watches `concile/` and hot-reloads your functions on every save, and the ephemeral admin key is
-printed in its (piped) output.
+Since the child process is the real `concile dev`, everything on the [local development](/docs/deploy/local-dev) page works exactly as described. Codegen runs on start, the child watches the `concile/` directory and hot-reloads your functions on every save, and the ephemeral admin key is printed in its piped output.
 
-Some mechanics worth knowing:
+Here are a few handy mechanics you should definitely keep in mind:
 
-- **CLI resolution.** The plugin runs your app's local `node_modules/.bin/concile` if it exists,
-  and falls back to `npx concile`. Override with the `command` option.
-- **Readiness.** Vite waits for the backend to accept TCP connections before serving (polled every
-  200ms, 30 second timeout). If the child exits early or never comes up, `vite` fails with a clear
-  error instead of serving a dead proxy.
-- **Cleanup.** The child is killed when the Vite server closes and on `SIGINT`/`SIGTERM`/process
-  exit, so a stopped `vite` never leaves an orphaned backend behind.
-- **Extra flags.** Anything `concile dev` accepts can be forwarded through `args`, for example
-  `args: ["--database-url", "postgres://..."]`.
+- **CLI resolution.** The plugin runs your app's local `node_modules/.bin/concile` if it exists, and falls back to `npx concile` otherwise. You can override this behavior with the `command` option.
+- **Readiness.** Vite patiently waits for the backend to accept TCP connections before serving. It polls every 200ms with a 30-second timeout. If the child process exits early or never comes up, `vite` fails with a clear error instead of serving a dead proxy.
+- **Cleanup.** The child process gets killed when the Vite server closes and on `SIGINT`, `SIGTERM`, or process exit. This means a stopped `vite` will never leave an orphaned backend behind.
+- **Extra flags.** Anything that `concile dev` accepts can be easily forwarded through `args`. For example, you can pass `args: ["--database-url", "postgres://..."]`.
 
 </Tab>
 
 <Tab value="Embed">
 
-Embed mode is opt-in:
+Embed mode is entirely opt-in:
 
 ```ts title="vite.config.ts"
 export default defineConfig({
@@ -130,34 +108,21 @@ export default defineConfig({
 });
 ```
 
-Instead of spawning a child, the plugin boots the engine inside Vite's process, using
-`@concile/cli`'s shared boot core (reached via a dynamic import; if `@concile/cli` isn't
-installed, embed mode fails at startup with a clear message). The engine paths are served as
-connect middleware, and `/api/sync` gets its own WebSocket upgrade listener that coexists with
-Vite's HMR socket on the same server. There is no second process and no proxy hop.
+Instead of spawning a child process, the plugin boots the engine right inside Vite's process. It uses `@concile/cli`'s shared boot core, reached via a dynamic import. If `@concile/cli` isn't installed, embed mode will fail at startup and give you a clear, helpful message. The engine paths are served as connect middleware, and `/api/sync` gets its own WebSocket upgrade listener that coexists nicely with Vite's HMR socket on the same server. There is no second process and absolutely no proxy hop.
 
-Startup writes `concile/_generated/` and logs the admin key:
+Startup writes to `concile/_generated/` and logs the admin key:
 
 ```
 [concile] embed → engine in-process on Vite's origin (admin key: ...)
 ```
 
-The database is SQLite at `<project root>/.concile/dev.db` by default. Point `dataPath` somewhere
-else, or set `databaseUrl` to a `postgres://` connection string to use
-[Postgres](/docs/deploy/postgres) instead. The admin key is a fresh ephemeral key per run unless you
-pass `adminKey`.
+The database is SQLite and lives at `<project root>/.concile/dev.db` by default. You can easily point `dataPath` somewhere else, or set `databaseUrl` to a `postgres://` connection string to use [Postgres](/docs/deploy/postgres) instead. The admin key is a fresh ephemeral key generated per run unless you explicitly provide an `adminKey`.
 
-The component set (your `concile.config.ts` composition) is fixed at boot, exactly as
-`concile dev` and `concile serve` behave. Adding or removing a component means restarting
-`vite`.
+The component set (your `concile.config.ts` composition) is fixed at boot, which is exactly how `concile dev` and `concile serve` behave. If you want to add or remove a component, you just need to restart `vite`.
 
 <Callout type="info" title="A different database file than concile dev">
 
-Embed mode's default SQLite path is `.concile/dev.db`, while `concile dev` (and so proxy mode)
-defaults to `.concile/data.db`. Switch modes and you're looking at a different, initially empty
-database. If you want the same data in both, point `dataPath` (embed) and `--data` (proxy, via
-`args`) at the same file, but never run both modes against it at once: the engine is
-single-writer.
+Embed mode's default SQLite path is `.concile/dev.db`, while `concile dev` (and proxy mode by extension) defaults to `.concile/data.db`. If you switch modes, you will be looking at a different, initially empty database. If you want the exact same data in both, you can point `dataPath` for embed mode and `--data` for proxy mode (via `args`) to the same file. Just be careful never to run both modes against it at once, as the engine is strictly single-writer.
 
 </Callout>
 
@@ -167,8 +132,7 @@ single-writer.
 
 ## Options
 
-All options are optional. `mode` and `functionsDir` apply to both modes; the rest belong to one mode
-and are ignored by the other.
+All options are completely optional. `mode` and `functionsDir` apply to both modes, while the rest are specific to one mode and simply ignored by the other.
 
 <TypeTable
   type={{
@@ -225,41 +189,23 @@ and are ignored by the other.
 
 ## Hot reload and HMR
 
-Two independent reload loops run side by side, and neither steps on the other:
+Two independent reload loops run side by side, and neither steps on the toes of the other:
 
-- **Frontend HMR is Vite's, unchanged.** Editing a component hot-swaps it in the browser exactly as
-  in any Vite app.
-- **Backend hot reload is concile's.** Saving a file under `concile/` reloads your schema and
-  functions and regenerates `concile/_generated/`, without dropping live subscriptions. A client
-  watching a query stays connected and re-runs against the new code on the next invalidation. A
-  broken save logs `✗ reload failed` and keeps the previous working functions running.
+- **Frontend HMR is Vite's, completely unchanged.** Editing a component hot-swaps it in the browser exactly as you would expect in any Vite app.
+- **Backend hot reload is concile's.** Saving a file under `concile/` reloads your schema and functions and regenerates `concile/_generated/`, without ever dropping your live subscriptions. A client watching a query stays happily connected and re-runs against the new code on the very next invalidation. A broken save simply logs `✗ reload failed` and keeps your previous working functions running in the meantime.
 
-In proxy mode, the child's own file watcher does this, exactly as described under
-[local development](/docs/deploy/local-dev#hot-reload). In embed mode, the plugin subscribes to
-Vite's own file watcher instead: changes under `functionsDir` (except `_generated/`) are debounced for
-50ms and then re-pushed in-process.
+In proxy mode, the child process's own file watcher handles this, exactly as described under [local development](/docs/deploy/local-dev#hot-reload). In embed mode, the plugin subscribes to Vite's own file watcher instead. Any changes under `functionsDir` (except for `_generated/`) are debounced for 50ms and then re-pushed in-process.
 
-Regenerated `_generated/` files are ordinary source files as far as Vite is concerned, so a codegen
-change that your frontend imports (a new function on `api`, say) flows into the browser through
-Vite's normal HMR.
+Regenerated `_generated/` files are treated as ordinary source files as far as Vite is concerned. This means a codegen change that your frontend imports, like a new function on `api`, flows right into the browser through Vite's normal HMR system.
 
 ## Limits
 
-- **The plugin is dev only.** It shapes `vite`'s dev server and nothing else. `vite build` produces
-  your frontend as usual, and you deploy the backend separately
-  ([self-hosting](/docs/deploy/self-hosting), [deploy and build](/docs/deploy/deploy-and-build)).
-- **Embed mode caps request bodies at 5 MiB** on the engine paths. A larger
-  [file storage](/docs/core-concepts/file-storage) upload through `/api/storage/upload` won't fit;
-  use proxy mode, or an S3-backed presigned upload, for big files.
-- **Embed mode needs Vite's own HTTP server.** Under `server.middlewareMode` (how some SSR
-  frameworks host Vite) there is no server to attach to, so the `/api/sync` WebSocket never wires up
-  and engine cleanup doesn't run. The plugin warns loudly; use proxy mode there.
-- **Proxy mode is two processes.** That's by design (zero divergence from the real `concile dev`),
-  but it means backend state lives in the child. If you need to poke the engine from Vite's process,
-  that's what embed mode is for.
+- **The plugin is strictly for development.** It only shapes `vite`'s dev server. Running `vite build` produces your frontend just like always, and you will deploy the backend separately ([self-hosting](/docs/deploy/self-hosting), [deploy and build](/docs/deploy/deploy-and-build)).
+- **Embed mode caps request bodies at 5 MiB** on the engine paths. A larger [file storage](/docs/core-concepts/file-storage) upload through `/api/storage/upload` won't fit here. You should use proxy mode or an S3-backed presigned upload for big files.
+- **Embed mode needs Vite's own HTTP server.** If you use `server.middlewareMode` (which is how some SSR frameworks host Vite), there is no server to attach to. This means the `/api/sync` WebSocket never wires up and engine cleanup doesn't run. The plugin will warn you loudly in this case, so stick to proxy mode there.
+- **Proxy mode is two processes.** This is completely by design to ensure zero divergence from the real `concile dev`, but it means backend state lives in the child process. If you ever need to poke the engine directly from Vite's process, that's exactly what embed mode is for.
 
 ## Related
 
-- [Local development](/docs/deploy/local-dev): everything the backend does under the plugin, flags,
-  hot reload, and the dashboard.
-- [Quickstart](/docs/get-started/quickstart): install concile and see the whole loop end to end.
+- [Local development](/docs/deploy/local-dev): everything the backend does under the plugin, including flags, hot reload, and the dashboard.
+- [Quickstart](/docs/get-started/quickstart): install concile and see the whole loop run end to end.

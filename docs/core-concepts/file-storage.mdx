@@ -5,25 +5,17 @@ description: The _storage table, ctx.storage, and why uploads are a two-phase pr
 
 {/* diataxis: explanation */}
 
-Think of a file the way concile thinks of any other row: something you can reference, query, and
-react to. The bytes themselves just happen to live somewhere else.
+Think of a file just like any other row in Concile. It's something you can reference, query, and react to seamlessly. The actual bytes just happen to be hanging out somewhere else.
 
-File storage is always on. There's nothing to opt into in `concile.config.ts`. The moment you run
-`concile dev`, every project has a reserved `_storage` system table and a `ctx.storage` facade
-available in every query, mutation, and action.
+The best part? File storage is ready to roll right out of the box. There's no need to flip any switches in `concile.config.ts`. The moment you fire up `concile dev`, your project automatically gets a reserved `_storage` system table, plus a handy `ctx.storage` facade that you can use across all your queries, mutations, and actions.
 
-The actual bytes live in a separate `BlobStore` backend: the local filesystem by default, an
-S3-compatible bucket (AWS S3, MinIO, Cloudflare R2) when you point the server at one, or an R2
-binding on the Cloudflare Durable Object host. Your function code stays identical across all three.
+As for the file bytes themselves, they live over in a separate `BlobStore` backend. By default, this is just your local filesystem. But if you want to scale up, you can easily point the server at an S3-compatible bucket like AWS S3, MinIO, or Cloudflare R2, or even use an R2 binding directly on the Cloudflare Durable Object host. The real magic is that your function code stays exactly the same no matter which option you choose!
 
 ## The `_storage` table and `Id<"_storage">`
 
-`_storage` is a built-in system table. It holds metadata for every uploaded file: `status`, `key`,
-`size`, `contentType`, `sha256`, `visibility`, and `expiresAt`, each keyed by its own document id.
+The `_storage` table is a built-in system table that holds the metadata for every uploaded file. This includes properties like `status`, `key`, `size`, `contentType`, `sha256`, `visibility`, and `expiresAt`, and each entry is keyed by its own document id.
 
-Unlike a component's internal tables, `_storage` lives in the app root, not some namespaced corner
-of the schema. That's what makes `Id<"_storage">` usable as a first-class field type in your own
-schema, exactly like `v.id("photos")`:
+Unlike the internal tables for a component, `_storage` lives at the app root instead of being tucked away in a namespaced corner of your schema. This makes `Id<"_storage">` fully usable as a first-class field type in your own schema, just like `v.id("photos")`:
 
 ```ts title="concile/schema.ts"
 import { v, defineSchema, defineTable } from "@concile/values";
@@ -36,28 +28,16 @@ export default defineSchema({
 });
 ```
 
-That field participates in reactivity like any other reference. A query that reads a `photos`
-document holding a stored file id re-runs when that row changes, the same read-set/write-set
-intersection every other table gets (see [How it works](/docs/get-started/how-it-works)). There's
-no special-casing for storage ids on the reactivity path. `_storage` is just another table, one
-that happens to be reserved and app-rooted instead of user-defined.
+This field participates in reactivity just like any other reference. When a query reads a `photos` document that holds a stored file id, it will automatically re-run whenever that row changes. It uses the exact same read-set and write-set intersection that every other table gets (check out [How it works](/docs/get-started/how-it-works) for more details). We do not use any special logic for storage ids when it comes to reactivity. At the end of the day, `_storage` is just another table. It simply happens to be reserved and rooted at the app level instead of being defined by you.
 
 ## Why uploads happen in two phases
 
-A mutation can't do byte I/O. Writing an actual file is non-deterministic in the same way `fetch`
-is: it touches the outside world, and a mutation's whole job is to be a deterministic, replayable
-transaction (see [Mutations](/docs/core-concepts/mutations)).
+A mutation is not allowed to handle byte I/O. Writing an actual file is a non-deterministic action, much like calling `fetch`. It interacts with the outside world, whereas a mutation is strictly designed to be a deterministic and replayable transaction (you can read more about this in [Mutations](/docs/core-concepts/mutations)).
 
-But *minting the record* of an upload, a pending `_storage` row plus a place to send the bytes, is a
-perfectly ordinary transactional write. So an upload splits into two phases:
+However, creating the actual record of an upload is a perfectly ordinary transactional write. This involves creating a pending `_storage` row and figuring out where to send the bytes. Because of this, we split the upload process into two phases:
 
-1. A **mutation** reserves the upload. It inserts a `pending` `_storage` row and returns a target
-   describing where the bytes should go.
-2. The **byte transfer** happens outside any transaction, and finishes by confirming, which flips
-   the row to `ready`. It takes one of two shapes depending on the backend: **proxied** (bytes go
-   through the engine's own HTTP endpoint) or **presigned** (bytes go straight to the bucket). Both
-   are covered under [`generateUploadUrl`'s two return
-   shapes](#generateuploadurls-two-return-shapes) below.
+1. A **mutation** reserves the upload. It inserts a `pending` `_storage` row and returns a target that describes where the bytes need to go.
+2. The **byte transfer** happens completely outside of any transaction. It finishes by confirming the transfer, which then flips the row status to `ready`. This transfer takes one of two shapes depending on your backend: **proxied** (where bytes flow through the engine's own HTTP endpoint) or **presigned** (where bytes go straight to your storage bucket). We cover both of these approaches in the [`generateUploadUrl`'s two return shapes](#generateuploadurls-two-return-shapes) section below.
 
 ```mermaid
 flowchart LR
@@ -66,16 +46,13 @@ flowchart LR
   B -->|"confirm"| D["Row flips to ready"]
 ```
 
-The row only becomes `ready` once the transfer is confirmed. An upload that's reserved and never
-finished (the client abandoned it, the tab closed, the network dropped) leaves a stale `pending`
-row with an expiry on it.
+The row only shifts to `ready` once the transfer is fully confirmed. If an upload gets reserved but is never finished, perhaps because the client abandoned it, the tab was closed, or the network dropped, it simply leaves behind a stale `pending` row with an expiration timer.
 
-A background reaper (covered below) reclaims that row and its bytes on its own. Nothing leaks
-storage forever, and you never have to write code for the abandoned case.
+A background reaper, which we will cover later on, automatically cleans up that row and its bytes. You do not have to worry about storage leaking forever, and you never have to write custom code to handle abandoned uploads.
 
 ## `ctx.storage` in queries and mutations
 
-Inside a query or mutation, `ctx.storage` is a small facade with four methods:
+When you are inside a query or mutation, `ctx.storage` acts as a small facade providing four methods:
 
 ```ts title="concile/files.ts"
 import { mutation, query } from "./_generated/server";
@@ -123,15 +100,11 @@ export const removePhoto = mutation({
   }}
 />
 
-`getUrl`, `getMetadata`, and `delete` are metadata-only. They never touch actual bytes, which is
-why they work from a query as well as a mutation. Each one reads or writes the `_storage` row
-through the calling function's own transaction, so `delete` is transactional and reactive exactly
-like any other write. The tombstone lands, and is visible, in the same commit as everything else
-the mutation did.
+Methods like `getUrl`, `getMetadata`, and `delete` only handle metadata. They never interact with the actual file bytes, which explains why you can use them in both queries and mutations. Each of these methods reads or writes the `_storage` row through the calling function's transaction. This means that `delete` is fully transactional and reactive just like any other write operation. The tombstone lands and becomes visible in the exact same commit as everything else your mutation accomplished.
 
 ### `generateUploadUrl`'s two return shapes
 
-What `target` looks like depends on the backend you're running, not on anything you wrote:
+The exact shape of your `target` depends entirely on the backend you are running, not on the code you wrote:
 
 ```ts
 {
@@ -152,23 +125,19 @@ What `target` looks like depends on the backend you're running, not on anything 
 
 <Tab value="proxied">
 
-Used by the filesystem backend, and the Cloudflare R2-binding backend. The client `POST`s bytes to
-the engine's own `/api/storage/upload` endpoint, which stores them and flips the row to `ready` in
-the same request.
+The filesystem backend and the Cloudflare R2 binding backend use this shape. Your client will `POST` bytes directly to the engine's `/api/storage/upload` endpoint. The engine stores the bytes and flips the row status to `ready` all within the same request.
 
 </Tab>
 
 <Tab value="presigned">
 
-Used by the S3-compatible backend. The client `PUT`s bytes straight to the bucket, bypassing the
-server entirely, then separately `POST`s the returned `confirmUrl` to flip the row to `ready`.
+The S3-compatible backend relies on this shape. Your client will `PUT` bytes straight into the bucket, completely bypassing the server. Once the upload finishes, the client sends a separate `POST` request to the provided `confirmUrl` to flip the row status to `ready`.
 
 </Tab>
 
 </Tabs>
 
-A client that handles both shapes works against every backend without knowing which one is
-deployed:
+If you build a client that handles both of these shapes, it will work seamlessly against every single backend without needing to know which one you actually deployed:
 
 ```ts title="client upload helper"
 async function uploadFile(client, baseUrl: string, file: Blob, contentType: string) {
@@ -193,27 +162,19 @@ async function uploadFile(client, baseUrl: string, file: Blob, contentType: stri
 }
 ```
 
-Either branch ends the same way: a `ready` `_storage` row, whose id you then persist into your own
-document (`ctx.db.insert("photos", { caption, image: storageId })`).
+Both branches finish the exact same way. You end up with a `ready` `_storage` row, and you can then take its id and persist it into your own documents with something like `ctx.db.insert("photos", { caption, image: storageId })`.
 
 <Accordions type="single">
 
 <Accordion title="Why generateUploadUrl is safe inside a mutation">
 
-Minting an upload target inside a mutation looks like it should be non-deterministic. URLs usually
-embed a timestamp or a random token. But every input it derives from is transaction-local:
+Creating an upload target inside a mutation might seem like a non-deterministic operation. URLs typically embed a timestamp or a random token. However, every single input it relies on is completely local to the transaction:
 
-- The blob **key** is the new row's own storage id (`key === storageId`). Ids are minted the same
-  deterministic way every other insert's id is. A replay on an OCC conflict simply commits whichever
-  attempt wins, with its own internally consistent id, expiry, and token.
-- **`expiresAt`** and the capability token's expiry both derive from `cctx.now`, the transaction's
-  fixed timestamp, never `Date.now()`.
-- The capability token itself is an HMAC over `(scope, id, exp)` with the deployment's signing key.
-  That's a pure function of stable inputs, so it's reproducible on replay.
+- The blob **key** is simply the new row's storage id. These ids are minted deterministically, just like any other insert. If there is a replay due to an OCC conflict, the system just commits whichever attempt wins, complete with its own internally consistent id, expiration, and token.
+- **`expiresAt`** and the capability token's expiration both pull from `cctx.now`. This is the transaction's fixed timestamp, meaning it never relies on `Date.now()`.
+- The capability token itself is an HMAC created over the scope, id, and expiration using the deployment's signing key. This acts as a pure function based on stable inputs, making it completely reproducible during a replay.
 
-That's also why `getUrl` is safe to call from a *query*. It needs to mint a fresh capability token
-for a private file on every call (see below), and it does so off `cctx.now`, never wall-clock. So
-two calls to the same query at the same logical read still see a consistent, replay-safe result.
+This explains why it is totally safe to call `getUrl` from a *query*. It has to mint a brand new capability token for a private file on every call, and it always uses `cctx.now` instead of the wall-clock time. Because of this, two calls to the same query during the same logical read will always yield a consistent, replay-safe result.
 
 </Accordion>
 
@@ -221,9 +182,7 @@ two calls to the same query at the same logical read still see a consistent, rep
 
 ## `ctx.storage` in actions
 
-Reading or writing the actual file *contents* is real I/O, the same kind of non-determinism as
-`fetch`. So it belongs in an [action](/docs/core-concepts/actions), never a query or mutation. The
-action-mode `ctx.storage` facade adds two byte-level methods and keeps the two read-only ones:
+When you need to read or write actual file *contents*, you are dealing with real I/O. This brings the same type of non-determinism as calling `fetch`. Therefore, this logic belongs inside an [action](/docs/core-concepts/actions), and should never be in a query or mutation. The action mode version of the `ctx.storage` facade introduces two byte-level methods while keeping the two read-only ones:
 
 ```ts title="concile/files.ts"
 import { action } from "./_generated/server";
@@ -257,40 +216,25 @@ export const resizeAndStore = action({
   }}
 />
 
-Internally, `store` still follows the two-phase shape for crash-safety: it registers a reapable
-`pending` row *before* writing any bytes, then flips it to `ready` only after the write succeeds.
-A crash mid-write leaves a row the reaper can still find and reclaim by key, rather than an
-orphaned blob nothing points to.
+Under the hood, `store` still uses a two-phase process to ensure crash safety. It first registers a reapable `pending` row before writing any bytes at all, and only flips it to `ready` once the write successfully completes. If a crash happens midway through a write, it just leaves behind a row that the reaper can easily find and clean up, rather than creating an orphaned blob sitting around taking up space.
 
-The action facade has no `ctx.db` of its own to write through. It delegates every metadata read and
-write to the internal `_storage:*` functions, and does native byte I/O against the `BlobStore`
-directly. Its notion of "now" is wall-clock `Date.now()`, not a transaction timestamp. That's fine,
-because actions are already non-deterministic by design.
+The action facade does not have its own `ctx.db` to write through. Instead, it delegates every metadata read and write to the internal `_storage:*` functions, and handles the native byte I/O directly against the `BlobStore`. In this context, its understanding of "now" is the wall-clock `Date.now()`, rather than a fixed transaction timestamp. This works perfectly fine since actions are already non-deterministic by their very nature.
 
 ## Access control: private by default
 
-Every file has a `visibility`, set at upload time (`generateUploadUrl({ visibility: "public" })` or
-`store(bytes, { visibility: "public" })`) and defaulting to `"private"`.
+Every file has a `visibility` property. You set this during upload using either `generateUploadUrl({ visibility: "public" })` or `store(bytes, { visibility: "public" })`. If you do not specify it, the visibility defaults to `"private"`.
 
 <Tabs items={['public', 'private (default)']}>
 
 <Tab value="public">
 
-Served at a stable URL. Anyone holding it can fetch the bytes, no token required. On the S3 backend
-this resolves to a CDN or bucket public URL (when `CONCILE_STORAGE_PUBLIC_URL` is configured). On
-the filesystem backend, or without a public base URL configured, it resolves to the engine's own
-serve endpoint with no token appended, streaming the bytes with no access check. Use `"public"` for
-content meant to be world-readable: a marketing asset, a public avatar.
+Public files are served at a stable URL. Anyone who has the URL can fetch the bytes without needing a token. On the S3 backend, this usually resolves to a CDN or bucket public URL as long as `CONCILE_STORAGE_PUBLIC_URL` is configured. If you are using the filesystem backend, or if you have not configured a public base URL, it resolves to the engine's own serve endpoint. The bytes stream freely with no token appended and no access checks. You should use `"public"` for content that is meant to be world-readable, like marketing assets or public user avatars.
 
 </Tab>
 
 <Tab value="private (default)">
 
-Never served on a bare URL. `getUrl()` instead returns a URL carrying a signed, expiring
-capability token: an HMAC over the file id, an expiry, and a *scope*, signed with the deployment's
-own admin key. Anyone holding that URL can fetch the bytes until it expires. There's no per-user or
-per-role check layered on top today (see
-[What isn't built](#what-isnt-built-per-user-authorization) below).
+Private files are never served on a bare URL. Instead, `getUrl()` returns a URL that includes a signed, expiring capability token. This token is an HMAC generated over the file id, an expiration timestamp, and a specific *scope*, all signed using your deployment's own admin key. Anyone holding that specific URL can fetch the bytes until the token expires. Keep in mind that we do not layer any per-user or per-role checks on top of this right now (you can read more in the [What isn't built](#what-isnt-built-per-user-authorization) section below).
 
 </Tab>
 
@@ -298,116 +242,67 @@ per-role check layered on top today (see
 
 <Callout type="warn" title="Handle private links like secrets">
 
-Treat a private file's `getUrl` like a signed download link. It's safe to hand to the user it's
-meant for, but not safe to log publicly or embed anywhere anyone can view it. It can leak into
-logs, browser history, or a `Referer` header.
+You should treat the `getUrl` for a private file just like a highly sensitive signed download link. It is perfectly safe to hand directly to the intended user, but you should never log it publicly or embed it where others can see it. These links can easily leak into logs, browser history, or even a `Referer` header.
 
 </Callout>
 
-A GET-capability token defaults to **one hour of validity** from the moment `getUrl` mints it (a
-fresh token is minted on every call, not cached on the row). That's long enough for a client to
-read the url out of a query result and actually fetch the bytes, and short enough to bound how long
-a leaked link stays live.
+A GET capability token defaults to exactly **one hour of validity** starting from the moment `getUrl` mints it. Keep in mind that a fresh token is minted on every single call rather than being cached on the row. One hour gives your client plenty of time to read the URL from a query result and fetch the bytes, while also keeping a tight limit on how long a leaked link stays active.
 
 ### Token scopes aren't interchangeable
 
-The capability token embeds a **scope**, either `"upload"` or `"get"`, as part of what it HMACs. A
-token minted for one purpose can't be replayed for the other, even for the same file id and expiry:
+The capability token embeds a **scope**, which is either `"upload"` or `"get"`, directly into what it HMACs. This means you cannot take a token minted for one purpose and replay it for another, even if the file id and expiration are exactly the same:
 
-- An **upload-scoped** token (minted by `generateUploadUrl` and appended to the proxied upload URL,
-  or to the presigned target's `confirmUrl`) authorizes writing or finalizing that one pending row.
-  It can't be used to read a private file's bytes.
-- A **get-scoped** token (minted by `getUrl` for a private file) authorizes reading that one file's
-  bytes. It can't be replayed against the upload or confirm endpoints to overwrite the file. That
-  matters precisely because a `getUrl` link is the one meant to be handed out and embedded in
-  pages, and is therefore the one most likely to leak.
+- An **upload-scoped** token is minted by `generateUploadUrl` and added to either the proxied upload URL or the presigned target's `confirmUrl`. This authorizes you to write or finalize that specific pending row. You cannot use it to read the bytes of a private file.
+- A **get-scoped** token is minted by `getUrl` for a private file and authorizes reading that specific file's bytes. You cannot replay this token against the upload or confirm endpoints to overwrite the file. This separation is super important because `getUrl` links are the ones you hand out and embed in web pages, making them the most likely to leak.
 
-The upload endpoints layer a second check on top of the token. Even a validly scoped, unexpired
-upload token is refused unless the row is *currently* a live pending upload (not already `ready`,
-not tombstoned, not expired). So a captured but still-unexpired upload token can't be replayed
-later to resurrect a deleted file or clobber an already-finalized one.
+Our upload endpoints also add a second layer of security on top of the token. Even if an upload token is valid and unexpired, it will be refused unless the row is *currently* an active, pending upload. This ensures a captured upload token cannot be used later to resurrect a deleted file or overwrite an already finished one.
 
 ## The orphan reaper
 
-Two situations leave a `_storage` row that no longer names a servable file:
+There are two main situations where a `_storage` row might no longer point to a usable file:
 
-- An upload was reserved (`generateUploadUrl`) but never confirmed. The client abandoned it, or a
-  direct-to-bucket PUT never got its follow-up confirm call. The row stays `pending` past its
-  `expiresAt`.
-- `ctx.storage.delete(id)` ran. Deleting is a transactional tombstone, not a byte-level delete. The
-  mutation flips the row back to `pending` with an *already-expired* `expiresAt`, because the
-  actual blob delete is real I/O and can't run inside the transaction. The row briefly still
-  carries its `key` so the reaper can find the blob by it.
+- An upload was reserved using `generateUploadUrl` but was never actually confirmed. Maybe the client abandoned it, or a direct bucket PUT just never sent its follow up confirm call. The row simply stays stuck in a `pending` state past its `expiresAt` time.
+- You ran `ctx.storage.delete(id)`. Deleting in concile acts as a transactional tombstone rather than an immediate byte-level delete. The mutation flips the row back to `pending` and sets it to an *already expired* `expiresAt` time. We do this because the actual blob deletion is real I/O and cannot safely happen inside the transaction. For a short time, the row still holds onto its `key` so the background reaper can track down the blob.
 
-A background driver, `storageReaper`, built on the same recurring-driver seam the scheduler uses,
-sweeps for exactly these rows: any `pending` row whose `expiresAt` has passed. It deletes the row
-and the underlying blob together. The sweep runs on a wall-clock timer (60 seconds by default) and
-immediately whenever a commit touches `_storage`. So a short-TTL abandoned upload, or a `delete()`
-tombstone, doesn't have to wait out a full sweep interval. It's typically reclaimed within moments
-of becoming reapable, not up to a minute later.
+We have a background driver called `storageReaper` that sweeps for exactly these kinds of rows. It looks for any `pending` row whose `expiresAt` time has passed, and then deletes the row and its associated blob together. This sweep runs on a default wall-clock timer of 60 seconds, and it also triggers immediately anytime a commit touches the `_storage` table. Because of this, abandoned uploads or `delete()` tombstones usually get cleaned up within moments rather than waiting a full minute.
 
-This is why `getUrl`/`getMetadata` return `null`, not stale data, for a deleted file the instant
-the delete commits. The *metadata* tombstone is immediate and transactional. Only the *bytes*
-trail behind, reclaimed asynchronously the next time the reaper sweeps.
+This is exactly why `getUrl` and `getMetadata` will return `null` instead of stale data the instant a delete commits. The metadata tombstone goes into effect immediately in a transactional way. Only the physical bytes trail behind, and the reaper quietly cleans them up asynchronously during its next sweep.
 
 ## Range requests
 
-The serve endpoint (`GET /api/storage/:id`) supports `Range: bytes=start-end` and open-ended
-`bytes=start-` requests, returning `206 Partial Content` with `Content-Range`/`Accept-Ranges`
-headers. That's useful for streaming video or audio playback, or a resumable-download UI that
-seeks into a large file.
+The serve endpoint located at `GET /api/storage/:id` fully supports `Range: bytes=start-end` as well as open-ended `bytes=start-` requests. It will return a `206 Partial Content` response alongside the proper `Content-Range` and `Accept-Ranges` headers. This feature is incredibly useful when you want to stream video or audio playback, or build a resumable download UI that needs to seek into a large file.
 
-Multi-range requests (`bytes=0-1,5-6`) aren't supported and fall back to a full `200` response. A
-range whose start is past the end of the file returns `416 Range Not Satisfiable`. An end past the
-file's actual size is clamped down to the last valid byte rather than rejected.
+We do not currently support multi-range requests like `bytes=0-1,5-6`. Those will just fall back to a full `200` response. If you request a range starting past the end of the file, you will get a `416 Range Not Satisfiable` response. However, if the end of your range goes past the actual file size, we simply clamp it down to the last valid byte instead of rejecting it.
 
-On backends that redirect to a signed bucket URL instead of streaming through the engine (S3 with
-a private file, or a public file with a CDN base URL configured), the range request is honored by
-whichever HTTP server actually serves the bytes. The engine's own redirect doesn't need to parse
-`Range` itself in that case, since it never streams the body.
+For backends that redirect to a signed bucket URL instead of streaming through the engine, the actual range request gets handled by whichever HTTP server serves the bytes. In those cases, our engine just issues the redirect and does not even need to parse the `Range` header, since it does not touch the body stream.
 
 ## Backend configuration
 
-Bytes are stored through a small, pluggable `BlobStore` seam. The engine never imports a
-byte-backend driver directly, the same storage-seam story as `DocStore` for SQLite and Postgres.
-Three adapters ship:
+Bytes are stored through a small, pluggable `BlobStore` seam. The engine never imports a byte backend driver directly, which is the exact same strategy we use with `DocStore` for SQLite and Postgres. We ship with three adapters out of the box:
 
 <Tabs items={['@concile/blobstore-fs', '@concile/blobstore-s3', '@concile/blobstore-r2']}>
 
 <Tab value="@concile/blobstore-fs">
 
-The zero-config default. Files land under `<data-dir>/storage`, next to your SQLite (or
-Postgres-adjacent) data. Nothing needs to be set to use it, and uploads use the `proxied` shape.
-`signGetUrl`/`publicUrl` both return `null` here, so private-file downloads always go through the
-engine's own token-gated serve endpoint, and public files stream through it too, with no token
-appended.
+This is the zero-config default. Your files land under `<data-dir>/storage`, right next to your SQLite or Postgres data. You do not need to configure anything to use it, and uploads automatically use the `proxied` shape. Both `signGetUrl` and `publicUrl` return `null` here, meaning private file downloads always route through the engine's own token-gated serve endpoint. Public files stream through that same endpoint, just without a token appended.
 
 </Tab>
 
 <Tab value="@concile/blobstore-s3">
 
-Any S3-compatible bucket: AWS S3, MinIO, or Cloudflare R2 accessed via its S3-compatible API.
-Uploads use the `presigned` shape, a direct PUT to the bucket that bypasses the server. Reads
-either redirect to a short-lived presigned GET (private files) or to a configured public/CDN base
-URL (public files with `CONCILE_STORAGE_PUBLIC_URL` set).
+This works with any S3-compatible bucket, including AWS S3, MinIO, or Cloudflare R2 when accessed via its S3 API. Uploads use the `presigned` shape, which is a direct PUT to the bucket that entirely bypasses the server. For reads, it will either redirect to a short-lived presigned GET for private files, or to a configured public CDN base URL for public files when you have `CONCILE_STORAGE_PUBLIC_URL` set.
 
 </Tab>
 
 <Tab value="@concile/blobstore-r2">
 
-A Workers-safe adapter for the Cloudflare Durable Object host. It uses an injected R2 bucket
-binding (`env.R2`) instead of the AWS SDK, so it carries no `node:fs`, `node:stream`, or
-`node:crypto` dependency and runs inside a Worker. Because an R2 *binding* has no presigned-PUT
-surface, uploads on this adapter always use the `proxied` shape, streamed through the Durable
-Object's own `fetch` handler. This adapter is wired up by the Cloudflare runtime host, not by
-`concile dev`/`serve`'s env and flag selection below.
+This is a Workers-safe adapter built specifically for the Cloudflare Durable Object host. It relies on an injected R2 bucket binding called `env.R2` instead of the standard AWS SDK. As a result, it carries no `node:fs`, `node:stream`, or `node:crypto` dependencies and runs smoothly inside a Worker. Since an R2 *binding* does not offer a presigned PUT surface, uploads on this adapter always rely on the `proxied` shape, streaming through the Durable Object's own `fetch` handler. Keep in mind that this adapter is wired up by the Cloudflare runtime host itself, not through the environment variables and flags used by `concile dev` or `serve`.
 
 </Tab>
 
 </Tabs>
 
-For `concile dev`/`serve`, the byte backend is picked automatically at boot based on whether an
-S3 bucket is configured. Unset means filesystem, set means S3:
+When you run `concile dev` or `serve`, the system automatically picks the byte backend at boot based on whether you have an S3 bucket configured. If you leave it unset, you get the filesystem. If you set it, you get S3:
 
 ```bash
 concile serve --storage-bucket my-app-uploads --storage-endpoint https://s3.us-east-1.amazonaws.com
@@ -431,46 +326,26 @@ CONCILE_STORAGE_BUCKET=my-app-uploads concile serve
 
 </Accordions>
 
-Flags win over environment variables when both are set, the same convention as
-`--database-url`/`CONCILE_DATABASE_URL` (see [Self-hosting](/docs/deploy/self-hosting)).
+Flags always win over environment variables when both are set. This follows the exact same convention as `--database-url` and `CONCILE_DATABASE_URL` (you can read more about this in [Self-hosting](/docs/deploy/self-hosting)).
 
-The bucket is the *only* switch between the two backends. If `CONCILE_STORAGE_ENDPOINT`,
-`_REGION`, or `_PUBLIC_URL` are set but `CONCILE_STORAGE_BUCKET` isn't, the server refuses to
-boot with an actionable error rather than silently falling back to the filesystem. Those settings
-only make sense for S3, so their presence without a bucket is an unambiguous misconfiguration.
-Silently writing uploads to local disk when you meant to point at durable object storage is a
-data-durability footgun: uploads would vanish on the next container recreate. The standard AWS
-credential env vars are *not* treated as S3 intent on their own. They commonly exist for unrelated
-reasons even on filesystem-backend deployments.
+The bucket is the *only* switch you need to flip between the two backends. If you set `CONCILE_STORAGE_ENDPOINT`, `_REGION`, or `_PUBLIC_URL` without also setting `CONCILE_STORAGE_BUCKET`, the server will refuse to boot. Instead of silently falling back to the filesystem, it will give you a clear, actionable error. Those settings only really make sense for S3, so providing them without a bucket is a clear misconfiguration. Silently writing uploads to your local disk when you intended to use durable object storage is a massive data durability trap, since your uploads would just vanish on the next container restart. We also do not treat the standard AWS credential environment variables as S3 intent on their own, because they often exist for completely unrelated reasons even when you are using a filesystem backend.
 
 <Callout type="info">
 
-On the filesystem backend, `concile dev`/`serve` also fails fast at boot if the storage
-directory can't be created or written to. A read-only mount or wrong ownership surfaces
-immediately as a clear boot error, not as a mysterious failure on the first upload.
+When you use the filesystem backend, `concile dev` and `concile serve` will also fail fast at boot if the storage directory cannot be created or written to. Things like a read-only mount or incorrect ownership will surface immediately as a clear boot error, rather than surprising you with a mysterious failure during your first upload.
 
 </Callout>
 
 ## What isn't built: per-user authorization
 
-Reading a private file today is a bearer-token model. Whoever holds a valid `getUrl` link can read
-the bytes until it expires, with no notion of "only the uploader" or "only this user's team."
+Currently, reading a private file uses a bearer token model. Anyone who has a valid `getUrl` link can read the file bytes until that link expires. We do not have built-in concepts like "only the uploader can read" or "only this user's team can access it."
 
-The serve endpoint has an internal `checkRead(identity, id)` authz seam reserved for exactly this,
-but it's intentionally unwired. There's no per-`(table, id, identity)` read-permission primitive in
-the engine today to plug into it, and wiring it to something half-built would mean guessing at a
-permission convention rather than shipping one.
+The serve endpoint actually has an internal `checkRead(identity, id)` authorization seam reserved for this exact purpose, but we left it intentionally unwired. There is no read permission primitive in the engine today to plug into it, and we did not want to wire it up to a half-built solution just to guess at a permission convention.
 
-Until that seam is wired, if your app needs finer-grained rules than "anyone with the link, until
-it expires," add your own check in the function that hands out the file's id or url. For example,
-verify the caller owns the parent document before returning `ctx.storage.getUrl(id)` from a query.
+Until we fully wire that seam, if your app needs finer-grained rules than "anyone with the link can view it until it expires," you should add your own check inside the function that hands out the file's id or url. For example, you can verify that the caller actually owns the parent document before you return `ctx.storage.getUrl(id)` from a query.
 
 ## Related
 
-- [Mutations](/docs/core-concepts/mutations) and [Actions](/docs/core-concepts/actions): why the
-  upload flow splits where it does, and why byte I/O can only happen in an action.
-- [How it works](/docs/get-started/how-it-works): the read-set/write-set intersection that makes a
-  `photos` row holding an `Id<"_storage">` reactive like any other field.
-- [Self-hosting](/docs/deploy/self-hosting): pointing the storage backend at an S3-compatible
-  bucket instead of the local filesystem default, alongside the equivalent `--database-url` story
-  for Postgres.
+- [Mutations](/docs/core-concepts/mutations) and [Actions](/docs/core-concepts/actions): learn why the upload flow splits where it does, and why byte I/O is restricted to actions.
+- [How it works](/docs/get-started/how-it-works): dive into the read-set and write-set intersection that makes a `photos` row holding an `Id<"_storage">` reactive just like any other field.
+- [Self-hosting](/docs/deploy/self-hosting): read about pointing the storage backend at an S3-compatible bucket instead of the default local filesystem, which is similar to the `--database-url` setup for Postgres.

@@ -5,137 +5,79 @@ description: What makes a subscribed query re-run, which query shapes get the ch
 
 {/* diataxis: explanation */}
 
-[How it works](/docs/get-started/how-it-works) covers the core idea: a subscribed query re-runs
-only when a committed write intersects its recorded read-set.
+Our [How it works](/docs/get-started/how-it-works) guide covers the core idea: a subscribed query re-runs only when a committed write actually intersects with its recorded read-set.
 
-This page goes one level deeper, from the app developer's seat. You'll see exactly what makes a
-query re-run, which query shapes get the cheapest incremental updates, and why reconnecting after
-a dropped connection is nearly free.
+This page takes you a level deeper, looking at things from the perspective of an app developer. We'll explore exactly what makes a query re-run, which query shapes get the cheapest incremental updates, and why reconnecting after a dropped connection is almost entirely free!
 
-Everything below describes the engine that ships today. If you want the internals (the data
-structures, the wire protocol, the source files), see the contributor-facing
-[Reactivity & sync](/docs/contributing/architecture/reactivity) page instead.
+Everything below describes how the engine works today. If you're looking for the nitty-gritty internals like data structures, the wire protocol, or source files, you should head over to the contributor-facing [Reactivity & sync](/docs/contributing/architecture/reactivity) page instead.
 
 ## Read-sets are range-precise, not table-level
 
-When a query reads through `ctx.db.query(table, index).eq(field, value)`, the engine doesn't
-record "this query touched the `messages` table." It records the exact slice of the index the
-scan covered. For `.eq("conversationId", id)`, that's the single narrow span of the
-`by_conversation` index belonging to that one conversation. Adding `.gt`/`.gte`/`.lt`/`.lte`
-narrows it further. `ctx.db.get(id)` records a single point.
+When your query reads data using `ctx.db.query(table, index).eq(field, value)`, the engine doesn't just note that the query touched the `messages` table. Instead, it records the exact slice of the index that the scan covered. For example, `.eq("conversationId", id)` translates to the single narrow span of the `by_conversation` index that belongs to that specific conversation. If you add `.gt`, `.gte`, `.lt`, or `.lte`, you narrow it down even further. And if you use `ctx.db.get(id)`, it records just a single point.
 
-That precision is what [Queries](/docs/core-concepts/queries) means when it says the shape of
-your query determines how it reacts: a narrow read range means only writes landing in that same
-narrow range can ever invalidate it. A busy app can commit thousands of writes to other
-conversations without your subscription doing any work at all.
+This precision is exactly what we mean on the [Queries](/docs/core-concepts/queries) page when we say the shape of your query determines how it reacts. A narrow read range means that only writes landing in that exact same narrow range can ever invalidate your query. This means a busy app can commit thousands of writes to other conversations without forcing your subscription to do any extra work at all.
 
-An unbounded scan, say `ctx.db.query("messages", "by_creation").collect()`, still records a
-range: the full interval of that index. That's correct, not a penalty. A query that reads
-everything genuinely depends on everything, including rows that don't exist yet, so any write to
-the table has to re-run it. Scoping reads down to an index range is what keeps a query's
-reactive footprint small.
+What about an unbounded scan, like `ctx.db.query("messages", "by_creation").collect()`? It still records a range, but in this case, it's the full interval of that index. This is the correct behavior, not a penalty. A query that reads absolutely everything genuinely depends on everything, including rows that haven't been created yet. Because of this, any write to the table will force it to re-run. Scoping your reads down to a specific index range is the key to keeping your query's reactive footprint as small as possible.
 
 ## What triggers a re-run
 
-A subscription re-runs when, and only when:
+A subscription will re-run when, and only when, these three things happen:
 
-1. Its query recorded a read-set (the ranges above) when it last ran.
-2. A mutation committed a write-set: the rows it inserted, replaced, or deleted. See
-   [Mutations](/docs/core-concepts/mutations).
-3. The two overlap.
+1. Its query recorded a read-set like the ranges we talked about above when it last ran.
+2. A mutation committed a write-set, which includes the rows it inserted, replaced, or deleted. You can read more about this in [Mutations](/docs/core-concepts/mutations).
+3. Those two sets overlap.
 
-Everything else, every live subscription with no overlap, is untouched. There's no polling, no
-periodic sweep, and no per-write cost proportional to the number of unrelated subscribers. The
-engine finds the affected subscriptions with an indexed matcher, so a write that affects one
-subscription out of ten thousand only pays for that one.
+Everything else is left completely untouched. Every live subscription without an overlap just keeps on ticking. We don't use polling, there are no periodic sweeps, and you won't see a per-write cost that scales with the number of unrelated subscribers. The engine finds affected subscriptions using an indexed matcher. This means a write affecting just one subscription out of ten thousand only pays the performance cost for that single one.
 
-There's one fallback: a subscription that recorded no ranges at all matches at the table level
-instead, so any write to a table it read re-runs it. Coarse, but it can never under-report and
-silently miss a write.
+We do have one fallback mechanism. If a subscription didn't record any ranges at all, it matches at the table level instead. As a result, any write to a table it read will cause it to re-run. It is a bit coarse, but it ensures we never under-report and silently miss a write.
 
 ## Keep queries in these shapes for cheap updates
 
-Being affected no longer always means "re-run the handler and resend the whole result." For a few
-provably safe query shapes, the engine derives the exact changed rows straight from the commit
-itself and sends just those rows as a diff. Your `useQuery` hook sees the same value either way.
-The difference is cost, not correctness.
+Being affected by a change does not always mean we have to re-run the handler and resend the entire result anymore. For a handful of provably safe query shapes, the engine actually figures out the exact changed rows straight from the commit itself. It then sends just those specific rows as a diff. Your `useQuery` hook will see the exact same value either way. The only difference here is the cost, not the correctness.
 
-You get the diff path when the query is one of these shapes:
+You get to take advantage of this efficient diff path when your query fits one of these shapes:
 
-- **A single `ctx.db.get(id)`,** returned as-is. A write to that one document becomes a
-  single-row update on the wire.
-- **A single `.collect()` over one index range,** returned as-is, with no `.take()`. A write
-  becomes an add, edit, or remove of just the affected rows. The wire cost is proportional to
-  what changed, not to the size of the list, so the saving grows as the list grows.
-- **A single `.paginate()` page,** returned as-is. Same row-level diffs, pinned to the page's own
-  key range, so writes elsewhere in the list don't touch it.
+- **A single `ctx.db.get(id)`** that is returned exactly as-is. A write to that single document simply becomes a single-row update sent over the wire.
+- **A single `.collect()` over one index range** that is returned as-is, without using `.take()`. In this case, a write becomes a targeted add, edit, or remove of just the affected rows. The wire cost stays proportional to what actually changed, rather than the overall size of the list. This means your savings grow as the list grows.
+- **A single `.paginate()` page** returned as-is. You get the same row-level diffs, but they are pinned to the page's own key range. Because of this, writes happening elsewhere in the list won't affect it.
 
-And you fall back to a full re-run and full resend (the exact behavior every query had before
-this optimization existed) when the query:
+If your query doesn't fit those shapes, it falls back to a full re-run and full resend. This is the exact same behavior every query had before we introduced this optimization. This fallback happens when the query:
 
-- post-processes the result (`.filter()`, `.map()`, `.slice()`, a spread, any re-shaping),
-- makes more than one read (a `get` plus a `collect`, a join, reading twice),
-- uses `.take()` or hits a `maxScan` cap while paginating,
-- or reads tables with row-level read policies applied.
+- Post-processes the result by using `.filter()`, `.map()`, `.slice()`, a spread operator, or any kind of re-shaping.
+- Makes more than one read, like doing a `get` plus a `collect`, performing a join, or reading twice.
+- Uses `.take()` or hits a `maxScan` cap while paginating.
+- Reads tables that have row-level read policies applied.
 
 <Callout type="info" title="A performance layer, not a correctness contract">
 
-Write your queries however is natural for your app. A query that can't take the diff path still
-works exactly as it always has. Nothing about what your query returns ever depends on which path
-it takes. There's also no flag to force it: the engine proves safety per run, or falls back.
+You should always write your queries however feels most natural for your app. A query that cannot take the diff path will still work exactly as it always has. Nothing about the data your query returns depends on which path it takes under the hood. There is also no flag you can use to force it. The engine will automatically prove safety per run, and it falls back when needed.
 
 </Callout>
 
-Every diffed update also carries a small checksum, computed independently on the server and the
-client. If they ever disagree, that one query quietly resyncs from a full re-run. Wrong data is
-never shown for more than a beat, and nothing else is affected.
+Every diffed update also brings along a small checksum that gets computed independently on both the server and the client. If those checksums ever disagree, that specific query will quietly resync itself by doing a full re-run. This ensures wrong data is never shown for more than a brief moment, and absolutely nothing else is affected.
 
 ## Reconnect resume: coming back is nearly free
 
-A client that drops offline and comes back (a laptop lid, a train tunnel) resubscribes to
-everything it was watching. Naively that would mean re-downloading every result just to learn
-most of them didn't change. Concile avoids both the bytes and most of the work, automatically,
-with no configuration:
+When a client drops offline and eventually comes back online, like when you close your laptop lid or drive through a train tunnel, it has to resubscribe to everything it was watching. A naive approach would be to re-download every single result, often just to discover that most of them did not even change. Concile gracefully avoids wasting both bandwidth and compute power, doing it all automatically with zero configuration needed.
 
-- **The bandwidth half.** Every pushed result carries a content fingerprint. On reconnect, the
-  client echoes back the last fingerprint it saw for each query. If the fresh result matches, the
-  server answers with a tiny "unchanged" marker instead of the value. In the measured
-  all-unchanged ceiling case this cuts reconnect bandwidth by roughly 99%.
-- **The compute half.** For a query the server can prove wasn't touched by any commit during the
-  disconnect (it keeps each query's read-set indexed for about a minute after the last subscriber
-  leaves), it skips re-executing the handler entirely. In the measured benchmark, 50 unchanged
-  subscriptions re-execute zero handlers on reconnect; if exactly one was touched during the gap,
-  exactly one re-runs.
+- **The bandwidth half.** Every result we push out carries a content fingerprint. When a client reconnects, it simply echoes back the last fingerprint it saw for each query. If the fresh result matches that fingerprint, the server answers with a tiny "unchanged" marker instead of sending the full value again. In our measured best-case scenario where nothing changed, this cuts the reconnect bandwidth by roughly 99%.
+- **The compute half.** If the server can prove a query was not touched by any commit during the disconnect, it skips re-executing the handler entirely. To do this, it keeps each query's read-set indexed for about a minute after the last subscriber leaves. In our benchmarks, a setup with 50 unchanged subscriptions re-executes absolutely zero handlers on reconnect. If exactly one was touched during the offline gap, then exactly one will re-run.
 
-Both halves are conservative: any doubt (an evicted entry, a write during the gap, a reconnect
-that lands on a different node in a multi-node fleet) falls back to a normal re-run. A resume is
-never allowed to serve stale data.
+Both of these optimizations are very conservative. If there is any doubt at all, like an evicted entry, a write that happened during the gap, or a reconnect that ends up landing on a different node in a multi-node fleet, it simply falls back to a normal re-run. A resume is never allowed to serve stale data under any circumstances.
 
 ## Why determinism makes this safe
 
-Everything above (trusting a re-run, deriving a diff from a commit without re-reading the store,
-skipping a re-run on the strength of a timestamp) rests on one rule: a query is a pure function
-of the data it reads. Same rows in, same output out, every time.
+Everything we discussed above relies on one very important rule. Trusting a re-run, deriving a diff from a commit without re-reading the store, and skipping a re-run based on a timestamp all require that a query is a pure function of the data it reads. If you put the same rows in, you should get the same output back out, every single time.
 
-That's why queries and mutations can't call `fetch`, read `Date.now()`, or call `Math.random()`.
-When you genuinely need the current time or a random value, `ctx.now()` and `ctx.random()` are
-the deterministic substitutes: both are fixed for the life of a transaction and any replay of it.
-Anything that can't be made deterministic, like a real network call, belongs in an
-[action](/docs/core-concepts/actions), which runs outside the transaction and is never part of a
-subscription.
+This strict rule is exactly why queries and mutations are not allowed to call `fetch`, read `Date.now()`, or use `Math.random()`. When your app genuinely needs the current time or a random value, you can use `ctx.now()` and `ctx.random()` as deterministic substitutes. Both of these are fixed for the entire life of a transaction, as well as any replay of it. Anything that simply cannot be made deterministic, like making a real network call, belongs in an [action](/docs/core-concepts/actions). Actions run outside the transaction and are never part of a subscription.
 
-The same determinism is what lets a mutation be safely replayed after an optimistic-concurrency
-conflict. See [Mutations](/docs/core-concepts/mutations).
+This same commitment to determinism is also what lets a mutation be safely replayed after an optimistic-concurrency conflict. You can read more about how that works in [Mutations](/docs/core-concepts/mutations).
 
 ## Honest boundaries
 
-- **The compute-saving reconnect skip is per-node.** The server keeps that bookkeeping in memory,
-  so in a multi-node fleet a reconnect that lands on a different node re-runs its queries
-  normally. Correct by falling back, never by guessing.
-- **There's no way to force the diff path.** The engine decides per run, from what it can prove
-  about that run's read shape. The list of shapes above is the whole contract.
-- **In a fleet, a write forwarded from another node re-runs affected queries in full** rather
-  than diffing them. This affects wire savings only, never correctness.
+- **The compute-saving reconnect skip is per-node.** The server keeps all of that bookkeeping directly in memory. So, if you are running a multi-node fleet and a reconnect lands on a different node, it will just re-run its queries normally. We stay correct by falling back, never by guessing.
+- **There is no way to force the diff path.** The engine makes this decision on a per-run basis, based on what it can prove about the read shape of that specific run. The list of shapes we talked about earlier is the entire contract.
+- **In a fleet, a write forwarded from another node re-runs affected queries in full** instead of diffing them. This only impacts your wire savings and never compromises the correctness of your app.
 
 ## Measured
 
@@ -147,14 +89,8 @@ conflict. See [Mutations](/docs/core-concepts/mutations).
 | Reconnect bandwidth, nothing changed while away | full resend | roughly 99% less |
 | Handler re-executions on reconnect, 50 unchanged subscriptions | 50 | 0 |
 
-Sources: the project `CHANGELOG.md`, versions 0.0.1 through 0.0.4, each with the benchmark
-scenario named. All figures are single-node, developer-laptop measurements. The shape of each win
-(cost proportional to what changed, re-execution eliminated) is what travels to other hardware,
-not the absolute numbers.
+You can find the sources for these metrics in the project `CHANGELOG.md`, specifically versions 0.0.1 through 0.0.4, where each benchmark scenario is named. Keep in mind that all these figures are single-node measurements taken on a developer laptop. The real takeaway here is the shape of each win, like making the cost proportional to what actually changed or eliminating re-execution entirely. That fundamental efficiency is what travels to other hardware, rather than the absolute numbers themselves.
 
 ## Going deeper
 
-The machinery behind this page (the interval-indexed subscription matcher, the diff classifier
-and its identity checks, the drift checksum, the resume registry, and the wire protocol) is
-documented for contributors in
-[Reactivity & sync](/docs/contributing/architecture/reactivity).
+The behind-the-scenes machinery we discussed on this page is fully documented for contributors over in [Reactivity & sync](/docs/contributing/architecture/reactivity). That includes the interval-indexed subscription matcher, the diff classifier and its identity checks, the drift checksum, the resume registry, and the wire protocol.

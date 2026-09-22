@@ -5,33 +5,25 @@ description: Live hot-swap onto a running server with concile deploy, or compile
 
 {/* diataxis: how-to */}
 
-You've got a `concile serve` deployment running (see [Self-hosting](/docs/deploy/self-hosting)). Now
-you want to ship a code change to it without rebuilding the container or restarting the process.
+So, you have a `concile serve` deployment up and running (feel free to check out [Self-hosting](/docs/deploy/self-hosting) if you need a hand with that). Now you want to push a new code change to it, but you'd really rather not deal with rebuilding the container or restarting the process.
 
-There are two ways to do that, plus a third path if you'd rather skip containers entirely:
+You actually have a couple of options here, plus a third route if you want to skip containers completely:
 
-- `concile deploy` pushes local `concile/` changes to an already-running `serve` and hot-swaps them in
-  live, with no restart.
-- `concile build` compiles your whole app into one self-contained executable, for when you'd rather
-  ship a binary than a Docker image.
-- The provisioning targets (`cloudflare`, `docker`, `railway`, `fly`, `aws`), a different
-  `concile deploy` mode entirely. They provision infrastructure, they don't hot-swap.
+- `concile deploy` takes your local `concile/` changes, pushes them to a running `serve`, and hot-swaps them in live without any restarts.
+- `concile build` bundles your entire app into a single, self-contained executable. It is perfect for when you prefer shipping a binary instead of a Docker image.
+- The provisioning targets (`cloudflare`, `docker`, `railway`, `fly`, `aws`) are a totally different mode for `concile deploy`. They set up infrastructure instead of doing a hot-swap.
 
-This page covers all three. If you already know what you're looking for, jump straight there:
+We'll cover all three on this page. If you know exactly what you need, feel free to jump right to it:
 
 - [`concile deploy`: live hot-swap](#concile-deploy-live-hot-swap-onto-a-running-server)
 - [The six deploy targets](#the-six-deploy-targets)
 - [Deploying from CI (GitHub Actions)](#deploying-from-ci-github-actions)
 - [`concile build`: one self-contained binary](#concile-build-one-self-contained-binary)
-- [Choosing between `deploy`, `build`, and Docker](#choosing-between-deploy-build-and-docker-self-hosting),
-  the comparison table, if you're not sure which of the three fits
+- [Choosing between `deploy`, `build`, and Docker](#choosing-between-deploy-build-and-docker-self-hosting) has a handy comparison table if you are trying to figure out which one is right for you.
 
 ## `concile deploy`: live hot-swap onto a running server
 
-`concile deploy` transpiles your local `concile/` functions and additive schema changes, then pushes
-them to a running `concile serve` deployment. The server validates everything and applies it
-atomically: it keeps serving requests the whole time, and a rejected deploy never leaves it
-half-updated.
+When you use `concile deploy`, it transpiles your local `concile/` functions along with any additive schema changes, and pushes them straight to your active `concile serve` deployment. The server checks everything over and applies the updates atomically. This means it keeps handling requests normally the entire time, and if a deploy gets rejected, it won't ever leave things in a half-updated state.
 
 <Steps>
 
@@ -39,8 +31,7 @@ half-updated.
 
 ### Enable it on the server: `--allow-deploy`
 
-A running `serve` doesn't accept deploys by default. Start it with `--allow-deploy`, or set
-`CONCILE_ALLOW_DEPLOY=1`, to opt in:
+By default, a running `serve` will not accept any deploys. To allow them, you just need to start it with `--allow-deploy`, or you can set `CONCILE_ALLOW_DEPLOY=1` to opt in:
 
 ```bash
 concile serve --dir concile --allow-deploy
@@ -48,16 +39,11 @@ concile serve --dir concile --allow-deploy
 CONCILE_ALLOW_DEPLOY=1 concile serve --dir concile
 ```
 
-Without this flag, `POST /_admin/deploy` isn't registered at all. The request falls through to the
-generic admin-router 404, indistinguishable from a nonexistent endpoint.
+If you forget this flag, `POST /_admin/deploy` won't even be registered. The request will just fall through to the generic admin router 404, looking exactly like an endpoint that doesn't exist.
 
 <Callout type="warn" title="Why this isn't on by default">
 
-`CONCILE_ADMIN_KEY` already grants full read and write access to your data (the dashboard and
-`concile deploy` both authenticate with it). Without a separate opt-in, a leaked admin key would mean
-remote code execution: every deploy replaces the functions that run *inside* the transaction. Requiring
-`--allow-deploy` keeps "read/write my data" and "replace my running code" as two distinct, deliberately
-opted-into capabilities, even though today they share one key.
+The `CONCILE_ADMIN_KEY` already gives you full read and write access to your data, and both the dashboard and `concile deploy` use it to authenticate. If we didn't require a separate opt-in, someone getting hold of a leaked admin key could lead to remote code execution, since every deploy replaces the functions running *inside* your transactions. By requiring `--allow-deploy`, we keep "read and write my data" and "replace my running code" as two totally separate capabilities that you have to choose to enable, even if they currently share the same key.
 
 </Callout>
 
@@ -80,33 +66,24 @@ CONCILE_ADMIN_KEY=your-strong-secret concile deploy --url https://myapp.example
 | `--check` | none | off | Fail if committed `concile/_generated/` has drifted from a fresh codegen run |
 | `--dry-run` | none | off | Validate (preflight + package) without pushing |
 
-`CONCILE_ADMIN_KEY` is read from the environment (there's no `--admin-key` flag), and it's required.
-`concile deploy` refuses to run without it. The general `--target`/`--env` flags also apply here
-(this command form is the default `--target serve --env production`); see
-[the CLI reference](/docs/core-concepts/cli#concile-deploy).
+We read `CONCILE_ADMIN_KEY` straight from your environment variables, and there is no `--admin-key` flag. It is required, so `concile deploy` will flat out refuse to run without it. You can also use the general `--target` and `--env` flags here. The command above is basically a shortcut for the default `--target serve --env production`. For more details, check out [the CLI reference](/docs/core-concepts/cli#concile-deploy).
 
 <Callout type="warn" title="Run codegen yourself before a serve-target deploy">
 
-The `serve` target pushes your tree exactly as it sits on disk. It does not regenerate
-`concile/_generated/`. If your schema or functions changed, run `concile codegen` (and commit the
-result) before deploying. `--check` verifies exactly this and fails fast on drift.
+Keep in mind that the `serve` target pushes your tree exactly as it is on your disk. It doesn't regenerate `concile/_generated/` for you. If you have changed your schema or functions, make sure to run `concile codegen` and commit the results before you deploy. Using `--check` will verify this for you and fail quickly if it spots any drift.
 
 </Callout>
 
-On success, verbatim:
+On success, you will see something like this:
 
 ```text
-✓ deployed via serve (production) — rev 4b3187d88b93 (7 functions, 2 changed)
+✓ deployed via serve (production) - rev 4b3187d88b93 (7 functions, 2 changed)
   https://myapp.example
 ```
 
-`rev` is a content hash of the pushed file tree (the first 12 hex characters of its SHA-256), not a
-sequence number. Deploying the exact same tree twice produces the same `rev`. The `2 changed` part
-appears on a delta push (see
-[what a deploy actually does](#going-deeper-what-a-deploy-actually-does) below); a full push prints
-just `(<n> functions)`. The new functions are callable immediately, with no restart, and existing
-WebSocket subscriptions keep working. They reactively pick up writes made through the newly deployed
-code, exactly as if the change had been made via `concile dev`'s hot reload.
+The `rev` you see is a content hash of the file tree you just pushed (specifically, the first 12 hex characters of its SHA-256), not a simple sequence number. If you deploy the exact same tree twice, you will get the exact same `rev`. You will notice the `2 changed` part during a delta push, which you can read more about in [what a deploy actually does](#going-deeper-what-a-deploy-actually-does) below. A full push will just print `(<n> functions)`. 
+
+Your new functions are ready to be called immediately without needing a restart, and all your existing WebSocket subscriptions will keep humming along nicely. They will reactively pick up any writes made through the newly deployed code, just like you are used to with `concile dev`'s hot reload.
 
 </Step>
 
@@ -124,8 +101,7 @@ code, exactly as if the change had been made via `concile dev`'s hot reload.
 
 ### Additive-only schema: destructive changes are rejected, not migrated
 
-There are no data migrations in Concile today. `diffSchema` compares your pushed schema against the
-server's live one, field by field and table by table.
+Right now, Concile doesn't have data migrations. Instead, `diffSchema` carefully compares the schema you just pushed with the server's live one, checking it field by field and table by table.
 
 **Allowed** (accepted, swap proceeds):
 - Adding a brand-new table.
@@ -133,20 +109,13 @@ server's live one, field by field and table by table.
 
 **Rejected** (409, server stays on the previous version):
 - Removing or renaming a table.
-- Changing a table's internal table number. This shouldn't happen under normal use: table numbers are
-  stable across a deploy specifically so this check never fires on a legitimate change.
+- Changing a table's internal table number. You shouldn't see this under normal use, as table numbers are kept stable across deploys specifically so this check doesn't block legitimate changes.
 - Removing a field from an existing table.
-- Changing a field's type, including what looks like a safe widening, like `string` to a union that
-  includes `string`, or `any` to `string`. The diff can't verify a "widening" is actually sound against
-  every existing row (an `any` column may hold values that aren't valid `string`s), so v1 takes the
-  conservative position: any field-type change is rejected. Over-rejecting only fails a deploy. It can
-  never corrupt data, which is the property this gate exists to protect.
-- Turning an existing optional field required.
-- Adding a new required field to an existing table. Existing rows don't have it, so make it optional
-  instead, and backfill via a mutation if you need every row populated.
+- Changing a field's type. This includes changes that might look like a safe widening, like going from a `string` to a union that includes `string`, or changing `any` to `string`. The diff can't be sure a widening is safe for every single existing row (for example, an `any` column might hold values that aren't valid strings). Because of this, we take a conservative approach and reject any field-type changes. Being overly cautious here only fails a deploy; it can never corrupt your data, which is the whole reason this protection is here.
+- Turning an existing optional field into a required one.
+- Adding a new required field to a table that already exists. Since existing rows wouldn't have this new field, make it optional instead, and then backfill the data with a mutation if you need it populated for every row.
 
-Any of these come back as `deploy failed: <reason>` describing exactly which table and field failed and
-why:
+If any of these issues happen, you will get a `deploy failed: <reason>` error that tells you exactly which table and field failed and why:
 
 ```
 ✗ deploy failed: field "notes.priority" changed type string→number (destructive)
@@ -154,18 +123,11 @@ why:
 
 ### The component set is fixed at boot
 
-Components composed via `concile.config.ts` (`@concile/scheduler`, `@concile/workflow`, and any
-others) are whatever was declared when `serve` booted. `concile deploy` can push new functions and
-additive schema against that fixed component set, but it can't add or remove a component on a live
-server. Changing the component list in `concile.config.ts` requires restarting the process, or
-redeploying the container.
+Any components you've set up in `concile.config.ts` (like `@concile/scheduler`, `@concile/workflow`, and so on) are locked in when `serve` first boots. While `concile deploy` is great for pushing new functions and additive schema updates for those components, it cannot add or remove a component on a live server. If you need to change the component list in `concile.config.ts`, you will have to restart the process or redeploy your container entirely.
 
 <Callout type="warn" title="Functions must be top-level under concile/">
 
-The function loader (used by `dev`, `serve`, and `deploy` alike) is top-level only. It does not recurse
-into subdirectories. Keep your query, mutation, and action modules directly under `concile/*.ts` (for
-example `concile/items.ts`), not nested under a subfolder like `concile/lib/items.ts`. Nested modules are
-silently not loaded, in a deploy exactly as in local dev.
+The function loader we use for `dev`, `serve`, and `deploy` only looks at the top level. It doesn't dig into subdirectories. Make sure to keep your query, mutation, and action modules directly under `concile/*.ts` (like `concile/items.ts`). If you nest them in a subfolder, like `concile/lib/items.ts`, they just won't be loaded, and this happens silently both in your local dev and during a deploy.
 
 </Callout>
 
@@ -180,7 +142,7 @@ CONCILE_ADMIN_KEY=prod-secret concile serve --dir concile --allow-deploy &
 
 # 3. Push it live (run `concile codegen` first if schema/functions changed)
 CONCILE_ADMIN_KEY=prod-secret concile deploy --url http://localhost:3000
-# ✓ deployed via serve (production) — rev 4b3187d88b93 (8 functions, 2 changed)
+# ✓ deployed via serve (production) - rev 4b3187d88b93 (8 functions, 2 changed)
 #   http://localhost:3000
 
 # 4. The new function is callable immediately, no restart:
@@ -189,8 +151,7 @@ curl -X POST http://localhost:3000/api/run \
   -d '{"path":"notes:add","args":{"box":"b1","text":"hello"}}'
 ```
 
-Any WebSocket client subscribed to a query touching the `notes` table before step 3 sees the write from
-step 4 pushed to it reactively. The deploy in between didn't drop or reset the subscription.
+If you have any WebSocket clients subscribed to a query on the `notes` table before step 3, they will see the write from step 4 pushed to them reactively. The deploy that happened in between won't drop or reset their subscriptions.
 
 ### Going deeper: what a deploy actually does
 
@@ -200,24 +161,10 @@ step 4 pushed to it reactively. The deploy in between didn't drop or reset the s
 
 `concile deploy` runs three steps locally, then hands off to one remote step:
 
-1. **Transpiles every `.ts` file under `concile/`** via esbuild's `transform` (not `bundle`). This strips
-   TypeScript types but leaves import specifiers completely untouched. A bare import like
-   `import { v } from "@concile/values"` passes through as-is, and it resolves against the target
-   server's own `node_modules`, not anything on your machine. Relative imports resolve within the
-   pushed file tree itself. This is why a deploy target needs the same `@concile/*` packages
-   installed as your app does (the Docker image already provides this, see
-   [Self-hosting](/docs/deploy/self-hosting)). It does **not** refresh `concile/_generated/`; that's
-   `concile codegen`'s job, run it yourself before deploying.
-2. **Probes `GET /_admin/deploy/modules`** for the server's current per-module content hashes
-   (lowercase-hex SHA-256 per pushed path). An older server, or one with deploy disabled, doesn't
-   answer; the CLI just falls back to a full-tree push.
-3. **Posts a delta** to `/_admin/deploy`, with `Authorization: Bearer $CONCILE_ADMIN_KEY`: modules
-   whose hash differs go as `changed` (`{path, code}`), matching ones as `unchanged` (`{path,
-   sha256}`), so an unchanged module never crosses the wire twice. Without a probe base it posts the
-   full `{files: [{path, code}]}` tree instead, and if the server reports the delta's base is stale
-   (another deploy landed in between), the CLI retries once with the full tree.
-4. **The server validates and applies it** (see the next section). This is the only step that runs
-   remotely.
+1. **Transpiles every `.ts` file under `concile/`** using esbuild's `transform` (not `bundle`). This strips out the TypeScript types but leaves your import specifiers completely untouched. So, a bare import like `import { v } from "@concile/values"` passes through exactly as it is, and it resolves against the target server's own `node_modules`, not what you have locally. Relative imports resolve within the pushed file tree itself. This is exactly why a deploy target needs the same `@concile/*` packages installed as your app does (the Docker image already handles this, which you can read about in [Self-hosting](/docs/deploy/self-hosting)). Also, it does **not** refresh `concile/_generated/`; that is `concile codegen`'s job, so remember to run it yourself before deploying.
+2. **Probes `GET /_admin/deploy/modules`** to check the server's current per-module content hashes (lowercase-hex SHA-256 per pushed path). If you have an older server, or one with deploy disabled, it won't answer. In that case, the CLI just falls back to doing a full-tree push.
+3. **Posts a delta** to `/_admin/deploy`, using `Authorization: Bearer $CONCILE_ADMIN_KEY`. Modules whose hashes differ are sent as `changed` (`{path, code}`), while matching ones go as `unchanged` (`{path, sha256}`). This way, an unchanged module never crosses the wire twice. Without a probe base, it posts the full `{files: [{path, code}]}` tree instead. If the server says the delta's base is stale (maybe another deploy landed in between), the CLI simply retries once with the full tree.
+4. **The server validates and applies it**, which we explain in the next section. This is actually the only step that runs remotely.
 
 </Accordion>
 
@@ -225,24 +172,12 @@ step 4 pushed to it reactively. The deploy in between didn't drop or reset the s
 
 On the server, `applyDeploy` does the following, in this exact order:
 
-1. **Writes the pushed tree** to disk under a per-revision directory (`<deployRoot>/<rev>/functions/`),
-   rejecting any path that's absolute or contains a `..` segment (a path-traversal guard on the
-   payload).
-2. **Loads and pushes it** through the same `loadFunctionsDir → push` pipeline used at boot, against the
-   deployment's fixed, already-composed component set and its current table numbers. Existing tables,
-   app and component alike, keep the numbers they already have. Only genuinely new tables get fresh
-   ones.
-3. **Diffs the schema** (see the additive-only rules above). If a table or field change is destructive,
-   the deploy is rejected here, and nothing has been swapped yet.
-4. **Only if both of those succeed**, it atomically swaps four things in sequence, with no `await`
-   between them: `runtime.setModules(...)`, `runtime.setTableNumbers(...)`, `setRoutes(...)` (for
-   `httpAction` routes), and the admin API's live schema (`adminApi.setSchema(...)`). Because there's no
-   `await` in this sequence, no request can observe a state where only some of these have updated.
+1. **Writes the pushed tree** to disk under a per-revision directory (`<deployRoot>/<rev>/functions/`). It actively rejects any path that is absolute or contains a `..` segment, which acts as a nice path-traversal guard on the payload.
+2. **Loads and pushes it** through the exact same `loadFunctionsDir → push` pipeline that it uses at boot. It does this against the deployment's fixed, already-composed component set and its current table numbers. Existing tables, whether they are app tables or component tables, keep the numbers they already have. Only genuinely new tables get fresh ones.
+3. **Diffs the schema**, following the additive-only rules we covered earlier. If it spots a destructive change to a table or field, the deploy gets rejected right here, and absolutely nothing is swapped yet.
+4. **Only if both of those succeed**, it atomically swaps four things in sequence, with no `await` between them: `runtime.setModules(...)`, `runtime.setTableNumbers(...)`, `setRoutes(...)` (for `httpAction` routes), and the admin API's live schema (`adminApi.setSchema(...)`). Since there is no `await` in this sequence, no request will ever see a weird state where only some of these have been updated.
 
-A load error or a schema rejection both leave the running deployment completely untouched. The previous
-version keeps serving every request throughout. That's what "atomic" means here: not that the swap is
-instantaneous (it is), but that validation is guaranteed to fully complete, with zero mutation of
-running state, before the first field is swapped.
+If there is a load error or a schema rejection, the running deployment is left completely untouched. Your previous version just keeps serving every request the whole time. This is what we mean by "atomic". It isn't just that the swap is instantaneous (which it is), but that validation is guaranteed to fully complete without changing any running state before the very first field is ever swapped.
 
 </Accordion>
 
@@ -265,15 +200,11 @@ already-running process. Target settings and credentials can live in the `deploy
 | `fly` | `fly deploy` (Fly builds the image itself) | Yes | Needs `flyctl`; `FLY_API_TOKEN` in CI; optional `app`/`region` settings |
 | `aws` | `aws apprunner start-deployment` against an existing App Runner service | Yes | Needs the `aws` CLI and a `serviceArn` setting; `AWS_ACCESS_KEY_ID` or `AWS_PROFILE` in CI |
 
-Provider CLIs are never bundled into concile; each target shells out to the one you already have
-installed, and fails `preflight` with a clear install hint if it's missing. Only the `serve` target
-uses the additive-schema gate described above. The provisioning targets ship a whole new
-build/image, so there's nothing to gate: the platform's own rollout replaces the process.
+We never bundle provider CLIs into concile itself. Instead, each target simply shells out to the CLI you already have installed. If it's missing, you will get a clear install hint during the `preflight` check. Just remember that only the `serve` target actually uses the additive-schema gate we described earlier. The other provisioning targets ship a brand new build or image, so there is nothing to gate, because the platform's own rollout handles replacing the process.
 
 ## Deploying from CI (GitHub Actions)
 
-CI is just another caller of the same command: the workflow below runs the identical
-`concile deploy` a human runs locally, with credentials coming from repository secrets.
+Think of CI as just another caller running the same command. The workflow below runs the exact same `concile deploy` that you would run locally, pulling credentials from your repository secrets instead of your environment.
 
 ```yaml title=".github/workflows/deploy.yml"
 name: deploy
@@ -301,29 +232,17 @@ jobs:
           CONCILE_ADMIN_KEY: ${{ secrets.CONCILE_ADMIN_KEY }}
 ```
 
-Three properties make this workflow safe to copy:
+Here are three reasons why this workflow is perfectly safe to copy:
 
-- **It never hangs.** `concile deploy` derives its interactive mode from `stdin.isTTY` and the
-  `CI` environment variable (GitHub Actions sets `CI=true` on every runner), so a missing credential
-  fails fast with an actionable message and a non-zero exit instead of prompting.
-- **`--check` gates codegen drift.** It exits 1 if `concile/_generated/` doesn't match a fresh
-  codegen run, which matters doubly for the `serve` target since a serve deploy never regenerates
-  it. `--dry-run` additionally runs the target's `preflight` and `package` steps without pushing.
-- **Exit codes are real.** A rejected schema change, a failed `--check`, or a provider CLI error all
-  exit 1 and fail the job like any other CI step.
+- **It never hangs.** `concile deploy` figures out its interactive mode from `stdin.isTTY` and the `CI` environment variable (GitHub Actions automatically sets `CI=true` on every runner). Because of this, if a credential is missing, it will fail fast with a helpful message and a non-zero exit rather than sitting there prompting you forever.
+- **`--check` gates codegen drift.** It will exit 1 if `concile/_generated/` doesn't perfectly match a fresh codegen run. This is especially important for the `serve` target since a serve deploy will never regenerate it. Adding `--dry-run` goes a step further by validating the target's `preflight` and `package` steps without actually pushing anything.
+- **Exit codes are real.** A rejected schema change, a failed `--check`, or a provider CLI error will always exit 1 and fail the job just like any standard CI step.
 
-For a provisioning target, swap the deploy line and secrets: `bunx concile deploy --target
-cloudflare` with `CLOUDFLARE_API_TOKEN` (plus a `npm i -D wrangler` install step), `--target
-railway` with `RAILWAY_TOKEN`, `--target fly` with `FLY_API_TOKEN`, and so on per the table above.
-Tokens always come from CI secrets; the provider CLIs' interactive `login` flows have no place in a
-headless runner.
+If you are using a provisioning target, you just need to swap out the deploy line and your secrets. For example, use `bunx concile deploy --target cloudflare` with a `CLOUDFLARE_API_TOKEN` (and remember to add an `npm i -D wrangler` install step). Or use `--target railway` with `RAILWAY_TOKEN`, `--target fly` with `FLY_API_TOKEN`, and so forth, as shown in the table above. Make sure your tokens always come from CI secrets, because the interactive `login` flows of provider CLIs really have no place in a headless runner.
 
 ## `concile build`: one self-contained binary
 
-`concile build` compiles your entire app, the Bun runtime, the Concile engine, `bun:sqlite`, your
-`concile/` functions and schema, and any composed components, into a single executable via
-`bun build --compile`. At deployment time you need nothing but the binary and a data directory: no
-`bun`/`node` install, no `node_modules`, no `concile/` source tree.
+Using `concile build` will compile your entire app, the Bun runtime, the Concile engine, `bun:sqlite`, your `concile/` functions and schema, plus any composed components, directly into a single executable using `bun build --compile`. When it comes time to deploy, all you need is that binary and a data directory. You won't need a `bun` or `node` install, no `node_modules`, and no `concile/` source tree at all.
 
 | Component | Bundled into the binary? |
 |---|---|
@@ -341,11 +260,7 @@ headless runner.
 
 ### Check prerequisites
 
-You need a `concile/` directory (schema and functions) and, optionally, a `concile.config.ts` next to
-it: the same layout `concile dev` uses. There's no `concile init` scaffolder. If your app composes
-components, install them as ordinary dependencies (`bun add @concile/scheduler @concile/workflow`).
-`concile build` runs its own codegen internally, so there's no separate `concile codegen` step to
-run first.
+You will need a `concile/` directory (for your schema and functions) and, optionally, a `concile.config.ts` file right next to it. This is exactly the same layout that `concile dev` uses. There is no `concile init` scaffolder here. If your app uses any composed components, just install them as ordinary dependencies (like `bun add @concile/scheduler @concile/workflow`). Also, `concile build` handles its own codegen internally, so you do not have to run a separate `concile codegen` step beforehand.
 
 </Step>
 
@@ -387,8 +302,7 @@ On success, `concile build` prints the output path and its size:
 CONCILE_ADMIN_KEY=your-strong-secret ./concile-server --port 3000 --hostname 0.0.0.0 --data-dir ./data
 ```
 
-`CONCILE_ADMIN_KEY` is required, exactly like `concile serve`. The binary fails fast (exit 1) if
-it isn't set, and it's never auto-generated. This is production-facing, same as `serve`.
+Just like with `concile serve`, the `CONCILE_ADMIN_KEY` is completely required here. The binary will fail fast (exit 1) if you don't set it, and it will never automatically generate one for you. This setup is meant for production, just like `serve`.
 
 | Flag | Env fallback | Default | Description |
 |---|---|---|---|
@@ -397,20 +311,15 @@ it isn't set, and it's never auto-generated. This is production-facing, same as 
 | `--data-dir` | none | `./data` | Directory holding the SQLite database (`db.sqlite`) |
 | `--database-url` | `CONCILE_DATABASE_URL` | SQLite | Postgres connection string, same flag `serve` accepts. Unset uses the embedded SQLite adapter |
 
-The binary is otherwise runtime-flag-compatible with `concile serve`: the same required-admin-key
-fail-fast behavior, and graceful shutdown on `SIGTERM`/`SIGINT` (stop the listener, close the database,
-exit 0).
+Otherwise, the binary is totally runtime-flag-compatible with `concile serve`. It has the same required admin key fail-fast behavior, and it handles graceful shutdowns on `SIGTERM` or `SIGINT` perfectly (it will stop the listener, securely close the database, and then exit 0).
 
-Immediately after the listener is up, the binary writes exactly one JSON line to stdout:
+Right after the listener comes up, the binary will write exactly one JSON line to stdout:
 
 ```json
 {"ready":true,"port":3000,"url":"http://0.0.0.0:3000"}
 ```
 
-This exists for a parent process, like Electron, Tauri, or a supervisor script, to read stdout and know
-precisely when the server is ready and which port it actually bound (relevant when `--port 0` or
-`$PORT` picks an ephemeral port). Nothing else is printed to stdout before this line. Treat "first line
-of stdout" as the contract, not "first line matching some pattern."
+This is really helpful for a parent process (like Electron, Tauri, or a supervisor script) to read stdout and know exactly when the server is ready and which port it actually bound to. This is especially relevant if you are using `--port 0` or `$PORT` to pick an ephemeral port. Nothing else will be printed to stdout before this line. You should treat "first line of stdout" as the strict contract, rather than looking for a "first line matching some pattern".
 
 </Step>
 
@@ -426,22 +335,18 @@ Everything embedded at compile time is fixed for the life of that binary:
 - The composed component set: adding `@concile/workflow` to `concile.config.ts` requires a rebuild,
   same as it requires a restart under `serve`.
 
-If you need live hot-swap, run `concile serve --allow-deploy` instead (see above). The single binary
-trades that away for a zero-dependency, single-file deployment artifact.
+If you really need live hot-swap functionality, you should run `concile serve --allow-deploy` instead, as we talked about above. The single binary trades that feature away so you can have a zero-dependency, single-file deployment artifact.
 
 </Callout>
 
 ### Other limitations
 
-- Single instance. SQLite requires exclusive file access, so it's one binary process per data directory
-  (unless you pass `--database-url` to point it at Postgres, in which case the usual single-writer
-  advisory-lock rules from [Postgres](/docs/deploy/postgres) apply instead).
-- No `concile init` scaffolder. You bring your own `concile/` directory. `concile build` doesn't
-  generate one.
+- **Single instance.** SQLite strictly requires exclusive file access, meaning you can only have one binary process per data directory. The only exception is if you pass `--database-url` to point it at Postgres. In that case, the usual single-writer advisory-lock rules from [Postgres](/docs/deploy/postgres) apply instead.
+- **No `concile init` scaffolder.** You have to bring your own `concile/` directory, because `concile build` will not generate one for you.
 
 ### Worked example: fixture app with a component, then cross-compiled
 
-This mirrors the shipped end-to-end test:
+This matches what we do in our shipped end-to-end test:
 
 ```bash title="terminal"
 concile build --dir concile --outfile ./concile-server --no-dashboard
@@ -466,25 +371,12 @@ concile build --dir concile --target linux-x64 --outfile ./dist/server-linux --n
 
 <Accordion title="How the build works internally">
 
-1. **Refreshes codegen**: `loadFunctionsDir → push → writeGenerated`, same as `deploy`, so the app's own
-   `import "./_generated/server"` resolves once bundled.
-2. **Generates a static-import entrypoint.** `bun build --compile` only bundles code reached via static
-   `import` statements. There's no filesystem to dynamically scan inside a compiled binary, so
-   `concile build` writes a throwaway `entry.ts` that statically imports every `concile/` module by
-   absolute path, the schema, `concile.config.ts` (if present), and, if the dashboard is included,
-   every dashboard asset via `import x with { type: "file" }`. It then reconstructs the exact
-   `{schema, modules}` shape `loadFunctionsDir` returns at runtime and hands it to `runBinaryServer` (the
-   same boot core `concile serve` uses, just fed statically imported modules instead of a dynamic
-   directory scan).
-3. **Shells out to `bun build --compile --minify`** (via `node:child_process.spawnSync`, so this works
-   whether the CLI itself is invoked under Bun or Node; only the compile step itself needs Bun on
-   `PATH`).
+1. **Refreshes codegen:** It runs `loadFunctionsDir → push → writeGenerated` exactly like `deploy` does, ensuring that your app's own `import "./_generated/server"` can resolve properly once everything is bundled.
+2. **Generates a static-import entrypoint:** Since `bun build --compile` only bundles code that is reached via static `import` statements, and there is no filesystem to dynamically scan inside a compiled binary, `concile build` gets creative. It writes a temporary `entry.ts` file that statically imports every single `concile/` module by its absolute path. It does the same for the schema, `concile.config.ts` if you have one, and every dashboard asset (using `import x with { type: "file" }`) if the dashboard is included. After that, it reconstructs the exact `{schema, modules}` shape that `loadFunctionsDir` usually returns at runtime, and feeds it to `runBinaryServer`. This is the exact same boot core that `concile serve` uses, just fed with statically imported modules rather than scanning a dynamic directory.
+3. **Shells out to `bun build --compile --minify`:** It does this using `node:child_process.spawnSync`, which means it works perfectly whether you invoke the CLI under Bun or Node. The only thing is that the compile step itself still needs Bun to be on your `PATH`.
 4. **Cleans up the generated entrypoint.**
 
-**Why no `--bytecode`:** the generated entrypoint boots with a top-level `await` (to fully start the
-runtime before serving), and `bun build --compile --bytecode` rejects top-level await. Cold-start speed
-is negligible for a long-running self-hosted server binary, so `concile build` omits `--bytecode`
-rather than restructure the entrypoint around it.
+**Why we skip `--bytecode`:** The generated entrypoint boots up with a top-level `await` to make sure the runtime fully starts before it begins serving. Unfortunately, `bun build --compile --bytecode` will flat out reject top-level await. Since cold-start speed really doesn't matter much for a long-running self-hosted server binary, `concile build` simply omits `--bytecode` instead of trying to restructure the entire entrypoint around it.
 
 </Accordion>
 
@@ -516,7 +408,7 @@ concile build --target windows-x64 --outfile ./dist/server-windows.exe
 
 </Tabs>
 
-A `windows-x64` target automatically appends `.exe` to `--outfile` if you didn't already include it.
+For the `windows-x64` target, it will automatically append `.exe` to your `--outfile` if you didn't include it yourself.
 
 ### Deployment patterns for the binary
 
@@ -532,9 +424,7 @@ CONCILE_ADMIN_KEY=your-strong-secret ./concile-server --hostname 0.0.0.0 --port 
 
 <Tab value="Immutable Docker image">
 
-An alternative to the bind-mounted image in [Self-hosting](/docs/deploy/self-hosting): cross-compile
-for Linux, then copy just the binary into a distroless base with no Bun, no `node_modules`, and no
-source at all.
+If you want an alternative to the bind-mounted image we discussed in [Self-hosting](/docs/deploy/self-hosting), you can cross-compile for Linux and then copy just the binary into a distroless base. This gives you an image with no Bun, no `node_modules`, and no source code at all.
 
 ```dockerfile title="Dockerfile.binary"
 FROM gcr.io/distroless/base-debian12
@@ -554,8 +444,7 @@ docker run -p 3000:3000 -e CONCILE_ADMIN_KEY=your-strong-secret -v concile-data:
 
 <Tab value="Desktop sidecar">
 
-Tauri or Electrobun can spawn the binary as a child process and parse its `{"ready":...}` stdout line
-to learn the URL to connect to. That gives you process isolation from the app's own runtime.
+Tools like Tauri or Electrobun can actually spawn the binary as a child process. They can then parse its `{"ready":...}` stdout line to figure out the exact URL to connect to. This gives you fantastic process isolation from the app's own runtime.
 
 </Tab>
 
@@ -592,9 +481,7 @@ WantedBy=multi-user.target
 | Runtime dependency | `serve` already running | Bun/Node only to build; the binary itself needs nothing | Docker |
 | Postgres | Whatever the target `serve` was started with | `--database-url` flag, same as `serve` | Same as `serve` |
 
-In practice these aren't mutually exclusive: you can run `concile serve --allow-deploy` in a
-container and use `concile deploy` against it for day-to-day shipping, falling back to rebuilding the
-image only when you need to change the composed component set.
+In practice, these options aren't mutually exclusive at all. You could easily run `concile serve --allow-deploy` inside a container and use `concile deploy` against it for all your day-to-day shipping. Then, you can just fall back to fully rebuilding the image on those rare occasions when you actually need to change the composed component set.
 
 ## Related
 

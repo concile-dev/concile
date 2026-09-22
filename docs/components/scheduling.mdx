@@ -5,18 +5,11 @@ description: runAfter, runAt, and cron jobs.
 
 {/* diataxis: explanation */}
 
-Think of `@concile/scheduler` as cron built into your database, not bolted on beside it. A
-scheduled job is a row in a `jobs` table. Running it later, once, at an exact time, or on a
-recurring cadence, works the same as any other write in concile: durably, with nothing polling in
-the background.
+Think of `@concile/scheduler` as cron that is built right into your database, rather than something awkwardly bolted on the side. A scheduled job is literally just a row in a `jobs` table. Whether you want to run it later, just once, at a very specific time, or on a regular schedule, it works exactly like any other write in concile: it is durable, and there is absolutely nothing polling in the background.
 
-A background driver dispatches the work. It wakes reactively on every commit, plus a wall-clock
-timer armed to the earliest pending job, so nothing is lost to a crash between claiming a job and
-finishing it.
+A background driver takes care of dispatching the work. It wakes up instantly on every commit and keeps a wall-clock timer set for the very next pending job. This means you will never lose a job to a crash right after claiming it but before finishing it.
 
-It's the foundation two other components build on. [`@concile/workflow`](/docs/components/workflows)
-dispatches every step through the scheduler's own job queue, and both `@concile/triggers` and
-`@concile/notifications` reuse the same recurring-driver seam for their own background loops.
+It also serves as the rock-solid foundation for two other components. [`@concile/workflow`](/docs/components/workflows) routes every single step through the scheduler's job queue, while both `@concile/triggers` and `@concile/notifications` lean on the same recurring driver system for their own background loops.
 
 ## Enabling it
 

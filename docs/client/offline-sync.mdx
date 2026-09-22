@@ -5,18 +5,11 @@ description: "The durable offline outbox: queue, drain, receipts, and everything
 
 {/* diataxis: explanation */}
 
-[Optimistic updates](/docs/client/optimistic-updates) and the transport's [automatic
-reconnect](/docs/client/client-sdk#reconnection-in-detail) cover a connection that drops for a few
-seconds and comes back. Neither one covers a reload.
+While [Optimistic updates](/docs/client/optimistic-updates) and the transport's [automatic reconnect](/docs/client/client-sdk#reconnection-in-detail) do a great job handling connections that drop for a few seconds, they don't help much if you reload the page.
 
-Close the laptop mid-flight, or crash the tab, and by default any mutation that was still `unsent`
-(queued while offline) or `inflight` (sent, response unknown) is simply gone. Nothing persists it,
-and nothing tells you what happened to it.
+If you close your laptop mid flight or crash your browser tab, any mutations that were still `unsent` (queued while offline) or `inflight` (sent, but waiting on a response) are just gone by default. There is no backup, and you never really find out what happened to them.
 
-The Receipted Outbox closes that gap. It's an **opt-in** layer on top of the reactive client:
-mutations you make offline get written to durable storage, survive a full reload or crash, and
-drain in order once the connection returns. The server keeps a per-client receipt for each one, so
-a resend can never double-apply.
+That is where the Receipted Outbox steps in to save the day. It is an **opt-in** layer you can add to the reactive client. With it, any mutations you make offline are saved securely. They can survive a full reload or crash and will automatically drain in the right order once you are back online. Plus, the server keeps a personalized receipt for every single one, so you never have to worry about accidentally applying the same change twice.
 
 <Callout type="info">
 

@@ -5,19 +5,19 @@ description: "The North Star: why the engine is shaped the way it is, and how th
 
 {/* diataxis: explanation */}
 
-This page is the map. It explains the one idea that everything else in Concile's engine is built around, and how that one idea lets a tiny single-binary app and a large distributed one share the exact same code.
+Think of this page as your map. It breaks down the single core idea that powers everything in Concile's engine. We're going to show you how this one concept lets a tiny single-binary app and a massive distributed system run on the exact same code.
 
-The other pages under **Architecture** each zoom into one piece of this picture in depth: [reactivity & sync](/docs/contributing/architecture/reactivity), [transactions](/docs/contributing/architecture/transactions), [storage](/docs/contributing/architecture/storage), [query engine](/docs/contributing/architecture/query-engine), [execution](/docs/contributing/architecture/execution), and [runtimes & topology](/docs/contributing/architecture/runtimes).
+If you want to dive deeper, the other pages in the **Architecture** section zoom into specific parts of this picture: [reactivity & sync](/docs/contributing/architecture/reactivity), [transactions](/docs/contributing/architecture/transactions), [storage](/docs/contributing/architecture/storage), [query engine](/docs/contributing/architecture/query-engine), [execution](/docs/contributing/architecture/execution), and [runtimes & topology](/docs/contributing/architecture/runtimes).
 
 ## The thesis, in plain terms
 
-Think about a typical backend: an app server, a database, a cache, a message queue, and a realtime/pub-sub broker, each a separate process talking to the others over the network. Most of the latency you feel and most of the complexity you maintain lives in those network seams, not in your actual business logic.
+Picture a typical backend. You've got an app server, a database, a cache, a message queue, and maybe a pub-sub broker. Each one is a separate process chatting with the others over the network. In reality, most of the latency you experience and the complexity you have to manage lives right there in those network hops, rather than in your actual business logic.
 
-Concile's bet is simple: **remove the seams.** Your query and mutation functions run *in the same process* as the storage engine, hidden behind one narrow interface instead of a database driver. There's no separate cache to invalidate and no message broker to wire up. When data changes, the engine already knows exactly which subscribed clients care, and pushes them an update directly.
+Concile takes a simple bet: **remove those hops.** We run your query and mutation functions *in the same process* as the storage engine, tucked behind one clean interface instead of a clunky database driver. You don't have to worry about invalidating a separate cache or wiring up a message broker. When your data changes, the engine already knows exactly which clients care about it and pushes them an update directly.
 
 ## Five goals that don't obviously fit together
 
-Concile is trying to be all of these at once:
+We're trying to hit all these goals at the same time:
 
 | Goal | What it means in practice |
 |---|---|
@@ -27,32 +27,32 @@ Concile is trying to be all of these at once:
 | **Deploy anywhere** | The same artifact runs on Docker, Bun, Node, or as a compiled standalone binary |
 | **Scalable** | Reads and writes can grow horizontally when an app outgrows one machine |
 
-Read that list again and notice the tension. "One lightweight binary" and "horizontally scalable distributed system" sound like opposite designs. Most backends pick one lane: a scrappy single-binary tool that hits a wall, or a scalable platform that's heavy to run on day one.
+If you look closely at that list, you'll probably spot some tension. Building "one lightweight binary" that's also a "horizontally scalable distributed system" sounds like a contradiction. Most backends force you to pick a lane. You either get a scrappy single-binary tool that eventually hits a wall, or a highly scalable platform that's a nightmare to run on day one.
 
-Concile's answer is not to pick a lane. It makes both **the same system at two different operating points**, connected by a handful of stable internal interfaces. Growing from one to the other is a deployment and configuration change, never a rewrite of your functions.
+Our approach with Concile is to refuse to pick a lane. We've built both into **the same system at two different operating points**, stitched together by a few stable internal interfaces. When you need to scale up, it's just a deployment and configuration change. You never have to rewrite your functions.
 
-Each goal maps to a concrete mechanism:
+We back up each of those goals with a specific technical mechanism:
 
 | Goal | The mechanism that delivers it |
 |---|---|
-| Great developer experience | In-process execution: your functions run next to the engine, so the dev loop and the types stay tight |
-| Lightweight | In-process execution plus the tiered split: Tier 0 is one process, one file of SQLite |
-| Fastest realtime | Push plus differential updates: subscribed clients get changes the moment a commit lands, and only the rows that changed |
-| Deploy anywhere | The narrow storage seam: the engine never knows which database or host it's on |
-| Scalable | The storage seam plus the tiered split: swap the adapter, then split the components, without touching app code |
+| Great developer experience | In-process execution: your functions run right next to the engine, keeping the dev loop fast and types tight. |
+| Lightweight | In-process execution plus the tiered split: Tier 0 is just one process and a single SQLite file. |
+| Fastest realtime | Push plus differential updates: subscribed clients receive changes the second a commit lands, and we only send the rows that actually changed. |
+| Deploy anywhere | The narrow storage seam: the engine literally doesn't know which database or host it's running on. |
+| Scalable | The storage seam plus the tiered split: you can swap the adapter and split the components without ever touching your app code. |
 
-The rest of this page explains those mechanisms.
+Let's walk through how these mechanisms actually work.
 
 ## The core primitive: reactive transactions over an ordered log
 
-This is the one idea to really understand. Everything else, the storage seam, the tiers, the sync protocol, is built on top of it.
+If you take away just one concept, make it this one. Everything else we do is built right on top of it.
 
-- **There is exactly one logical writer, the transactor.** Every committed write is stamped with a commit timestamp that only ever goes up, and appended to an ordered log. Because writes are strictly ordered, a hard concurrency problem ("make these transactions serializable") collapses into an easy one ("append in order").
-- **Queries are read-only and deterministic.** Same inputs always produce the same output, with no network calls, no randomness, and no clock reads. While a query runs, the engine quietly records its **read set**: exactly which rows and index ranges it looked at. Determinism matters here for a concrete reason: it's what makes that read set trustworthy, and what makes it safe to transparently re-run the query later.
-- **Mutations are read/write transactions that run under optimistic concurrency control (OCC).** A mutation executes against a snapshot of the data, and only commits if nothing it read has changed in the meantime. Otherwise the engine transparently retries it. When a mutation commits, it produces a **write set**: the ranges it actually changed.
-- **Reactivity is just set intersection.** A live subscription is a query plus the read set it recorded. When a transaction commits with write set `W`, the engine checks every open subscription: does its read set overlap `W`? If yes, that query is recomputed and the new result is pushed to the client. If no, nothing happens. That client isn't touched at all.
+- **We use exactly one logical writer, called the transactor.** Every time a write is committed, we stamp it with a timestamp that only ever goes up, and then we append it to an ordered log. Since writes are strictly ordered, a notoriously tough concurrency problem ("how do we make these transactions serializable?") turns into a very simple one ("just append them in order").
+- **Queries are always read-only and completely deterministic.** If you give a query the same inputs, you'll always get the same output. No network calls, no random numbers, and no checking the time. While your query runs, our engine quietly keeps track of its **read set**, noting exactly which rows and index ranges it looked at. This determinism is crucial because it guarantees that the read set is trustworthy, meaning we can safely re-run the query behind the scenes later on.
+- **Mutations handle read and write transactions using optimistic concurrency control (OCC).** A mutation runs against a snapshot of your data and will only commit if nothing it looked at has changed in the meantime. If something did change, the engine simply retries it for you. Once a mutation successfully commits, it generates a **write set**, logging the exact ranges it altered.
+- **Reactivity boils down to simple set intersection.** Think of a live subscription as just a query combined with its recorded read set. When a transaction commits with a write set `W`, the engine quickly checks all open subscriptions to see if any of their read sets overlap with `W`. If they do, we recompute that query and push the fresh result straight to the client. If they don't overlap, we do absolutely nothing.
 
-No polling, no hand-written cache invalidation, no pub/sub topics to configure by hand. One mechanism gives you both correctness (OCC) and live updates (invalidation) for free.
+You don't need to poll for changes, write your own cache invalidation logic, or manually configure pub/sub topics. This single mechanism hands you both correctness (via OCC) and live updates (via invalidation) completely for free.
 
 ```mermaid
 flowchart LR
@@ -67,7 +67,7 @@ This whole diagram is **storage-independent**. It talks about timestamps and ran
 
 ## Three kinds of functions, and why one of them can't touch the database directly
 
-Concile functions come in three flavors, and the difference between them is entirely about determinism:
+We offer three flavors of Concile functions, and the key difference between them all comes down to determinism:
 
 | Kind | Deterministic? | Can read/write the database? | Can call `fetch`, read the clock, use randomness? |
 |---|---|---|---|
@@ -75,15 +75,15 @@ Concile functions come in three flavors, and the difference between them is enti
 | **Mutation** | Yes | Read + write, via OCC | No |
 | **Action** | No | Only indirectly, via `ctx.runQuery`/`ctx.runMutation` | Yes |
 
-Queries and mutations are deterministic on purpose. It's the only way a recorded read set stays meaningful, and the only way a conflicting mutation can be safely replayed instead of just failing outright.
+We made queries and mutations deterministic on purpose. It's the only way to ensure that a recorded read set stays meaningful. It's also what allows us to safely replay a conflicting mutation instead of just letting it fail.
 
 <Callout type="warn" title="Why queries can't call fetch or Date.now()">
 
-The moment a query calls `fetch` or reads `Date.now()`, replaying it could produce a different answer than the one a subscribed client already saw, and the whole reactivity guarantee falls apart.
+The second a query calls `fetch` or reads `Date.now()`, replaying it might give you a totally different answer than what a subscribed client already received. That would completely break our reactivity guarantee.
 
 </Callout>
 
-Actions are the deliberate escape hatch. Real side effects like calling a third-party API, sending an email, or reading the system clock need to happen *somewhere*. Actions run entirely **outside** the transactor, with no direct database access, so nothing non-deterministic can ever leak into the reactive core. See [Actions](/docs/core-concepts/actions) for the user-facing side of this, and [Execution](/docs/contributing/architecture/execution) for how the executor enforces the split internally.
+Actions serve as your deliberate escape hatch. We know you need to do real side effects somewhere, whether that's calling a third-party API, sending out an email, or just checking the system clock. Actions run entirely **outside** the transactor and don't have direct database access. This ensures that unpredictable, non-deterministic behavior never sneaks into the reactive core. You can check out [Actions](/docs/core-concepts/actions) to see how this looks in practice, or read up on [Execution](/docs/contributing/architecture/execution) to learn how our executor enforces this separation under the hood.
 
 ## The storage seam: one interface, more than one database
 

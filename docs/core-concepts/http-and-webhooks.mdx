@@ -5,11 +5,9 @@ description: Expose a plain HTTP endpoint for webhooks and REST calls with httpA
 
 {/* diataxis: how-to */}
 
-A webhook doesn't know or care about your sync protocol. Stripe, GitHub, and your email provider all
-want the same thing: `POST` some JSON at a URL and get a response back.
+Let's be real, your webhooks don't care at all about the fancy sync protocol you're using. Services like Stripe, GitHub, and your email provider all want exactly the same thing: to `POST` a bit of JSON to a URL and get a quick response back.
 
-`httpAction` and a conventional `http.ts` router give you exactly that: a plain HTTP endpoint, wired
-into the same reactive engine as the rest of your app. This page walks through building one.
+That's exactly where `httpAction` and a standard `http.ts` router come into play. They give you a clean, no-fuss HTTP endpoint that's fully wired into the exact same reactive engine powering the rest of your app. Let's walk through how to build one.
 
 ```mermaid
 flowchart LR
@@ -26,17 +24,13 @@ flowchart LR
 
 ### Write the handler with httpAction
 
-`httpAction` is an [action](/docs/core-concepts/actions) that speaks raw HTTP instead of typed
-arguments. Its input is a Web `Request`, its output is a `Response`, but everything else about it is
-a regular action:
+Think of `httpAction` as an [action](/docs/core-concepts/actions) that speaks raw HTTP rather than relying on typed arguments. It takes a standard Web `Request` as input and returns a `Response`, but under the hood, it behaves just like any regular action.
 
-- `ctx.runQuery(ref, args)`, `ctx.runMutation(ref, args)`, `ctx.runAction(ref, args)`, each a fresh,
-  independent top-level run, exactly as in an action.
-- Native `fetch`, `Date.now()`, `Math.random()`, timers all work normally.
+- You can call `ctx.runQuery(ref, args)`, `ctx.runMutation(ref, args)`, or `ctx.runAction(ref, args)`. Each of these fires off a fresh, independent top-level run, just like you would expect in a normal action.
+- Native browser APIs like `fetch`, `Date.now()`, `Math.random()`, and your standard timers all work perfectly.
 
 <Callout type="warn" title="No ctx.db">
-  An `httpAction` isn't part of any transaction, so the only way it touches data is by calling a
-  query, mutation, or action through the three methods above.
+  An `httpAction` does not run inside a transaction. If you need it to read or write data, you will have to call a query, mutation, or action using one of the three methods mentioned above.
 </Callout>
 
 ```ts title="concile/http.ts"
@@ -52,15 +46,9 @@ export const receiveWebhook = httpAction(async (ctx, request) => {
 });
 ```
 
-`httpAction` takes either a bare handler function or `{ handler }`. There's no `args`/`returns`
-validator option the way `query`/`mutation`/`action` have one, because the input is a `Request`, not a
-validated argument object. Parse and validate the body yourself, the same as you would in any HTTP
-framework.
+You can pass either a simple handler function or a `{ handler }` object to `httpAction`. You won't find an `args` or `returns` validator option here like you do with `query`, `mutation`, or `action`. That is because your input is a raw `Request` rather than a validated argument object. You will need to parse and validate the body yourself, just like you would in any standard HTTP framework.
 
-Because the handler has no `ctx.db`, its actual write goes through `ctx.runMutation`. That mutation is
-what produces a write set and fans out to any subscription reading the `messages` table (see
-[Reactivity](/docs/core-concepts/reactivity)). This is the shape every webhook in concile takes:
-HTTP in, mutation for the write, reactive fan-out for free.
+Since the handler doesn't have access to `ctx.db`, you will need to handle actual data writes through `ctx.runMutation`. That mutation handles creating a write set and instantly fans out updates to any subscriptions currently watching the `messages` table (you can learn more about this in [Reactivity](/docs/core-concepts/reactivity)). This pattern is the foundation for every webhook you build in concile. You take HTTP in, use a mutation to handle the write, and get reactive fan-out updates for free.
 
 </Step>
 
@@ -68,8 +56,7 @@ HTTP in, mutation for the write, reactive fan-out for free.
 
 ### Register it in http.ts
 
-A conventional `concile/http.ts` default-exports an `httpRouter()` populated with `route()` calls. This
-is how the engine discovers your endpoints at load time:
+A typical `concile/http.ts` file usually has a default export of an `httpRouter()` that is populated with your `route()` calls. This is exactly how the engine finds and sets up your endpoints when your app loads:
 
 ```ts title="concile/http.ts"
 import { httpRouter } from "./_generated/server";
@@ -82,19 +69,14 @@ http.route({ path: "/webhooks/messages", method: "POST", handler: receiveWebhook
 export default http;
 ```
 
-Each `route()` call takes exactly one of `path` or `pathPrefix`, plus a `method`:
+Every time you call `route()`, you need to provide exactly one of either `path` or `pathPrefix`, along with an HTTP `method`:
 
-- **`{ path, method, handler }`**: an exact match. The request's path must equal `path` character for
-  character.
-- **`{ pathPrefix, method, handler }`**: a prefix match. The request's path must start with
-  `pathPrefix` (so `pathPrefix: "/webhooks/"` matches `/webhooks/messages` and
-  `/webhooks/anything`).
+- **`{ path, method, handler }`**: This is for exact matches. The incoming request's path has to match your `path` exactly, character for character.
+- **`{ pathPrefix, method, handler }`**: This handles prefix matches. As long as the request's path starts with your `pathPrefix`, it will match. For example, `pathPrefix: "/webhooks/"` will comfortably match both `/webhooks/messages` and `/webhooks/anything`.
 
-Passing both, or neither, throws at registration time: ``http.route requires exactly one of `path`
-or `pathPrefix` ``.
+If you try to pass both, or if you forget to pass either one, the system will throw an error when registering the routes, telling you that ``http.route requires exactly one of `path` or `pathPrefix` ``.
 
-The `handler` must be a named export of an app module, something `httpAction(...)` produced.
-Registering an inline arrow function or an unresolvable reference fails project loading with:
+Also, keep in mind that your `handler` needs to be a named export from one of your app modules, specifically something created by `httpAction(...)`. If you try to register an inline arrow function or a reference that cannot be resolved, your project will fail to load with a message like this:
 
 ```
 http.route handler for "/webhooks/messages" must be an exported httpAction
@@ -107,14 +89,11 @@ http.route handler for "/webhooks/messages" must be an exported httpAction
 
 ### Understand match precedence
 
-When a request could match more than one registered route, resolution is deterministic:
+If an incoming request happens to match more than one of your registered routes, the system figures out which one to use in a very predictable way:
 
-1. Method must always match. A route registered for `POST` never matches a `GET` request to the same
-   path, regardless of exact or prefix.
-2. An exact `path` match wins outright over every `pathPrefix` route, no matter how specific the
-   prefix. This is checked first and returns immediately.
-3. Among `pathPrefix` routes, the longest matching prefix wins. `pathPrefix: "/webhooks/stripe/"`
-   beats `pathPrefix: "/webhooks/"` for a request to `/webhooks/stripe/invoice`.
+1. The HTTP method always has to match. If you register a route for `POST`, it will never accidentally catch a `GET` request to that same path, whether it is an exact or prefix match.
+2. An exact `path` match always beats any `pathPrefix` route, even if the prefix is highly specific. The system checks for exact matches first and returns the result right away.
+3. When looking at multiple `pathPrefix` routes, the longest matching prefix takes the win. So, `pathPrefix: "/webhooks/stripe/"` will beat out `pathPrefix: "/webhooks/"` if the request is heading to `/webhooks/stripe/invoice`.
 
 ```ts title="concile/http.ts"
 http.route({ path: "/webhooks/stripe/health", method: "GET", handler: healthCheck });

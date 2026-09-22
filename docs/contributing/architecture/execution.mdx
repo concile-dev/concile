@@ -5,15 +5,15 @@ description: "How queries, mutations, actions, and httpActions run behind a narr
 
 {/* diataxis: explanation */}
 
-## The one-sentence version
+## In a nutshell
 
-A **UDF** ("user-defined function") is the query, mutation, action, or `httpAction` you write in TypeScript, the code that lives in your `concile/` folder. The executor is the pipeline that takes a request naming one of those functions and turns it into a running handler that reaches the database only through a narrow, controlled doorway, then hands back a result plus a record of exactly what it read and wrote.
+A **UDF** (user-defined function) is simply the query, mutation, action, or `httpAction` that you write in TypeScript. It's the code hanging out in your `concile/` folder. The executor is like a pipeline. It takes a request for one of your functions and spins it up into a running handler. This handler can only talk to the database through a very specific, controlled doorway. When it's done, it hands back your result along with a receipt of everything it read and wrote.
 
-Everything on this page traces that pipeline. If you're new to the codebase, the package to have open while you read is `packages/executor` (`src/executor.ts`, `src/kernel.ts`, `src/guest.ts`, `src/profile.ts`).
+Everything on this page is about tracing that exact pipeline. If you're checking out the codebase for the first time, you'll want to have the `packages/executor` folder open as you read along (`src/executor.ts`, `src/kernel.ts`, `src/guest.ts`, and `src/profile.ts`).
 
-## The path from a request to a result
+## From request to result
 
-Think of the executor as a small, disciplined pipeline. Every call, whether it arrives over the client WebSocket, an HTTP request, or one function calling another, goes through the same steps:
+Think of the executor as a tight, well-organized pipeline. Every single call goes through the exact same steps, whether it comes in over a client WebSocket, an HTTP request, or even just one function calling another:
 
 ```mermaid
 flowchart TD
@@ -26,13 +26,13 @@ flowchart TD
     G --> H["Return the result plus<br/>its read/write footprint"]
 ```
 
-The important step is E: a fresh, single-use kernel per call. Nothing about function B's invocation is visible to function A's, even if they run back-to-back. That isolation, plus the fact that the handler never gets a direct reference to the database (only a narrow messaging channel), is what the rest of this page explains.
+Step E is the real magic here: we create a fresh, single-use kernel for every single call. Nothing from function B's run is visible to function A's, even if they happen right after one another. That strong isolation, combined with the fact that the handler only ever gets a narrow messaging channel to the database instead of a direct reference, is what the rest of this page is all about.
 
-This whole pipeline lives behind one method: `InlineUdfExecutor.run(fn, args, options)` (see `packages/executor/src/executor.ts`). "Inline" means the handler runs as plain JavaScript in the same process as the engine today. There's more on what that does and doesn't buy you further down.
+This entire pipeline sits behind just one method: `InlineUdfExecutor.run(fn, args, options)` (you can find it in `packages/executor/src/executor.ts`). The "Inline" part just means that right now, the handler runs as plain JavaScript in the same process as the engine. We'll get into what that actually means for you a bit later.
 
-## Four profiles, one small policy table
+## Four profiles, one simple policy table
 
-Every function is one of four types, and the executor treats the type as a **capability profile**, not just a label. The profile says what the function is and isn't allowed to touch:
+Every function falls into one of four types. The executor doesn't just use these types as labels; it treats them as a **capability profile**. This profile dictates exactly what the function is allowed to interact with:
 
 ```mermaid
 flowchart LR
@@ -46,7 +46,7 @@ flowchart LR
     end
 ```
 
-The exact same information as a table, straight from `packages/executor/src/profile.ts`:
+If you prefer looking at tables, here is the exact same information straight from `packages/executor/src/profile.ts`:
 
 | | `dbRead` | `dbWrite` | `random` | `clock` | `network` |
 |---|---|---|---|---|---|
@@ -55,34 +55,34 @@ The exact same information as a table, straight from `packages/executor/src/prof
 | **action** | no (only via `runQuery`/`runMutation`) | no | native | native | native |
 | **httpAction** | no (only via `runQuery`/`runMutation`) | no | native | native | native |
 
-This one table is the single place that answers "can a query call `fetch`?" (no) or "can a mutation write to the database?" (yes, but only inside a transaction). Four frozen profile objects, `QUERY_PROFILE`, `MUTATION_PROFILE`, `ACTION_PROFILE`, `HTTP_ACTION_PROFILE`, are the literal source of truth. `profileFor(type)` picks one per invocation.
+This little table is your go-to guide. It answers questions like "Can my query call `fetch`?" (nope) or "Can a mutation write to the database?" (yes, as long as it's inside a transaction). We have four frozen profile objects (`QUERY_PROFILE`, `MUTATION_PROFILE`, `ACTION_PROFILE`, and `HTTP_ACTION_PROFILE`) that act as the absolute source of truth. The `profileFor(type)` function simply grabs the right one for each run.
 
-**Why the split exists.** Queries and mutations must be *deterministic*: re-runnable, producing the same answer every time. The engine relies on that. A mutation retries automatically on a write conflict (see [Transactions & consistency](/docs/contributing/architecture/transactions)), and a subscribed query is silently re-run whenever a write touches something it read (see [Reactivity](/docs/contributing/architecture/reactivity)). If those functions could call `fetch()` or read the real clock, two runs could produce two different answers, and both mechanisms would break.
+**Why do we split things up like this?** Well, queries and mutations have to be *deterministic*. That means you should be able to run them over and over and get the exact same answer every time. The engine completely relies on this behavior. For example, a mutation will automatically retry if it hits a write conflict (check out [Transactions & consistency](/docs/contributing/architecture/transactions)), and a subscribed query quietly re-runs whenever a write changes something it previously read (see [Reactivity](/docs/contributing/architecture/reactivity)). If these functions could randomly call `fetch()` or check the actual time, two runs might give you completely different answers, which would break both of those systems.
 
-Actions and `httpAction`s don't need that guarantee. They're for side effects, like sending an email or calling a webhook, so they get the real world instead: real randomness, real time, real network, but no direct database access. An action that needs data calls `ctx.runQuery`/`ctx.runMutation`, each its own fresh, independent invocation of this whole pipeline.
+On the flip side, actions and `httpAction`s don't need to be deterministic. They're built for real-world side effects like sending an email or triggering a webhook. So, they get access to the real world: true randomness, the actual clock, and the real network, but they don't get direct access to the database. If an action needs data, it just calls `ctx.runQuery` or `ctx.runMutation`, which spins up a brand new, independent run through the pipeline.
 
-## Determinism is the host's job
+## Keeping things deterministic
 
-Rather than trust a function's code to *avoid* randomness and the clock, the executor gives deterministic functions their own versions of those things:
+Instead of just hoping your function's code avoids using true randomness and the real clock, the executor steps in and provides deterministic functions with their own special versions of those tools:
 
-- `ctx.random()` returns a number from a seeded pseudo-random generator (a `mulberry32` PRNG, see `packages/executor/src/seeded-random.ts`), seeded per invocation. Re-run the same call with the same seed and you get the exact same sequence of "random" numbers.
-- `ctx.now()` returns a wall-clock timestamp captured once, at the start of the invocation, and held fixed for the rest of the run (including across a mutation's retry attempts).
+- `ctx.random()` gives you a number from a seeded pseudo-random generator (specifically a `mulberry32` PRNG, which you can find in `packages/executor/src/seeded-random.ts`). It gets a new seed for every run. If you re-run the same call with the same seed, you'll get the exact same sequence of "random" numbers.
+- `ctx.now()` hands you a wall-clock timestamp that is captured exactly once at the very start of the run. It stays frozen for the entire execution, even if a mutation has to retry a few times.
 
-This is why a query or mutation handler should call `ctx.random()`/`ctx.now()` rather than the global `Math.random()`/`Date.now()`. The seeded versions are what makes replay and reactive re-execution safe.
+This is exactly why you should always use `ctx.random()` and `ctx.now()` in your query or mutation handlers instead of the global `Math.random()` and `Date.now()`. These seeded helpers are the secret sauce that makes replay and reactive re-execution totally safe.
 
-<Callout type="warn" title="Isolate-ready, not isolate-isolated">
+<Callout type="warn" title="Isolate-ready, not completely isolated yet">
 
-It would be easy to assume "forbidden" in the table above means the platform actively blocks a query from calling the real `Math.random()`, `Date.now()`, or `fetch()`. Today, it doesn't. The shipped `InlineUdfExecutor` runs a function's handler as ordinary JavaScript in the engine's own process, and nothing rebinds or removes the global `Math`, `Date`, or `fetch` objects.
+It's tempting to look at "forbidden" in that table and assume the platform actively blocks a query from calling the real `Math.random()`, `Date.now()`, or `fetch()`. But right now, it actually doesn't. The `InlineUdfExecutor` we ship today runs your function's handler as standard JavaScript in the engine's own process. We aren't doing anything tricky to rebind or remove the global `Math`, `Date`, or `fetch` objects.
 
-Determinism today comes from convention plus the seeded helpers, not from hard sandboxing. `ctx.random()`/`ctx.now()` are seeded and safe to use, but a handler that reaches for the raw globals directly can still do so.
+So, determinism right now relies on following conventions and using our seeded helpers, rather than strict sandboxing. `ctx.random()` and `ctx.now()` are seeded and completely safe, but if a handler really wants to grab the raw globals directly, it still can.
 
-The syscall boundary described below is deliberately built so that a future V8-isolate executor (each invocation gets its own JavaScript globals, with no ambient access to the host's `Math`/`Date`/`fetch`) can be dropped in behind the same interface without changing how user code is written. That's the "isolate-ready" part. It just hasn't been built yet, so don't describe the current engine as sandboxing untrusted code from real non-determinism.
+We intentionally built the syscall boundary (which we'll talk about below) so that we can eventually drop in a V8-isolate executor. When that happens, each run will get its own JavaScript globals and won't have any ambient access to the host's `Math`, `Date`, or `fetch`. Best of all, we can do this without you having to change how you write your code. That's what we mean when we say it's "isolate-ready." We just haven't built that part yet, so it's best not to think of the current engine as a perfect sandbox that protects untrusted code from non-determinism.
 
 </Callout>
 
-## The syscall boundary: how `ctx.db` actually reaches the database
+## The syscall boundary: how `ctx.db` really talks to the database
 
-This is the core isolation idea, and it's simpler than it sounds. The function's handler never holds a live reference to the database, the transaction, or the query engine. Every time it calls something like `ctx.db.get(id)` or `ctx.db.insert(table, value)`, that call is serialized into a plain string message and sent across a narrow channel to a **kernel**: a per-invocation, trusted object that runs in the engine and has the actual access.
+This is where the core idea of isolation comes in, and honestly, it's pretty simple. Your function's handler never actually gets a live reference to the database, the transaction, or the query engine. Instead, every time you call something like `ctx.db.get(id)` or `ctx.db.insert(table, value)`, we serialize that call into a simple string message. We then send that string across a narrow channel to a **kernel**. The kernel is a trusted, per-invocation object that runs inside the engine and holds the real keys to the database.
 
 ```mermaid
 sequenceDiagram
@@ -96,9 +96,9 @@ sequenceDiagram
     K-->>G: a JSON string comes back
 ```
 
-The two sides of this (`packages/executor/src/guest.ts` for the guest, `packages/executor/src/kernel.ts` for the host) only ever exchange plain strings: `channel.call(op, argJson): Promise<string>`. Nothing but JSON crosses the line. That's a deliberate design choice. Because the boundary is "a string goes in, a string comes back," it doesn't matter whether the guest is plain JS in the same process (as it is today) or, eventually, code running inside a fully separate V8 isolate. The contract is identical either way.
+The two sides of this conversation (`packages/executor/src/guest.ts` on the guest side and `packages/executor/src/kernel.ts` on the host side) only ever talk to each other using plain strings, like this: `channel.call(op, argJson): Promise<string>`. Absolutely nothing but JSON crosses that line. We designed it this way on purpose. Since the rule is simply "a string goes in and a string comes back," it really doesn't matter if the guest is plain JavaScript running in the same process (which is how it works today) or if it's code running inside a completely separate V8 isolate in the future. The agreement stays exactly the same.
 
-**What actually crosses this boundary today.** The router (`createKernelRouter()`) registers a small, concrete set of operations:
+**So, what actually crosses this boundary right now?** The router (`createKernelRouter()`) registers a very small, specific set of operations:
 
 | Op | What it does |
 |---|---|
@@ -110,52 +110,52 @@ The two sides of this (`packages/executor/src/guest.ts` for the guest, `packages
 | `db.paginate` | Same scan, but one page at a time with a cursor (backs `ctx.db.query(...).paginate()`) |
 | `console.log` | Buffer a log line so it can be returned with the result |
 
-Every one of these is guarded on the way in:
+Every single one of these operations is carefully guarded before it's allowed to run:
 
-- A write is rejected outright if the current profile's `dbWrite` capability is `false`, so a query handler that somehow tries to insert a document gets a clear error, not a silent no-op.
-- A read or write outside the calling function's own table namespace is rejected.
-- Where composed, row-level read/write policies from the authorization component are checked before data leaves the kernel.
+- We instantly reject any write if the current profile's `dbWrite` capability is set to `false`. So, if a query handler somehow tries to insert a document, it gets a loud, clear error instead of a confusing, silent failure.
+- We block any read or write that tries to touch something outside the calling function's own table namespace.
+- If you're using composed components, we also double-check row-level read and write policies from the authorization system before any data is allowed to leave the kernel.
 
-**Why this doubles as the reactivity ledger.** As the kernel services each `db.*` call, it records exactly which index ranges were read and which were written into the current transaction. That ledger is not an afterthought. It's the mechanism that makes the rest of the reactive engine work: the accumulated read ranges become the query's subscription footprint (what has to change before this query is re-run, see [Reactivity](/docs/contributing/architecture/reactivity)), and the write ranges become what a mutation's optimistic-concurrency check validates against on commit (see [Transactions & consistency](/docs/contributing/architecture/transactions)). Because the kernel, not the guest, is the one keeping this ledger, a function's code can't under-report what it touched even if it tried.
+**How this also powers our reactivity ledger.** As the kernel processes each `db.*` call, it carefully jots down exactly which index ranges were read and which ones were written into the current transaction. This ledger isn't just a nice-to-have feature; it's the engine that drives our entire reactive system. The read ranges pile up to form the query's subscription footprint (basically, the list of things that need to change before we re-run the query, which you can read about in [Reactivity](/docs/contributing/architecture/reactivity)). Meanwhile, the write ranges are used by the mutation's optimistic-concurrency check during the commit phase (check out [Transactions & consistency](/docs/contributing/architecture/transactions)). Since the kernel is the one holding the clipboard and not the guest, a function couldn't lie about what it touched even if it wanted to.
 
-Scheduling a job, calling another function, or reaching a composed component's own facade (like `ctx.scheduler` or `ctx.auth`) doesn't go through this same `db.*` op table as a new, dedicated op. They're built as ordinary JavaScript closures the executor constructs fresh for each invocation (more in the next section). But they follow the same underlying rule: the handler is only ever handed narrow, single-purpose functions, never a live handle to engine internals.
+When you schedule a job, call another function, or talk to a composed component's facade (like `ctx.scheduler` or `ctx.auth`), you aren't actually creating a brand new, dedicated operation in the `db.*` table. Instead, we build these as standard JavaScript closures that the executor freshly prepares for every run (we'll dive into that more in the next section). However, they all follow the exact same golden rule: the handler only ever gets narrow, single-purpose functions and absolutely never gets a live handle to the engine's internal workings.
 
-Most of them, in fact, still come back around to the same `db.*` ops underneath. `ctx.scheduler.runAfter`/`runAt`/`cancel` (`components/scheduler/src/facade.ts`) is the clearest example. There's no `scheduler.enqueue` syscall: a mutation's `ctx.scheduler.runAfter(...)` call just runs `db.insert` on a `jobs` row (plus a `job_args` row) through the exact same `GuestDatabaseWriter` the handler's own `ctx.db` uses, and `cancel(id)` is a `db.get` followed by a `db.replace`.
+In fact, most of these still end up using the same old `db.*` operations under the hood. A great example of this is `ctx.scheduler.runAfter`, `runAt`, or `cancel` (which you can find in `components/scheduler/src/facade.ts`). There isn't a special `scheduler.enqueue` syscall. When a mutation calls `ctx.scheduler.runAfter(...)`, it simply runs a `db.insert` on a `jobs` row (along with a `job_args` row) using the exact same `GuestDatabaseWriter` that your handler's `ctx.db` uses. Similarly, calling `cancel(id)` is really just a `db.get` followed immediately by a `db.replace`.
 
-That's why scheduling doesn't need its own syscall. Enqueuing or canceling a job is nothing more than writing a row, so it commits (or rolls back) with the rest of the calling mutation's transaction and fans out reactively like any other write the moment it commits. There's no separate job system underneath, just rows the kernel already knows how to track.
+This clever setup is why scheduling doesn't need its own special syscall. Adding or canceling a job is literally just writing a row to a table. Because of that, it commits or rolls back perfectly in sync with the rest of your mutation's transaction, and it naturally triggers reactive updates just like any other write would. We don't have a hidden, separate job system running in the background; it's all just rows that the kernel already knows exactly how to manage.
 
-## Validation: catching mistakes before they run
+## Validation: catching mistakes early
 
-Two different validation checks happen around every call, both using the same validator system (`@concile/values`, the same `v.string()`/`v.object()`/etc. helpers app code uses in `schema.ts`):
+We run two different validation checks during every call. They both use the exact same validator system (`@concile/values`, which gives you the handy `v.string()`, `v.object()`, and other helpers you use in `schema.ts`):
 
-1. **Arguments, on the way in.** A function declared with an `args` validator (`query({ args: { ... }, handler })`) has that validator checked against the actual call arguments *before* the handler ever runs. A mismatch throws an `ArgumentValidationError` whose message names the offending field and why it failed. `httpAction`s skip this step: their input is a raw `Request`, not structured args.
-2. **Documents, on write.** `ctx.db.insert` and `ctx.db.replace` validate the value being written against the target table's schema (if the table declares one in `schema.ts`). A mismatch throws a `DocumentValidationError`, again naming the field.
+1. **Checking arguments on the way in.** If you declare a function with an `args` validator (like `query({ args: { ... }, handler })`), we check the incoming arguments against that validator *before* your handler even gets to run. If things don't match up, we throw an `ArgumentValidationError` that points out exactly which field messed up and why. The only exception here is `httpAction`s, which skip this step because they take a raw `Request` instead of structured arguments.
+2. **Checking documents when writing.** Whenever you use `ctx.db.insert` or `ctx.db.replace`, we validate the data you're trying to write against the target table's schema (assuming you declared one in `schema.ts`). If the data doesn't match the schema, we throw a `DocumentValidationError` and tell you which field is causing the trouble.
 
-A function can also declare a `returns` validator. Today that's used purely for typing: it flows into codegen so the generated, typed client `api` object knows what a call returns. The actual return value isn't checked against it at runtime yet. Don't describe return validation as enforced; only argument and document validation are.
+You can also declare a `returns` validator for your function. Right now, we mostly use this just to help with typing. It feeds into our code generation so that your typed client `api` object knows exactly what to expect back from a call. We don't actually enforce the return value against this validator at runtime yet, so just keep in mind that only argument and document validation are strictly enforced.
 
-## How `ctx` gets built for each function type
+## Assembling the `ctx` object for each function type
 
-The object a handler receives as its first argument (conventionally called `ctx`) isn't one fixed shape. The executor assembles a different one depending on the function type, right before calling the handler:
+The object your handler gets as its very first argument (which we usually just call `ctx`) isn't set in stone. The executor actually builds a custom version of it right before calling your handler, completely based on the function's type:
 
-- **Query.** `ctx.db` is a read-only `GuestDatabaseReader` (`get`, `query(...).collect()`/`.paginate()`), plus `ctx.random()`, `ctx.now()`, and a read-only facade for each composed component (`ctx.auth`, `ctx.scheduler`, and so on, whatever the deployment has composed via `concile.config.ts`).
-- **Mutation.** Same as a query, but `ctx.db` is a `GuestDatabaseWriter` (adds `insert`, `replace`, `delete`), and any composed component that opted in to writing gets a writable facade too. For example, the scheduler needs to write a job row as part of the calling mutation's own transaction, so its writes roll back together with everything else if the mutation fails.
-- **Action / httpAction.** There is **no `ctx.db`**, structurally absent, not just empty, because actions run outside any transaction and have no read/write set to track. Instead `ctx` carries `ctx.runQuery`, `ctx.runMutation`, and `ctx.runAction`, each of which starts a brand-new, independent top-level invocation of this whole pipeline (its own transaction, for a query or mutation).
+- **Query.** Here, `ctx.db` is a read-only `GuestDatabaseReader` (giving you `get`, `query(...).collect()`, and `.paginate()`). You also get `ctx.random()`, `ctx.now()`, and a read-only facade for every composed component in your setup (like `ctx.auth` or `ctx.scheduler`, depending on what you've wired up in `concile.config.ts`).
+- **Mutation.** This gives you everything a query has, but `ctx.db` upgrades to a `GuestDatabaseWriter` (which adds `insert`, `replace`, and `delete`). Any composed component that needs to write gets a writable facade, too. For instance, the scheduler has to write a job row as part of your mutation's transaction, ensuring that if your mutation fails, the scheduler's write rolls back gracefully with everything else.
+- **Action / httpAction.** In this case, there is absolutely **no `ctx.db`**. It isn't just empty; it's structurally missing because actions run completely outside of any transaction and don't have a read or write set for us to track. Instead, `ctx` hooks you up with `ctx.runQuery`, `ctx.runMutation`, and `ctx.runAction`. Each of these kicks off a brand-new, totally independent trip through our pipeline (and gets its own transaction, if it's a query or mutation).
 
-  Concretely, each of these calls `resolveRef` on the function reference and hands it to a runtime-supplied `invoke(path, args, opts)`, which re-enters the *same* executor pipeline this whole page describes: a fresh kernel, a fresh syscall channel, the profile for whatever that target function actually is. So an action orchestrating three `runMutation` calls is really three completely independent trips across the syscall boundary, not one shared transaction.
+  Behind the scenes, each of these methods calls `resolveRef` on the function reference and passes it to a runtime `invoke(path, args, opts)` function. This drops you right back into the *same* executor pipeline we've been talking about: a fresh kernel, a new syscall channel, and the correct profile for that specific target function. So, if your action orchestrates three `runMutation` calls, it's actually making three completely separate trips across the syscall boundary, not sharing one big transaction.
 
-  Composed components that support being called from an action expose a matching facade built the same way. For example, `ctx.scheduler.runAfter` from inside an action delegates to `runMutation("scheduler:_enqueue", ...)` rather than writing a `jobs` row directly, since an action has no `db` to write through. See [Actions](/docs/core-concepts/actions) for the app-facing view of this.
+  Any composed components that you can call from an action provide a facade built the exact same way. Take `ctx.scheduler.runAfter` as an example: when you call it from inside an action, it smartly delegates to `runMutation("scheduler:_enqueue", ...)` instead of trying to write a `jobs` row directly, because the action simply doesn't have a `db` to write to. You can check out [Actions](/docs/core-concepts/actions) if you want to see what this looks like from an app developer's perspective.
 
-Each of these `ctx.<component>` facades is built by the component's own `ContextProvider` (`build` for query/mutation, `buildAction` for actions). See [Building a custom component](/docs/contributing/extending/custom-component) for how a component author writes one. The facade doesn't get a resolved caller identity, just the same ambient bearer token the invocation carried in as `options.identity` (a plain string, or `null`), threaded through as `cctx.identity`/`identity` on whatever `ComponentContext`/`ActionApi` the provider receives.
+Each one of these `ctx.<component>` facades is put together by the component's own `ContextProvider` (`build` for queries and mutations, and `buildAction` for actions). Take a look at [Building a custom component](/docs/contributing/extending/custom-component) if you're curious about how component authors write these. The facade doesn't automatically get a fully resolved caller identity. It just receives the same ambient bearer token that the run started with as `options.identity` (which is just a plain string, or sometimes `null`). We thread this through as `cctx.identity` or `identity` on whatever `ComponentContext` or `ActionApi` the provider gets.
 
-Resolving it into an actual user is entirely the component's job, done with ordinary reads. `@concile/auth`'s `ctx.auth.getUserId()` (`components/auth/src/context.ts`) looks up the session row for that token via a normal `db.get`-backed query inside the calling transaction. So an expired or revoked session is just a row that's missing or stale, and the lookup enters the read set like any other read (a session revocation reactively invalidates every query that called `getUserId()`, the same as any other write intersecting a read range). There's no separate "identity" syscall op and no dedicated read-tracking for it. Identity resolution is ordinary `db.*` traffic that happens to be looking at a sessions table.
+Figuring out who the actual user is is completely up to the component, and it does this using standard reads. For example, `@concile/auth`'s `ctx.auth.getUserId()` (found in `components/auth/src/context.ts`) looks up the session row for the token using a normal `db.get` query right inside your transaction. This means an expired or revoked session is nothing more than a missing or stale row, and checking for it is recorded in the read set just like anything else. If a session is revoked, it naturally invalidates every query that called `getUserId()`, exactly like any other write that hits a read range. We don't use a special "identity" syscall operation, and we definitely don't track it separately. Resolving identities is just regular `db.*` traffic that happens to be looking at a table full of sessions.
 
-## The executor as a swappable seam
+## The executor as a swappable piece of the puzzle
 
-Everything above (the profiles, the syscall channel, the validators, the way `ctx` is built) is designed around one contract: give the executor a function, its arguments, and some options, and get back a result plus its footprint. `InlineUdfExecutor` is the only implementation that ships today. It runs the handler as plain JavaScript in the same process as the rest of the engine: the fastest option, and entirely appropriate for a trusted single-tenant deployment, which is what Concile is today.
+Everything we've covered so far (the profiles, the syscall channel, the validators, and how we build `ctx`) is built around one simple agreement: you hand the executor a function, its arguments, and some options, and it hands you back a result along with its footprint. Right now, `InlineUdfExecutor` is the only implementation we ship. It runs your handler as plain JavaScript in the same process as the rest of the engine. This is super fast and makes perfect sense for a trusted single-tenant setup, which is exactly what Concile is today.
 
-Here's why that matters if you're contributing. Because the boundary the handler talks through is always just strings in, strings out (as described above), nothing about how `ctx.db` is used from inside a handler needs to change if that handler later runs somewhere more isolated, like a real V8 isolate with no ambient access to the host's globals.
+If you're thinking about contributing, here is why all of this really matters. Since the boundary your handler talks through is always strictly "strings in, strings out," we don't have to change a single thing about how `ctx.db` is used inside a handler if we decide to run that handler somewhere more isolated in the future. We could easily move it to a real V8 isolate that has zero ambient access to the host's globals, and your code wouldn't even notice.
 
-That's a documented direction (see the internal design notes this page is drawn from), not something shipped yet. There is no isolate executor in the repository today, only the one inline implementation. If you're contributing to the executor, the discipline to preserve is exactly this: never let a handler reach engine internals except through `ctx.db`/`ctx.<component>`/`ctx.runQuery` and friends, so that discipline keeps paying off if a stricter executor ever replaces the inline one.
+We're definitely heading in that direction (you can peek at the internal design notes this page is based on), but we haven't shipped it yet. Today, you won't find an isolate executor in the repository, just our trusty inline implementation. So, if you're writing code for the executor, the main rule of thumb to remember is this: never let a handler touch the engine's internals except through approved channels like `ctx.db`, `ctx.<component>`, or `ctx.runQuery`. Sticking to this discipline now means we'll be in great shape if we ever swap in a much stricter executor down the road.
 
 ## Where to go next
 

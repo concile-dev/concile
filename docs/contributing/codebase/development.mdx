@@ -5,25 +5,17 @@ description: "Clone, install, build, test, and the inner loop for working on con
 
 {/* diataxis: how-to */}
 
-This page is for people working on concile's own codebase, not people building an app with
-it. If you're building an app, you want the [Quickstart](/docs/get-started/quickstart) instead.
+Welcome! We wrote this guide specifically for developers who are eager to contribute directly to the Concile codebase. Just a quick heads up: if you are looking to build an awesome app using Concile instead of working on the engine itself, you will want to head right over to the [Quickstart](/docs/get-started/quickstart).
 
-Everything below is real. Every command is copied from an actual `package.json` or `turbo.json`
-in the repo, not aspirational.
+All the commands you see below are exactly the ones we rely on every single day. We pulled them straight from our actual `package.json` and `turbo.json` files, so you can trust they are ready to go!
 
 ## Prerequisites
 
-- **Bun >= 1.2.** Bun is both the package manager and the runtime for the day-to-day workflow
-  (`bun install`, `bun run build`, `concile dev`). Install it from [bun.sh](https://bun.sh) if
-  you don't have it.
-- **Node >= 22** is a fully-supported *target* for the published packages. End users can run
-  concile on Node, but as a contributor you develop and run the tooling on Bun.
+- **Bun >= 1.2.** We use Bun as our package manager and our daily development runtime for things like `bun install`, `bun run build`, and `concile dev`. If you haven't installed it yet, you can grab it from [bun.sh](https://bun.sh).
+- **Node >= 22** is fully supported as a deployment target for our published packages. While end users can absolutely run Concile on Node, contributors develop and run our internal tools using Bun.
 
 <Callout title="Why Bun for development but Node as a target?">
-  Concile's engine is written to be runtime-agnostic behind small seams (like the storage
-  adapter), so it genuinely runs on both. Bun is just the faster, single-tool choice for the
-  contributor loop: one binary that installs packages, runs scripts, and executes TypeScript
-  directly with no separate transpile step.
+  We designed Concile's engine to be runtime-agnostic by using small abstraction layers, like our storage adapter, so it truly runs on both. We chose Bun for development because it is simply faster and gives us a great all-in-one experience. It provides a single binary that handles installing packages, running scripts, and executing TypeScript directly without needing an extra transpile step.
 </Callout>
 
 ## Bootstrap the repo
@@ -34,18 +26,13 @@ cd concile
 bun install
 ```
 
-(`<your-fork-url>` is a placeholder. Clone whichever fork or remote you're actually working
-from.)
+Just remember that `<your-fork-url>` is a placeholder. Make sure to clone the actual fork or remote repository you plan to work from.
 
-`bun install` reads the Bun workspace defined in the root `package.json`. Every package under
-`packages/`, `components/`, `examples/`, `apps/`, and `ee/packages/` is one workspace, installed
-and linked together in a single pass.
+When you run `bun install`, it reads our workspace configuration from the root `package.json`. It will install and link together all the packages found in `packages/`, `components/`, `examples/`, `apps/`, and `ee/packages/` in one quick pass.
 
 ## The core loop commands
 
-These are the top-level scripts every contributor uses, run from the repo root. They're all
-orchestrated by [Turborepo](https://turbo.build) (`turbo.json`), which understands the
-dependency graph between packages and runs things in the right order.
+Here are the main scripts you will use on a daily basis. You can run these right from the root of the repository. We use [Turborepo](https://turbo.build) to orchestrate them via `turbo.json`. Turborepo understands how all our packages depend on each other and ensures everything runs in the correct order.
 
 ```bash
 bun run build       # Turborepo, topological: builds every package's dist/
@@ -55,24 +42,23 @@ bun run lint        # lint checks
 bun run dev         # watch-build every package (re-runs build on save)
 ```
 
-Working on one package at a time? Scope any script to it with `--filter`:
+If you are only working on a single package, you can easily scope any script to just that package by using the `--filter` flag:
 
 ```bash
 bun run --filter @concile/values test
 bun run --filter @concile/values typecheck
 ```
 
-There's also a separate end-to-end test command, covered in its own section below because it has
-a different rule attached to it:
+We also have a separate command for end-to-end tests. We will cover this in more detail later since it follows a slightly different set of rules:
 
 ```bash
 bun run test:e2e    # cross-package E2E suites, run one at a time (concurrency 1)
 bun run test:all    # test + test:e2e together
 ```
 
-## The inner dev loop
+## The daily development loop
 
-Day to day, the loop looks like this:
+Your day-to-day workflow will usually look something like this:
 
 ```mermaid
 flowchart LR
@@ -83,138 +69,94 @@ flowchart LR
     B -.->|"writes dist/, the ONLY thing tests import"| C
 ```
 
-The dotted annotation on the build step is the single most important thing to internalize
-before you touch this codebase. It's the subject of gotcha #1 below.
+The note about the build step in the diagram is incredibly important to keep in mind as you work on this codebase. We explain this in detail in our first pitfall below.
 
-## Two gotchas that will bite you
+## Common pitfalls to avoid
 
-These are both hard-won lessons from the project's own history. Read them now and save
-yourself an hour of confusion later.
+We learned these lessons the hard way during the project's history. Taking a moment to read them now might save you a lot of time and confusion later on!
 
-### 1. Cross-package tests import from `dist/`, not `src/`
+### 1. Tests across packages import from `dist/`, not `src/`
 
-When package A depends on package B (say, `@concile/cli` depends on `@concile/values`), A's
-tests resolve B through B's **built** `dist/` output, the same way a real npm consumer would,
-not through B's `src/`.
+When one package depends on another, like when `@concile/cli` depends on `@concile/values`, the tests resolve the dependency using the built files in the `dist/` folder. This is exactly how a normal npm user would consume the package, rather than pulling directly from the `src/` folder.
 
-That means: if you edit `packages/values/src/index.ts` and immediately run
-`bun run --filter @concile/cli test`, your edit is invisible. Nothing breaks, nothing updates.
-The test just silently keeps running against whatever was in `dist/` before your edit. You have
-to `bun run build` (or `bun run --filter @concile/values build`) first to refresh `dist/`.
+This means if you make an edit to `packages/values/src/index.ts` and then immediately run `bun run --filter @concile/cli test`, you won't see your changes. The test will silently keep running against the old compiled code in `dist/`. To see your updates, you need to run `bun run build` or `bun run --filter @concile/values build` to refresh the `dist/` folder first.
 
-<Callout title="git checkout won't save you either" type="warn">
+<Callout title="A warning about git checkout" type="warn">
 
-  `dist/` is gitignored. If you're debugging something that seems to have "reverted itself," a
-  `git checkout` on the source doesn't touch the stale `dist/` sitting on disk. You still need to
-  rebuild.
+  We ignore the `dist/` folder in git. If you are ever debugging an issue and it feels like your code magically reverted itself, keep in mind that doing a `git checkout` on your source code won't update the stale `dist/` files on your disk. Always remember to rebuild!
 
 </Callout>
 
-### 2. `bun run test` runs vitest under Node, not Bun
+### 2. Our shared test suite runs on Node
 
-Even though Bun is the primary runtime, the shared test suite (`bun run test`) runs vitest
-**under Node**: `globalThis.Bun` is `undefined` inside those tests. Two consequences follow.
+Even though we use Bun as our primary tool, when you run `bun run test`, vitest actually runs under Node. This means `globalThis.Bun` will be `undefined` during these tests. This leads to two important points:
 
-- Don't write assertions in the shared suite that depend on a Bun-only global or API. They'll
-  fail (or worse, silently no-op) because that suite never runs on Bun.
-- The actual Bun runtime path is comparatively under-tested by the shared suite. It gets its own
-  separate smoke test instead. For example, `docstore-sqlite` has a `bun run` smoke test that
-  only runs on Bun.
+- Try to avoid writing tests in the shared suite that rely on Bun specific globals or APIs. They will likely fail or do nothing at all since they aren't running in a Bun environment.
+- Because the shared suite doesn't test the Bun runtime path, we rely on separate smoke tests for that. For instance, `docstore-sqlite` includes a specific `bun run` smoke test designed to run exclusively on Bun.
 
-If you're touching anything that behaves differently on Bun vs. Node (SQLite bindings, file
-APIs), check whether there's a Bun-specific smoke test near that package, and add one if not.
+If you find yourself working on code that behaves differently between Bun and Node, such as SQLite bindings or file APIs, please check if a Bun specific smoke test exists in that package. If there isn't one, it would be great if you could add it!
 
-## Run an example end to end
+## Testing with a real example
 
-The fastest way to see whether your change actually works, not just whether it typechecks, is to
-run it inside a real example app.
+The quickest way to verify that your changes are working as expected is to test them out inside one of our example applications. This gives you a much better feel for things than just relying on the typechecker.
 
 ```bash
 cd examples/chat
 bun run dev
 ```
 
-That `dev` script is really:
+Under the hood, that `dev` script is actually running:
 
 ```bash
 bun ../../packages/cli/dist/bin.js dev --dir concile --web web --port 3210
 ```
 
-Here's what happens when it starts:
+When you start the server, a few exciting things happen:
 
-1. It boots the **embedded runtime**, an in-process engine (storage, transaction manager, query
-   engine, WebSocket sync server), all in one Bun process. No separate database to start.
-2. It watches the `concile/` folder (`--dir concile`) for function and schema changes.
-3. On every save, it re-bundles your functions, re-runs codegen (regenerating the typed
-   `_generated/api` your app code imports), and pushes the new code into the running engine,
-   without dropping open WebSocket subscriptions. A page with a live query just updates.
-4. It serves the sync WebSocket, the HTTP API, and the dashboard, all on one port
-   (`--port 3210`), and serves the example's static frontend (`--web web`).
+1. It spins up the **embedded runtime**, which includes our storage, transaction manager, query engine, and WebSocket sync server. All of this runs in a single Bun process, so there is no need to set up a separate database.
+2. It keeps an eye on the `concile/` folder by using the `--dir concile` flag, watching for any changes to your functions or schema.
+3. Whenever you save a file, it automatically rebundles your functions and runs our code generator to update the typed `_generated/api` that your app uses. It then hot reloads this new code into the engine without dropping any of your active WebSocket connections. If you have a web page open with a live query, you will see it update instantly!
+4. Finally, it serves the sync WebSocket, our HTTP API, and the dashboard all on a single port specified by `--port 3210`. It also serves the example's static frontend using the `--web web` flag.
 
-If you only changed a function in `concile/` you don't need to do anything else. The watch loop
-picks it up. If you changed a package under `packages/` that the example depends on, remember
-gotcha #1: rebuild that package first, or the example keeps running the old code.
+If you are only editing functions inside the `concile/` folder, you are good to go! The watcher will handle everything automatically. However, if you are making changes to a core package inside the `packages/` folder that the example relies on, please keep our first pitfall in mind. You will need to rebuild that package first, otherwise the example app will keep running the old version of the code.
 
-To regenerate the typed API by hand (without starting the dev server):
+If you ever need to regenerate the typed API manually without starting the full development server, you can do so easily:
 
 ```bash
 bun run codegen   # from inside examples/chat
 ```
 
-See [the CLI reference](/docs/core-concepts/cli) for the full flag list, and
-[Local development](/docs/deploy/local-dev) for the end-user-facing version of this workflow.
+Feel free to check out our [CLI reference](/docs/core-concepts/cli) to see all the available flags. You can also read about the [Local development](/docs/deploy/local-dev) process to see how end users experience this workflow.
 
-## E2E tests and the cardinal testing rule
+## The golden rule of end-to-end testing
 
-`packages/cli/test/*-e2e.test.ts` are a different animal from ordinary unit tests. Each one boots
-a **real** `concile dev` (or `concile serve`) server, the actual CLI entrypoint an end user
-runs, and drives it over a real WebSocket or HTTP connection.
+The tests you find in `packages/cli/test/*-e2e.test.ts` are quite different from standard unit tests. Each of these tests starts up a genuine `concile dev` or `concile serve` server. This is the exact same command line interface that our users run, and the tests interact with it over a real WebSocket or HTTP connection.
 
 ```bash
 bun run test:e2e   # concurrency 1: E2E suites boot real servers/ports, so they don't run in parallel
 ```
 
-The project's cardinal testing rule follows directly from this:
+Because of this, we have one golden rule when it comes to testing:
 
-<Callout title="Any cross-package feature must be proven through the real CLI server">
+<Callout title="Always verify cross-package features using the real server">
 
-  A mechanism that only passes in isolation, a unit test exercising some internal class directly
-  and never wired through `concile dev`/`serve` the way a real user's request would travel, has
-  repeatedly hidden real bugs in this project's history. Things like a feature built correctly
-  but never actually plumbed into the command that's supposed to use it, or a privilege check
-  that only fires on one of two code paths into the same functionality. If your change crosses a
-  package boundary, it needs an E2E test alongside its unit tests, not instead of them.
+  In the past, we have found that tests that only run in isolation can hide tricky bugs. If a unit test only exercises an internal class without ever routing through `concile dev` or `serve`, we might miss things. Sometimes a feature is built perfectly but forgets to wire itself into the main command. Other times, a security check might only trigger on one specific path. So, if your changes span across multiple packages, please make sure to include an end-to-end test along with your regular unit tests!
 
 </Callout>
 
-## Working conventions
+## Guidelines for contributing
 
-A few conventions every contributor is expected to follow. These aren't style preferences,
-they're how bugs get caught before they ship.
+We have a few guidelines that we ask all our contributors to follow. We do not see these as simple style preferences, but rather as important practices that help us catch bugs early.
 
-**Spec first, then plan, then code.** Each build-order slice (see
-[the architecture overview](/docs/contributing/architecture/system-design)) gets a design spec
-under `docs/superpowers/specs/`, reviewed and approved, before any implementation plan or code.
-Don't jump straight to coding a new slice. The spec is where architectural mistakes get caught
-cheaply, before they're locked into shipped code.
+**Always start with a spec.** Before writing any code or even a detailed implementation plan for a new feature slice, we write a design spec in the `docs/superpowers/specs/` folder. We wait to get this reviewed and approved before moving forward. By doing this, we can catch architectural issues early when they are easiest to fix. You can read more about feature slices in our [architecture overview](/docs/contributing/architecture/system-design).
 
-**DX is the feature, not polish.** Error messages from the CLI and SDK, the quality of type
-inference, and how fast `concile dev` starts up are treated as core product surface. If a
-change makes an error message vaguer, or slows down startup, or blunts a generated type, weigh
-that cost explicitly. Don't treat it as an acceptable side effect of an unrelated fix.
+**Developer experience is a core feature.** We care deeply about things like the clarity of our CLI error messages, the quality of our TypeScript types, and how fast the server starts up. If your changes make an error message less helpful or slow down the startup time, please consider those trade-offs carefully. We don't want to accept degraded developer experience as a side effect of other fixes.
 
-**Two documentation audiences, never mixed.** `docs/enduser/` is the public, end-user product
-documentation (this site): how someone *uses* concile. `docs/dev/` and `docs/superpowers/` are
-internal engineering docs (specs, architecture decisions, plans): how concile itself is
-*built*. A change to one should never leak into the other.
+**Keep our documentation separate.** We maintain two distinct sets of documentation. The `docs/enduser/` folder is for public documentation like this site, focusing on how people use Concile. Our internal engineering docs, located in `docs/dev/` and `docs/superpowers/`, are all about how Concile is built. We try really hard not to mix the two!
 
-**Storage-seam purity.** The engine must never know which database it's running on. Anything
-that leaks a SQLite- or Postgres-specific detail out of an adapter package
-(`packages/docstore-sqlite`, `packages/docstore-postgres`, and so on) and into engine code is
-treated as a design bug, not a style nit. See [the storage architecture](/docs/contributing/architecture/storage)
-for why this boundary matters.
+**Keep the storage layer clean.** The core engine should never know what specific database it is using. If specific details about SQLite or Postgres leak out of their adapter packages and into the main engine, we treat that as a serious design bug. If you are curious about why this matters, take a look at our [storage architecture guide](/docs/contributing/architecture/storage).
 
-## The contribution process, visually
+## A visual guide to contributing
 
 ```mermaid
 flowchart LR
@@ -226,13 +168,11 @@ flowchart LR
     F --> G[Land]
 ```
 
-Every step is real work, not ceremony. The brainstorm and spec are where a bad approach gets
-rethought while it's still cheap to change. The E2E step is where a feature that "should work"
-gets proven against the actual server a user would run.
+We value every single step in this process. Brainstorming and writing specs are essential because they give us a chance to rethink an approach before we invest time in coding. The end-to-end testing phase is our way of making sure that features actually work in the real world when a user runs the server.
 
-## Where new work goes
+## Finding a home for your new code
 
-If you're adding something new, here's how to decide where it lives.
+If you are adding a new feature and aren't sure where it should live, here is a quick guide to help you out:
 
 | You're adding... | It goes in... |
 |---|---|
@@ -241,17 +181,11 @@ If you're adding something new, here's how to decide where it lives.
 | A new database backend | A new adapter package implementing the `DocStore` interface (the shared cross-backend contract from `packages/docstore`). Under that seam, adapters differ: `docstore-sqlite` sits on a small synchronous `DatabaseAdapter`, while `docstore-postgres` sits on an async `PgClient`. See [Writing a storage adapter](/docs/contributing/extending/storage-adapter) |
 | A new object-storage backend | A new adapter package (implementing the `BlobStore` seam) |
 
-The guiding rule is the same one that keeps this codebase navigable at ~30 packages: **keep
-packages small and single-purpose.** A package should be understandable on its own, without
-having to read the CLI or another package's internals first.
+As a general rule of thumb, we always strive to **keep our packages small and focused on a single purpose**. We want every package to be easily understood on its own without needing to dig into the CLI or other internal code. This helps keep our codebase friendly and easy to navigate!
 
-## Next steps
+## Where to go next
 
-- [The monorepo](/docs/contributing/codebase/monorepo): a tour of the packages, components, and
-  how they depend on each other.
-- [Architecture overview](/docs/contributing/architecture/system-design): the reactive-transaction
-  core and the tiered architecture.
-- [Building components](/docs/contributing/extending/custom-component): the seam new opt-in
-  features are built on.
-- [Contributing guide](/docs/contributing/contributing-guide): how to actually propose and land a
-  change (PRs, CLA/DCO).
+- [The monorepo](/docs/contributing/codebase/monorepo): Take a tour of our packages, our components, and how they all fit together.
+- [Architecture overview](/docs/contributing/architecture/system-design): Dive into our reactive transaction core and learn about our tiered architecture.
+- [Building components](/docs/contributing/extending/custom-component): Learn how to build new opt-in features using our component system.
+- [Contributing guide](/docs/contributing/contributing-guide): Read up on the actual process for proposing changes, opening PRs, and signing our contributor agreements.

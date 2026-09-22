@@ -5,21 +5,15 @@ description: An open-source reactive backend you host yourself.
 
 {/* diataxis: explanation */}
 
-concile is an open-source, reactive backend you host yourself. You write your backend as regular
-TypeScript functions, and concile keeps every user's screen up to date automatically.
+Concile is an open source, reactive backend that you host yourself. You write your backend as normal TypeScript functions, and Concile automatically keeps every user's screen up to date.
 
-Think of a Google Doc. When one person types, everyone else sees the change right away, with no
-refresh button. concile gives your whole app that quality, for any data, and you barely have to
-think about it.
+Think of how a Google Doc works. When one person types, everyone else sees the change right away, and nobody has to click a refresh button. Concile gives your entire app that same magic for any kind of data, and you barely have to think about it.
 
 ## The idea in one minute
 
-You write two kinds of functions. A **query** reads data. A **mutation** writes it. Your app
-subscribes to a query, like "the messages in this chat."
+You really only write two kinds of functions. A **query** reads data, and a **mutation** writes data. Your app subscribes to a query, like "give me all the messages in this chat."
 
-When someone sends a message, they call a mutation. concile notices the mutation changed data your
-query was reading, re-runs the query, and pushes the new result to everyone watching that chat. You
-never write polling, WebSocket code, or cache-invalidation logic. That part is the whole product.
+When someone sends a message, they call a mutation. Concile immediately notices that this mutation changed data your query was looking at. It re-runs the query and pushes the new result to everyone watching that chat. You never have to write polling loops, manage WebSockets, or deal with cache invalidation. That is the whole point of the product.
 
 ```mermaid
 flowchart LR

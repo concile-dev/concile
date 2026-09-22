@@ -5,14 +5,9 @@ description: useQuery, useMutation, useAction.
 
 {/* diataxis: how-to */}
 
-`@concile/client` is the framework-agnostic client that runs the reactive sync protocol underneath
-your app: a transport, a `ConcileClient` built on top of it, and (via `@concile/client/react`)
-hooks that subscribe a component to a query and re-render it on every push.
+Think of `@concile/client` as the framework-agnostic engine that powers the reactive sync protocol behind your app. It includes a transport layer, a `ConcileClient` built right on top of it, and a set of handy hooks (via `@concile/client/react`) that subscribe your components to queries and automatically re-render them whenever new data arrives.
 
-This page covers the whole client surface: construction, transports, every `ConcileClient` method,
-the React hooks, the wire lifecycle, auth, typed codegen, and error handling. For deep dives on the
-two biggest features built on this client, see [Optimistic updates](/docs/client/optimistic-updates)
-and [Offline sync](/docs/client/offline-sync).
+In this guide, we will walk you through everything you need to know about the client. We cover how to build it, how transports work, and every single `ConcileClient` method. We also dive into React hooks, the wire lifecycle, authentication, typed codegen, and how to handle errors. If you are curious about the two biggest features we built on this client, check out our deep dives on [Optimistic updates](/docs/client/optimistic-updates) and [Offline sync](/docs/client/offline-sync).
 
 ## Construct a client
 

@@ -5,13 +5,9 @@ description: "The reactive model: how concile knows which queries to refresh whe
 
 {/* diataxis: explanation */}
 
-Reactivity in concile is not magic, and it is not polling. It comes from one idea: **the engine
-records what each query reads, records what each mutation writes, and refreshes a query only when
-the two overlap.**
+Reactivity in Concile is not magic, and it definitely isn't polling. It all comes down to one simple idea: **the engine tracks exactly what each query reads, tracks exactly what each mutation writes, and only refreshes a query when those two things overlap.**
 
-Everything else on this page (the data model, the commit protocol, the matcher that finds affected
-subscriptions without scanning every live one, and the determinism rule) follows from getting that
-one idea right.
+Everything else you will read on this page follows from getting that single idea right. That includes our data model, how we handle commits, how we find affected subscriptions without scanning every single one, and why we strictly enforce determinism.
 
 ## Read sets: what a query actually records
 

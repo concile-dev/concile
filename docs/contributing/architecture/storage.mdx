@@ -5,17 +5,11 @@ description: "The append-only MVCC document log, the narrow DocStore seam, and w
 
 {/* diataxis: explanation */}
 
-Everything in Concile, queries, mutations, reactivity, the dashboard's data browser, ultimately
-bottoms out in one thing: a log of document revisions on disk. If you understand how that log
-works, the rest of the engine makes a lot more sense. This page walks through it from the ground
-up. No prior Concile knowledge assumed.
+At the end of the day, everything in Concile boils down to a simple log of document revisions on your disk. Whether you're running queries, writing mutations, or poking around the data browser, it all comes back to this log. Grasping how it works will really help you understand the rest of the engine. In this guide, we'll build that understanding together from scratch. No prior Concile knowledge needed!
 
 ## The one thing to understand first: nothing is ever overwritten
 
-Most databases store the *current* value of a row and overwrite it in place when it changes.
-Concile's storage layer does something different: it **never overwrites**. Every write, insert,
-update, or delete, appends a brand-new entry to a log. The "current" value of a document is just
-whichever entry for it happened most recently.
+Most databases just save the *current* value of a row, overwriting old data whenever there's a change. Concile's storage layer, on the other hand, takes a different approach: it **never overwrites**. Instead, every single write, insert, update, or delete just tacks a brand-new entry onto the end of a log. So when you ask for the "current" value of a document, you're really just getting the most recent entry for it.
 
 Concretely, every write appends a `DocumentLogEntry`:
 
@@ -28,11 +22,7 @@ interface DocumentLogEntry {
 }
 ```
 
-A `null` value is called a **tombstone**. It marks the document as deleted as of that `ts`,
-without erasing its history. The `prev_ts` field points back to the entry that came before it, so
-every document's history forms a **backward-linked chain through time**: newest, pointing at the
-one before it, pointing at the one before that, all the way back to its first revision
-(`prev_ts: null`).
+We call a `null` value a **tombstone**. It basically marks the document as deleted as of that `ts`, without erasing its history. The `prev_ts` field points back to the entry that came before it, which means every document's history forms a **backward-linked chain through time**. The newest entry points at the one before it, which points at the one before that, all the way back to its very first revision (`prev_ts: null`).
 
 ```mermaid
 flowchart LR
@@ -41,42 +31,25 @@ flowchart LR
     Cut["read at readTimestamp = 8"] -. "newest revision with ts less-or-equal 8" .-> T7
 ```
 
-That's one document's entire history: created at `ts=3`, edited at `ts=7`, then deleted at
-`ts=12`. Nothing was ever mutated in place. Each step just appended a new row.
+That right there is one document's entire history: created at `ts=3`, edited at `ts=7`, and then deleted at `ts=12`. Notice how nothing was ever mutated in place. Each step just quietly appended a new row.
 
 ## Reading "as of" a moment in time
 
-Because old revisions are never thrown away, you can ask a very useful question: "what did this
-document look like at some earlier point?" That's a **snapshot read**, and the rule for answering
-it is simple:
+Since we never throw away old revisions, you can ask a pretty useful question: "what did this document look like at some earlier point?" We call that a **snapshot read**, and the rule for answering it is surprisingly simple:
 
 > Take the newest revision whose `ts` is less than or equal to your `readTimestamp`. If that
 > revision is a tombstone, the document doesn't exist at that snapshot.
 
-In the diagram above, reading at `readTimestamp = 8` lands on the `ts = 7` revision. The `ts = 12`
-delete hasn't happened yet as of time 8, so it's invisible to that read. Reading at
-`readTimestamp = 20` would land on the tombstone, and the document would appear deleted.
+In the diagram above, doing a read at `readTimestamp = 8` lands you right on the `ts = 7` revision. The `ts = 12` delete hasn't happened yet as of time 8, so it's completely invisible to that read. If you were to read at `readTimestamp = 20`, you'd land on the tombstone, making the document appear deleted.
 
-This one rule is the whole of **snapshot isolation** in Concile: the same scan, run again later
-at the same `readTimestamp`, always returns exactly the same answer, no matter how many more
-writes have landed since. Nothing about the past ever changes. That stability is what makes two
-other big features possible:
+This single rule is the core of **snapshot isolation** in Concile. It means that the exact same scan, if run again later at the same `readTimestamp`, will always return exactly the same answer, no matter how many new writes have landed in the meantime. The past is set in stone, and nothing about it ever changes. That stability is what makes two other massive features possible:
 
-- **Deterministic replay.** If a query function ever needs to be re-run (for example, to check
-  whether a mutation's read set actually changed, see
-  [Transactions & consistency](/docs/contributing/architecture/transactions)), running it again at
-  the same timestamp is guaranteed to produce the same result. No "well, it depends when you ask."
-- **Reactivity.** The [reactivity](/docs/contributing/architecture/reactivity) engine can safely
-  cache "this query, at this snapshot, produced this result" and only worry about whether a new
-  write's range overlaps what the query read, never about the read silently going stale on its
-  own.
+- **Deterministic replay.** If a query function ever needs to be re-run (like if we need to check whether a mutation's read set actually changed, which you can read about in [Transactions & consistency](/docs/contributing/architecture/transactions)), running it again at the same timestamp is absolutely guaranteed to produce the same result. You'll never run into a situation where the answer depends on when you ask.
+- **Reactivity.** Our [reactivity](/docs/contributing/architecture/reactivity) engine can safely cache that "this query, at this snapshot, produced this result". It only ever has to worry about whether a new write's range overlaps what the query read, and never has to worry about the read silently going stale on its own.
 
 ## Indexes are versioned the same way
 
-A document table needs indexes to be queried efficiently (by field, by range, and so on). See
-[the query engine](/docs/contributing/architecture/query-engine) for how those get built and
-used. The important thing here is that **index entries follow the exact same append-only,
-timestamped discipline as documents**. A `DatabaseIndexUpdate` is:
+Of course, a document table needs indexes if we want to query it efficiently (whether that's by field, by range, or something else). If you're curious about how those get built and used, you can check out [the query engine](/docs/contributing/architecture/query-engine). But the most important takeaway here is that **index entries follow the exact same append-only, timestamped discipline as our documents**. For instance, a `DatabaseIndexUpdate` looks like this:
 
 ```ts
 interface DatabaseIndexUpdate {
@@ -86,20 +59,11 @@ interface DatabaseIndexUpdate {
 }
 ```
 
-Each update is stamped with a `ts`, just like a document revision. So "what did this index look
-like at `readTimestamp`" is answered by the identical rule: newest entry per key with
-`ts <= readTimestamp`, skip it if it's a `Deleted` marker. A document's row and its index entries
-are always written in the very same commit, at the very same `ts`, so an index scan and a direct
-document read at the same snapshot can never disagree with each other.
+Notice how each update is stamped with a `ts`, just like a document revision. Because of this, asking "what did this index look like at `readTimestamp`" is answered using the exact same rule: just grab the newest entry per key where `ts <= readTimestamp`, and skip it if you see a `Deleted` marker. Since a document's row and its index entries are always written in the very same commit at the exact same `ts`, an index scan and a direct document read taken at the same snapshot can never disagree with one another.
 
 ## The DocStore seam: one interface, several backends
 
-All of the above, the log, the tombstones, the versioned indexes, is *implemented* by something
-called a `DocStore` (defined in `packages/docstore/src/types.ts`). This is the single interface
-the rest of the engine (the transactor, the query engine, the scheduler, everything) is written
-against. Crucially: **the engine only ever imports this interface, never a specific database
-driver.** Whatever can satisfy `DocStore` (do an ordered, point-in-time range scan, and an atomic
-batch write) is a valid storage backend.
+Everything we've talked about so far (the log, the tombstones, and the versioned indexes) is *implemented* by something called a `DocStore` (which you can find defined in `packages/docstore/src/types.ts`). This is the sole interface that the rest of the engine (like the transactor, the query engine, the scheduler, and really everything else) is written against. This is a crucial detail: **the engine only ever imports this interface, and never a specific database driver.** As long as a system can satisfy `DocStore` (by performing an ordered, point-in-time range scan, and an atomic batch write), it qualifies as a valid storage backend.
 
 ```mermaid
 flowchart TD
@@ -109,38 +73,23 @@ flowchart TD
     Iface --> DO["DO-SQLite adapter<br/>Cloudflare Durable Objects"]
 ```
 
-`DocStore` has a fair number of methods, but they group into a handful of concerns. Here's the
-whole surface, opened up one group at a time:
+While `DocStore` has a fair number of methods, they generally group into a handful of core concerns. Here's a look at the entire surface area, broken down one group at a time:
 
 <Accordions type="single">
 
 <Accordion title="Setup">
 
-`setupSchema(options?)` creates the physical tables if they don't exist yet. It's idempotent,
-calling it on an already-set-up store is a harmless no-op, and it runs once when the store opens.
+The `setupSchema(options?)` method creates the physical tables if they don't exist yet. It's fully idempotent, meaning that calling it on a store that is already set up is a completely harmless no-op, and it typically just runs once when the store opens.
 
 </Accordion>
 
 <Accordion title="Writing (three ways, and why)">
 
-There are three ways to write, because they solve slightly different problems.
+We actually have three different ways to write, mostly because they solve slightly different problems.
 
-`write(documents, indexUpdates, conflictStrategy)` is the low-level "insert these already-stamped
-rows" primitive. It's used when the caller (for example, a replica applying someone else's
-committed rows) already knows the exact `ts` each row belongs at. Its `conflictStrategy`
-(`"Error"` or `"Overwrite"`) says what to do if a row at that exact `(table_id, internal_id, ts)`
-already exists: `"Error"` refuses the write, while `"Overwrite"` replaces it in place. That second
-mode is used by tooling like the migration importer, which re-inserts documents at their real,
-already-known `ts` and needs a second pass over the same rows to be a safe no-op rather than a
-duplicate-key failure.
+The `write(documents, indexUpdates, conflictStrategy)` method is our low-level "insert these already-stamped rows" primitive. We use it when the caller (like a replica applying someone else's committed rows, for example) already knows the exact `ts` that each row belongs at. The `conflictStrategy` argument (which can be `"Error"` or `"Overwrite"`) tells the system what to do if a row at that exact `(table_id, internal_id, ts)` already exists. If it's `"Error"`, we refuse the write, while `"Overwrite"` replaces it in place. That second mode comes in handy for tooling like the migration importer, which re-inserts documents at their real, already-known `ts` and needs a second pass over the same rows to be a safe no-op rather than throwing a duplicate-key failure.
 
-`commitWrite(documents, indexUpdates)` is what an ordinary transaction commit calls. The documents
-and index updates arrive with `ts: 0n` as a placeholder, and **the store itself allocates the
-real commit timestamp, inside its own transaction**, before writing the rows. That detail
-matters: if the timestamp were handed out earlier by some outside clock and *then* the write
-landed, there'd be a brief window where a timestamp had been promised but nothing was actually
-written yet, and a crash in that window would be a real headache. By making allocation and
-writing one atomic step, that window simply doesn't exist.
+The `commitWrite(documents, indexUpdates)` method is what an ordinary transaction commit will call. The documents and index updates arrive with `ts: 0n` acting as a placeholder, and then **the store itself allocates the real commit timestamp, right inside its own transaction**, before writing the rows. That detail is actually pretty important. If the timestamp were handed out earlier by some outside clock and *then* the write landed, we'd have a brief window where a timestamp had been promised but nothing was actually written yet. A crash in that window would be a real headache to deal with. By making the allocation and the writing one single atomic step, we completely eliminate that window.
 
 ```mermaid
 sequenceDiagram
@@ -157,76 +106,44 @@ sequenceDiagram
     Store-->>Tx: return the allocated commit ts
 ```
 
-`commitWriteBatch(units)` is the same idea for committing several transactions' worth of rows in
-one go (a "group commit"). Each unit still gets its own distinct, strictly increasing timestamp,
-but they all land together in a single underlying database transaction. This mostly matters for
-scaled-out deployments doing many small commits per second. A single-node deployment can ignore
-it.
+The `commitWriteBatch(units)` method follows the same idea, but it's for committing several transactions' worth of rows in one go (often called a "group commit"). Each unit still gets its own distinct, strictly increasing timestamp, but they all land together in a single underlying database transaction. This is mostly a big deal for scaled-out deployments that are doing many small commits per second. If you're on a single-node deployment, you can generally just ignore it.
 
-`addCommitGuard(guard)` lets other parts of the system (for example, the offline mutation outbox
-described in the product docs) hook a bit of logic to run *inside* every commit's transaction,
-useful for things like "also write a receipt row, atomically with this commit." Most deployments
-never register one.
+The `addCommitGuard(guard)` method lets other parts of the system (like the offline mutation outbox described in our product docs) hook a little bit of logic to run *inside* every commit's transaction. It's super useful for things like "also write a receipt row, atomically with this commit." That being said, most deployments will probably never need to register one.
 
 </Accordion>
 
 <Accordion title="Reading (the hot path)">
 
-This runs on every query.
+These methods run on every query.
 
-- `get(id, readTimestamp?)`: one document's newest visible revision, or `null`.
-- `index_scan(indexId, tableId, readTimestamp, interval, order, limit?)`: the primary read
-  primitive. It's an **async generator**, a function you loop over with `for await`, which
-  produces results one at a time instead of building a giant array up front, that walks an
-  index's key range in order and yields `[keyBytes, latestDocument]` pairs, applying the snapshot
-  rule above as it goes.
-- `scan(tableId, readTimestamp?)` and `count(tableId)`: a whole table's live documents, and how
-  many there are.
-- `maxTimestamp()`: the highest commit timestamp the store has ever seen. Used on startup to make
-  sure a restarted engine never hands out a timestamp it's already used before (more on this
-  below).
+- `get(id, readTimestamp?)`: This returns a document's newest visible revision, or `null` if it doesn't exist.
+- `index_scan(indexId, tableId, readTimestamp, interval, order, limit?)`: This is our primary read primitive. It's actually an **async generator**, meaning it's a function you can loop over with `for await`. It produces results one at a time instead of building a giant array up front, walking an index's key range in order and yielding `[keyBytes, latestDocument]` pairs. It also applies that snapshot rule we talked about earlier as it goes.
+- `scan(tableId, readTimestamp?)` and `count(tableId)`: These give you a whole table's live documents, and how many of them there are.
+- `maxTimestamp()`: This fetches the highest commit timestamp the store has ever seen. We use it on startup to make sure a restarted engine never hands out a timestamp it has already used before (we'll talk more about this below).
 
 </Accordion>
 
 <Accordion title="The change feed">
 
-`load_documents(range, order, limit?)` tails the raw log over a timestamp range, every revision,
-tombstones included, not deduplicated to "latest per key" the way `index_scan`/`scan` are. This is
-the primitive that reactive subscriptions and any future replication or change-stream feature are
-built on: "give me everything that happened between these two timestamps."
+The `load_documents(range, order, limit?)` method tails the raw log over a timestamp range. It includes every single revision (tombstones included) and doesn't deduplicate down to "latest per key" the way `index_scan` or `scan` do. This is the core primitive that our reactive subscriptions, and really any future replication or change-stream features, are built on. It basically asks the system to "give me everything that happened between these two timestamps."
 
 </Accordion>
 
 <Accordion title="OCC support">
 
-`previous_revisions(queries)` answers "what was this document's revision immediately before some
-timestamp?" for a batch of documents at once. Worth being precise about who calls it: **the
-transactor doesn't.** Its OCC validation intersects a transaction's read ranges against an
-in-memory ring of recent commits (`packages/transactor/src/shard-writer.ts`) and never re-reads
-the store; see [Transactions & consistency](/docs/contributing/architecture/transactions). Today
-`previous_revisions` is consumed by the scaled-out `ee/` storage substrates, which pass it
-through when composing stores. The `DocStore` itself doesn't validate anything; it just answers
-the question honestly.
+The `previous_revisions(queries)` method answers the question: "what was this document's revision immediately before a specific timestamp?" for a batch of documents at once. It's worth being precise about who actually calls it, because **the transactor doesn't.** The transactor's OCC validation actually intersects a transaction's read ranges against an in-memory ring of recent commits (found in `packages/transactor/src/shard-writer.ts`) and never bothers to re-read the store. You can read more about that in [Transactions & consistency](/docs/contributing/architecture/transactions). Today, `previous_revisions` is mainly consumed by our scaled-out `ee/` storage substrates, which pass it right through when they are composing stores. The `DocStore` itself doesn't validate anything at all, it just honestly answers the question it was asked.
 
 </Accordion>
 
 <Accordion title="A small key-value store">
 
-`getGlobal`/`writeGlobal`/`writeGlobalIfAbsent` are a tiny string-to-JSON side table for engine
-bookkeeping, things like schema metadata or one-time bootstrap flags. `writeGlobalIfAbsent` is a
-compare-and-set: it only writes if the key doesn't already exist, which is exactly what a "run
-this setup step exactly once" check needs.
+The `getGlobal`, `writeGlobal`, and `writeGlobalIfAbsent` methods make up a tiny string-to-JSON side table for engine bookkeeping. We use them for things like schema metadata or one-time bootstrap flags. The `writeGlobalIfAbsent` method acts as a compare-and-set operation: it only writes if the key doesn't already exist, which is exactly the kind of check you need when you want to "run this setup step exactly once".
 
 </Accordion>
 
 <Accordion title="Client mutation receipts">
 
-`DocStore` also carries a handful of methods
-(`getClientVerdict`/`recordClientVerdict`/`pruneClientMutations`, and friends) that back the
-durable offline mutation outbox: how a client's replayed mutation gets recognized as "already
-applied" instead of running twice after a reconnect. That's a whole feature in its own right. The
-short version here is just that these receipts live in the same store, right alongside documents
-and indexes, so they commit atomically with the writes they're receipting. See
+Our `DocStore` also carries a handful of methods (like `getClientVerdict`, `recordClientVerdict`, `pruneClientMutations`, and their friends) that back our durable offline mutation outbox. This handles how a client's replayed mutation gets recognized as "already applied" instead of mistakenly running twice after a reconnect. It's really a whole feature in its own right, but the short version is just that these receipts live in the exact same store, right alongside our documents and indexes, so they can commit atomically with the writes they are receipting. You can see
 [Offline sync](/docs/client/offline-sync) for how the outbox itself uses these.
 
 </Accordion>
@@ -235,33 +152,17 @@ and indexes, so they commit atomically with the writes they're receipting. See
 
 ## The TimestampOracle: where commit timestamps come from
 
-Every commit needs a `ts` that's guaranteed to be strictly greater than every `ts` that came
-before it. That's what makes "newest revision with `ts <= readTimestamp`" a well-defined, stable
-answer. The component responsible for that is the `TimestampOracle`, one per store (one per shard
-at Tier 2's scaled-out deployments):
+Every commit needs a `ts` that's guaranteed to be strictly greater than every `ts` that came before it. This strict ordering is exactly what makes our rule of finding the "newest revision with `ts <= readTimestamp`" such a well-defined and stable answer. The component responsible for making this happen is the `TimestampOracle`. We have one of these per store (or one per shard if you're looking at Tier 2's scaled-out deployments):
 
-- `getCurrentTimestamp()`: the latest timestamp allocated so far (which might still be an
-  in-flight commit that hasn't landed yet).
-- `getLastCommittedTimestamp()`: the latest timestamp that has actually, fully committed (the
-  safe snapshot a new read can use right now).
-- `observeTimestamp(ts)`: nudges the oracle's clock forward to at least `ts`, and never lets it go
-  backward. This is what makes restarts safe: when the store reopens, it reads back the highest
-  `ts` it ever committed (via `maxTimestamp()`) and calls `observeTimestamp` with it *before*
-  allocating anything new, so a crash and restart can never reuse or rewind a timestamp that
-  already means something.
+- `getCurrentTimestamp()`: This gets the latest timestamp allocated so far (which might still be an in-flight commit that hasn't officially landed yet).
+- `getLastCommittedTimestamp()`: This grabs the latest timestamp that has actually, fully committed, serving as the safe snapshot that a new read can use right now.
+- `observeTimestamp(ts)`: This nudges the oracle's clock forward to at least `ts`, and strictly ensures it never goes backward. This is the magic that makes restarts safe. When the store reopens, it reads back the highest `ts` it ever committed (using `maxTimestamp()`) and then calls `observeTimestamp` with it *before* it starts allocating anything new. This ensures a crash and restart can never accidentally reuse or rewind a timestamp that already has meaning in the system.
 
-`ts` is purely a logical counter, not a wall-clock time. It only has to increase, never repeat. (A
-document's separate `_creationTime` field is the actual wall-clock timestamp developers see; the
-two are unrelated.)
+It's important to remember that `ts` is purely a logical counter, and not a wall-clock time. Its only job is to increase and never repeat. If you're looking for wall-clock time, a document has a separate `_creationTime` field that handles that, and it's what developers usually see. The two concepts are completely unrelated.
 
 ## Why the seam is this narrow, on purpose
 
-Look back at the `DocStore` interface: it's really just "ordered point-in-time range scans" plus
-"atomic batch writes" plus a tiny KV store. Nothing about SQL, nothing about a specific database
-product. That narrowness is deliberate. It's what lets Concile claim **deploy anywhere** without
-the engine's transaction logic, query planner, or reactivity code ever needing to change. Any
-backend that can answer "give me the newest row per key up to this timestamp, in order" and "write
-this batch atomically" is a legal `DocStore`.
+If you look back at the `DocStore` interface, you'll see it's really just "ordered point-in-time range scans" combined with "atomic batch writes" and a tiny KV store. There's nothing in there about SQL, and nothing tying it to a specific database product. That narrow focus is entirely deliberate. It's what allows Concile to claim that you can **deploy anywhere** without the engine's transaction logic, query planner, or reactivity code ever needing to change. Any backend that can successfully answer "give me the newest row per key up to this timestamp, in order" and can also "write this batch atomically" is considered a legal `DocStore`.
 
 <Callout type="warn" title="A design invariant, not a suggestion">
   A leak of SQLite- or Postgres-specific behavior above this seam would be a design bug, not a
@@ -270,64 +171,35 @@ this batch atomically" is a legal `DocStore`.
 
 ## Two shipped adapters, one synchronous and one async
 
-Concile ships two database backends today, plus a Cloudflare-native adapter, and the two
-databases intentionally look different under the hood because their underlying drivers do.
+Right now, Concile ships with two database backends, plus a Cloudflare-native adapter. The two databases intentionally look quite different under the hood, mainly because their underlying drivers operate differently.
 
 <Tabs items={['SqliteDocStore', 'PostgresDocStore', 'DO-SQLite']}>
 
 <Tab value="SqliteDocStore">
 
-`SqliteDocStore` (`packages/docstore-sqlite`) sits on top of a small **synchronous**
-`DatabaseAdapter` seam (`exec`/`prepare`/`transaction`), matching `node:sqlite`/`bun:sqlite`,
-which are themselves synchronous APIs. Its commit allocates the next timestamp with a plain
-`MAX(ts) + 1` computed inside its own transaction. Because Concile enforces a single writer at a
-time, that read-then-increment can never race with another writer.
+The `SqliteDocStore` (found in `packages/docstore-sqlite`) sits on top of a small **synchronous** `DatabaseAdapter` seam (using `exec`, `prepare`, and `transaction`), which perfectly matches `node:sqlite` and `bun:sqlite` since they are themselves synchronous APIs. When it commits, it allocates the next timestamp with a plain `MAX(ts) + 1` computed directly inside its own transaction. Since Concile strictly enforces a single writer at a time, that read-then-increment logic can never accidentally race with another writer.
 
 </Tab>
 
 <Tab value="PostgresDocStore">
 
-`PostgresDocStore` (`packages/docstore-postgres`) sits on an **async** `PgClient` seam instead,
-because talking to Postgres always means awaiting network round trips. Its commit calls
-`nextval('concile_ts')` inside the same transaction as the row inserts, so the timestamp becomes
-visible atomically with the rows it stamps. It also takes a Postgres advisory lock on startup, so
-a second engine instance pointed at the same database fails fast instead of silently corrupting
-things by writing concurrently. Because index scans can't rely on SQLite's per-row logic, they're
-rewritten as set-based `DISTINCT ON`/`LATERAL` queries that do the same "newest row per key" dedup
-in one round trip.
+On the other hand, the `PostgresDocStore` (`packages/docstore-postgres`) sits on an **async** `PgClient` seam, simply because talking to Postgres always involves awaiting network round trips. When it commits, it calls `nextval('concile_ts')` inside the exact same transaction as the row inserts, meaning the timestamp becomes visible atomically along with the rows it stamps. It also smartly takes a Postgres advisory lock on startup. This way, if a second engine instance points at the same database, it fails fast instead of silently corrupting things by writing concurrently. Since index scans can't rely on SQLite's per-row logic, they are rewritten as set-based `DISTINCT ON` and `LATERAL` queries that perform the same "newest row per key" deduplication in just one round trip.
 
 </Tab>
 
 <Tab value="DO-SQLite">
 
-The `DO-SQLite` adapter (`packages/docstore-do-sqlite`) runs inside a Cloudflare Durable Object.
-It doesn't reimplement the MVCC log logic at all. It reuses `SqliteDocStore` verbatim and just
-supplies a different `DatabaseAdapter` that talks to the Durable Object's own embedded SQLite
-(`ctx.storage.sql`) instead of `node:sqlite`/`bun:sqlite`. That reuse is the seam paying off
-exactly as intended: a brand-new deployment target for basically free, because only the narrow
-adapter had to change.
+The `DO-SQLite` adapter (`packages/docstore-do-sqlite`) runs right inside a Cloudflare Durable Object. Interestingly, it doesn't even try to reimplement the MVCC log logic. Instead, it reuses the `SqliteDocStore` verbatim and just supplies a different `DatabaseAdapter` that talks directly to the Durable Object's own embedded SQLite (`ctx.storage.sql`), rather than `node:sqlite` or `bun:sqlite`. That kind of reuse is a perfect example of our seam paying off exactly as intended. It gave us a brand-new deployment target for basically free, since we only had to change the narrow adapter logic.
 
 </Tab>
 
 </Tabs>
 
-Selecting between SQLite and Postgres is a deployment-time choice, `--database-url`/
-`CONCILE_DATABASE_URL`, with no code changes and no migrations, since the physical schema (next
-section) is identical either way. See [self-hosting](/docs/deploy/self-hosting) and
-[Postgres](/docs/deploy/postgres) for how that's configured in practice, and
-[Writing a storage adapter](/docs/contributing/extending/storage-adapter) if you want to add a new
-backend yourself.
+Choosing between SQLite and Postgres is a simple deployment-time choice using the `--database-url` or `CONCILE_DATABASE_URL` flags. It requires absolutely no code changes and no migrations, primarily because the physical schema (which we'll cover in the next section) is identical either way. If you want to see how that's configured in practice, check out our guides on [self-hosting](/docs/deploy/self-hosting) and [Postgres](/docs/deploy/postgres). And if you're feeling adventurous and want to add a new backend yourself, take a look at [Writing a storage adapter](/docs/contributing/extending/storage-adapter).
 
 ## Physically schemaless: a fixed set of tables holds everything
 
-Here's a detail that surprises people coming from a typical SQL database: adding a new app table
-in your `schema.ts` never runs any `CREATE TABLE`. Under the hood there are always exactly the
-same small set of physical tables (`documents`, `indexes`, `persistence_globals`, plus the
-client-receipt tables), no matter how many logical tables or indexes your app defines. A logical
-table is just a `table_id` value that happens to appear in the `documents` rows. A logical index
-is just an `index_id` value in the `indexes` rows. Defining a new table or index is a **metadata
-operation**: allocate it a number, start writing rows tagged with that number, never a schema
-migration.
+Here's a detail that often surprises people who are used to typical SQL databases: adding a new app table in your `schema.ts` file never actually runs any `CREATE TABLE` commands. Under the hood, there is always exactly the same small set of physical tables (`documents`, `indexes`, `persistence_globals`, and the client-receipt tables), regardless of how many logical tables or indexes your app defines. In our system, a logical table is really just a `table_id` value that happens to appear in the `documents` rows, and a logical index is just an `index_id` value in the `indexes` rows. Defining a new table or index is purely a **metadata operation**. You just allocate it a number and start writing rows tagged with that number. You never have to worry about running a schema migration.
 
 ```mermaid
 flowchart TD
@@ -336,20 +208,13 @@ flowchart TD
     Storage["logical table: _storage<br/>table_id = 20"] --> Documents
 ```
 
-Every row above lives side by side in the very same physical table, distinguished only by the
-`table_id` column. There's no per-table SQL object for the engine to create, alter, or migrate.
+Every row you see above lives side by side in the very same physical table, and they are distinguished only by their `table_id` column. There is no per-table SQL object for the engine to create, alter, or migrate.
 
-This is also why Concile never needs a migration step as your app's `schema.ts` evolves: there's
-no DDL to run in the first place. (Additive schema changes are still validated at deploy time, see
-[Deploy & build](/docs/deploy/deploy-and-build), but that validation is a code-level check, not a
-database one.)
+This is exactly why Concile never needs a migration step as your app's `schema.ts` evolves. There is simply no DDL to run in the first place. Additive schema changes are still validated at deploy time (which you can read about in [Deploy & build](/docs/deploy/deploy-and-build)), but that validation is purely a code-level check, not a database one.
 
 ## Document identity: ids that validate themselves
 
-One more piece worth understanding: what a document id actually *is*. Internally, a document's
-identity is just `{ tableNumber, internalId }`, a small number identifying its table, plus 16
-random bytes. The `k57x3n8j...`-looking string you see in application code is produced by
-encoding that pair:
+There's one more piece that's definitely worth understanding, and that's what a document id actually *is*. Internally, a document's identity is just a combination of `{ tableNumber, internalId }`. It's a small number that identifies its table, plus 16 random bytes. The `k57x3n8j...` style string that you see floating around in application code is produced by encoding that specific pair:
 
 ```
 base32( varint(tableNumber)  ++  internalId (16 bytes)  ++  fletcher16-checksum (2 bytes) )
@@ -357,28 +222,18 @@ base32( varint(tableNumber)  ++  internalId (16 bytes)  ++  fletcher16-checksum 
 
 | Part | What it does |
 |---|---|
-| `varint(tableNumber)` | Packs the table number into as few bytes as possible (1 byte for small numbers, more for large ones). Since most apps have far fewer than 128 tables, this keeps ids short in the common case. |
-| `internalId` (16 bytes) | Generated from a cryptographically secure random source, so ids are unguessable and effectively collision-free without any coordination between writers. |
-| Trailing checksum (2 bytes) | A Fletcher-16 over everything before it. A mistyped or truncated id string is caught immediately by the codec alone. No database round trip is needed to discover it's invalid. |
-| Base32 encoding | The whole byte string is encoded in Crockford Base32, a text alphabet that deliberately skips the letters `i`, `l`, `o`, and `u` to avoid confusion with `1`, `0`, and `v`. |
+| `varint(tableNumber)` | This packs the table number into as few bytes as possible (1 byte for small numbers, and more for larger ones). Since most apps have far fewer than 128 tables, this neatly keeps ids short in the common case. |
+| `internalId` (16 bytes) | These are generated from a cryptographically secure random source, ensuring that ids are unguessable and effectively collision-free without needing any coordination between writers. |
+| Trailing checksum (2 bytes) | This is a Fletcher-16 checksum over everything before it. It ensures that a mistyped or truncated id string is caught immediately by the codec alone, meaning no database round trip is ever needed to discover that it's invalid. |
+| Base32 encoding | The entire byte string is then encoded in Crockford Base32. It's a text alphabet that deliberately skips the letters `i`, `l`, `o`, and `u` to carefully avoid confusion with `1`, `0`, and `v`. |
 
-Table numbers are partitioned by range: **1 to 9999 are reserved for Concile's own internal
-system tables** (for example, the file-storage table lives permanently at table number 20), and
-**user-defined tables start at 10001**. Because the table *number*, not its name, is what's baked
-into every id, renaming a table in `schema.ts` never invalidates any existing document id.
+Table numbers are nicely partitioned by range. The numbers from **1 to 9999 are reserved for Concile's own internal system tables** (for example, the file-storage table lives permanently at table number 20), while **user-defined tables start at 10001**. Because the table *number*, rather than its name, is what gets baked into every single id, renaming a table in your `schema.ts` file will never invalidate any existing document id.
 
 ## Where this fits in the bigger picture
 
-The storage layer deliberately knows nothing about transactions, query planning, or reactive
-subscriptions. It just offers ordered snapshots and atomic writes. Everything more interesting is
-built one layer up:
+The storage layer deliberately knows absolutely nothing about transactions, query planning, or reactive subscriptions. It simply offers ordered snapshots and atomic writes. Everything more interesting and complex is built one layer up:
 
-- [Transactions & consistency](/docs/contributing/architecture/transactions): how a mutation
-  becomes one serializable transaction on top of `commitWrite`, including OCC validation and
-  conflict retry.
-- [The query engine](/docs/contributing/architecture/query-engine): how index selection and
-  `.where()` post-filters turn into calls to `index_scan`.
-- [Reactivity](/docs/contributing/architecture/reactivity): how a write's range gets compared
-  against a subscribed query's read set to decide whether to re-run it.
-- [Writing a storage adapter](/docs/contributing/extending/storage-adapter): a practical guide if
-  you want to implement `DocStore` for a new backend.
+- [Transactions & consistency](/docs/contributing/architecture/transactions): This covers how a mutation becomes one serializable transaction on top of `commitWrite`, including OCC validation and conflict retry logic.
+- [The query engine](/docs/contributing/architecture/query-engine): This explains how index selection and `.where()` post-filters are translated into calls to `index_scan`.
+- [Reactivity](/docs/contributing/architecture/reactivity): This dives into how a write's range gets compared against a subscribed query's read set to intelligently decide whether to re-run it.
+- [Writing a storage adapter](/docs/contributing/extending/storage-adapter): This is a practical guide you can use if you ever want to implement `DocStore` for a completely new backend.

@@ -5,19 +5,11 @@ description: Sessions, email, OAuth, MFA, and passkeys.
 
 {/* diataxis: explanation */}
 
-`@concile/auth` is a first-party, self-hosted authentication component. Out of the box it gives
-you email and password accounts, anonymous sign-in with in-place upgrade, and a hardened session
-model. Layer on top of that as much as you need: email verification, password reset, magic links,
-one-time codes, social OAuth, third-party JWT/OIDC, TOTP two-factor, and passkeys.
+`@concile/auth` is our very own first-party authentication component, ready to go right out of the box. It sets you up with email and password accounts, anonymous sign-in options that you can easily upgrade later, and a seriously tough session model. From there, you can mix and match whatever else you need, like email verification, password resets, magic links, one-time codes, social OAuth logins, third-party JWT or OIDC, two-factor TOTP, and even passkeys.
 
-However a user signs in, every flow ends the same way: a real session row in your own database.
-That row is what `ctx.auth.getUserId()` reads inside the transaction, over `ctx.db`, exactly like
-any other read. So it becomes part of the calling function's [read
-set](/docs/get-started/how-it-works#read-sets-what-a-query-actually-records), and revoking a
-session is just a write against that row. Every subscribed query gated on identity re-runs and
-reflects the change immediately: no polling, no separate invalidation channel to wire up.
+No matter how a user logs in, the journey always wraps up the same way by creating a real session row right in your database. That exact row is what `ctx.auth.getUserId()` checks inside the transaction, just like any normal read. Because of this, it joins the calling function's [read set](/docs/get-started/how-it-works#read-sets-what-a-query-actually-records). If you ever need to revoke a session, it's as simple as making a write to that row. Any subscribed query relying on that identity will rerun and update instantly, meaning no polling or messing with separate invalidation channels.
 
-Everything past password sign-in is opt-in, each behind its own config block. `defineAuth()` with
+Everything beyond basic password sign-in is totally optional, tucked away in its own config block. `defineAuth()` with
 no arguments gives you password and anonymous sign-in and nothing else. A deployment that never
 configures `email`, `oauth`, `jwt`, `mfa`, or `passkeys` behaves exactly like an older version of
 the component that never had them.

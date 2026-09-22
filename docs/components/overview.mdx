@@ -5,14 +5,9 @@ description: Opt-in capabilities composed in concile.config.ts.
 
 {/* diataxis: explanation */}
 
-The core engine (schema, queries, mutations, actions, reactivity) doesn't know what auth,
-notifications, or workflows are, and it doesn't need to. Those capabilities are components:
-self-contained packages that plug into the engine through one seam, `ComponentDefinition`. Each one
-contributes whatever mix of tables, a `ctx.<name>` facade, background behavior, and HTTP routes it
-needs.
+The core engine (schema, queries, mutations, actions, reactivity) doesn't really know about auth, notifications, or workflows, and honestly, it doesn't need to. Think of these capabilities as components, which are basically self-contained packages that plug right into the engine using a single seam called `ComponentDefinition`. Each one chips in with its own mix of tables, a handy `ctx.<name>` facade, background behavior, and whatever HTTP routes it might need.
 
-A project composes exactly the components it wants in `concile.config.ts`. Nothing is installed
-for you, and nothing runs that you didn't list.
+When you're setting up a project, you get to handpick exactly the components you want in your `concile.config.ts` file. We don't install anything for you behind your back, and absolutely nothing runs unless you specifically ask for it.
 
 This page explains the component model itself: how you compose components, what's built in today,
 and how composition works (ordering, namespacing, the driver seam). For each capability's own API,

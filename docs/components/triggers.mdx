@@ -5,16 +5,9 @@ description: React to table changes.
 
 {/* diataxis: explanation */}
 
-A trigger is a small piece of code that runs itself whenever a table changes. Think of it as a
-database trigger, except it's an ordinary Concile function, and Concile runs it durably with no
-dropped events.
+A trigger is just a handy little piece of code that automatically runs itself whenever a table changes. You can think of it like a traditional database trigger, but it is just a regular Concile function, and Concile makes sure it runs reliably without dropping any events.
 
-`@concile/triggers` runs a handler you choose whenever documents in a table you're watching are
-inserted, updated, or deleted. It fills the gap between mutations, which are synchronous and run
-inside the writer's own transaction with no external effects, and
-[workflows](/docs/components/workflows), which are explicit and caller-initiated. A trigger reacts on
-its own to something that already happened. Use it for denormalized counters, audit logs,
-notification fan-out, kicking off a durable workflow, or syncing to an external system.
+`@concile/triggers` will run a specific handler you choose whenever documents in a table you are keeping an eye on get inserted, updated, or deleted. It perfectly fills the gap between mutations, which happen synchronously and have no external effects, and [workflows](/docs/components/workflows), which are explicitly started by a caller. A trigger just reacts all on its own to something that has already happened. It is great for things like denormalized counters, keeping audit logs, fanning out notifications, kicking off a durable workflow, or keeping an external system in sync.
 
 <Callout type="info" title="Opt-in component">
 

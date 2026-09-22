@@ -5,14 +5,9 @@ description: RBAC, ReBAC, and row policies.
 
 {/* diataxis: explanation */}
 
-Say your `documents` table needs three kinds of access: some people can read everything, some can
-read only their team's documents, and some can read only what's been shared with them directly.
-`@concile/authz` is how you express all three without hand-rolling permission checks inside every
-query and mutation.
+Let's say your `documents` table needs a few different levels of access. Maybe some folks can read absolutely everything, while others can only see their team's documents, and a few can only look at things that were shared with them directly. Instead of painfully writing permission checks by hand for every single query and mutation, `@concile/authz` lets you handle all of this smoothly.
 
-It gives you three tools: role-based access control (RBAC) with inheritance and scoped grants,
-relationship-based access control (ReBAC) for sharing-style permissions, and declarative row
-policies that filter what a query returns and gate what a mutation writes.
+It hooks you up with three great tools: role-based access control (RBAC) complete with inheritance and scoped grants, relationship-based access control (ReBAC) for those sharing-style permissions, and declarative row policies that automatically filter what a query shows and tightly control what a mutation can write.
 
 | You want to say | Reach for | Looks like |
 |---|---|---|

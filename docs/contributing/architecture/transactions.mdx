@@ -5,25 +5,25 @@ description: "The single-writer OCC transactor and 3-phase commit."
 
 {/* diataxis: explanation */}
 
-Picture a small shop with one register. Any number of customers can wander the aisles and fill their carts at the same time, but only one person checks out at a time. That's the whole trick behind how Concile keeps every mutation safe without making every read stand in line.
+Imagine a cozy little shop with just one cash register. People can browse the aisles and fill their carts together, but they check out one by one. This is exactly how Concile makes sure every data change is safe while letting everyone read data without waiting.
 
-Every mutation you write runs inside a transaction: a `ctx.db.insert(...)`, a `ctx.db.replace(...)`, all of it. This page explains how that transaction stays safe (no two mutations can silently step on each other) and cheap (no locks while reading, no waiting) at the same time. It also explains how the same bookkeeping that makes this safe gets reused to power live queries.
+Whenever you change data, like using `ctx.db.insert(...)` or `ctx.db.replace(...)`, it happens inside a transaction. Here we'll break down how these transactions stay perfectly safe so no two updates accidentally step on each other, and stay incredibly cheap by avoiding slow locks and waiting lines. We'll also explore how the very same behind-the-scenes tracking that keeps things safe also drives your live queries.
 
-If you haven't read `/docs/core-concepts/mutations` yet, start there for the developer-facing view. This page is the "how it works under the hood" companion, useful once you're reading engine source, writing a component, or just curious.
+If you haven't checked out `/docs/core-concepts/mutations` yet, you might want to start there for the developer's perspective. Think of this page as the backstage tour, perfect for when you're digging into the engine source code, building a new component, or just feeling curious.
 
-## The one trick: only one writer at a time, per shard
+## The magic trick: one writer per shard
 
-Concile's engine is organized into **shards**. In the default single-binary setup there's exactly one shard, so for now just think of it as "the database." (Sharding is how Concile scales writes horizontally at Tier 2, see `/docs/contributing/architecture/runtimes`. Everything on this page applies per shard either way.)
+We organize Concile's engine into **shards**. If you are running the default setup with a single binary, you just have one shard. You can simply think of it as the database for now. We use sharding to scale things up in Tier 2, which you can read about in `/docs/contributing/architecture/runtimes`, but everything we talk about here applies to each shard individually.
 
-The class that fans a commit out across multiple shards is `ShardedTransactor` (`packages/transactor/src/sharded-transactor.ts`). It holds N independent `ShardWriter`s behind the same single `Transactor` interface that `SingleWriterTransactor` implements, so callers don't need to know whether they're talking to one shard or many.
+The tool that spreads a commit across multiple shards is the `ShardedTransactor` found in `packages/transactor/src/sharded-transactor.ts`. It manages multiple independent `ShardWriter` instances behind the familiar `Transactor` interface that `SingleWriterTransactor` uses. This means the code calling it does not even have to care if it is talking to one shard or fifty.
 
-Inside one shard, Concile makes a deliberate simplifying choice: only one transaction is allowed to commit at a time. A per-shard lock (`AsyncMutex`, in `packages/transactor/src/shard-writer.ts`) makes commits happen one after another, never in parallel.
+Inside a single shard, we made a straightforward choice: only one transaction can commit at any given moment. We use a lock called `AsyncMutex` in `packages/transactor/src/shard-writer.ts` to guarantee that commits queue up and never happen at the exact same time.
 
-Alongside that lock sits a monotonic clock: an oracle that only ever hands out increasing numbers, or "timestamps." Every committed transaction gets a timestamp strictly greater than every timestamp committed before it on that shard.
+Right next to that lock is a monotonic clock. You can picture it as a trusty counter that only ever hands out bigger and bigger numbers, which we call timestamps. When a transaction commits, it gets a timestamp that is guaranteed to be larger than any commit that came before it on that shard.
 
-Why does this combination matter? It turns a normally hard problem, "did someone else change the data I depended on?", into a cheap one. With commits serialized and timestamps strictly increasing, a transaction only has to ask one question at commit time: has anything I read changed since I started?
+Why is this setup so powerful? It takes a notoriously thorny problem like figuring out if someone else messed with your data and makes it incredibly easy to solve. Because commits line up one by one and timestamps always go up, a transaction only has to answer one simple question when it is time to commit: did the data I looked at change while I was working?
 
-There's no other writer to coordinate a lock with, no deadlock detection, no distributed consensus needed. This technique is called **optimistic concurrency control (OCC)**: assume no conflict, do the work, and check for a conflict only right before committing.
+You do not have to worry about coordinating locks with other writers, checking for deadlocks, or managing complex distributed consensus. We call this approach **optimistic concurrency control (OCC)**. You just assume everything is fine, get the work done, and only double check for conflicts at the very end before saving.
 
 ```mermaid
 flowchart LR
@@ -33,11 +33,11 @@ flowchart LR
     D -->|"then"| E["Commit B<br/>validated against ts = 11"]
 ```
 
-Both `A` and `B` read concurrently, lock-free: reads never wait on anything. Only the brief commit step is serialized, and it's deliberately short: validate, stamp a timestamp, write. Nothing else happens while the lock is held.
+In this scenario, both `A` and `B` can read data at the same time without any locks holding them back. Reads literally never wait. Only that final, lightning-fast commit step happens one at a time. We keep it intentionally brief by just validating, grabbing a timestamp, and writing. The system does not do anything else while holding the lock.
 
-## The lifecycle of a mutation
+## The life of a mutation
 
-Every transaction goes through the same four steps. Keep this shape in mind: it's the mental model for the rest of this page. The class that implements it is `SingleWriterTransactor` (`packages/transactor/src/single-writer-transactor.ts`), which delegates the actual mechanics to a per-shard `ShardWriter`.
+Every transaction follows the same four basic steps. It is helpful to keep this pattern in mind because it forms the foundation for everything else we cover here. The `SingleWriterTransactor` class in `packages/transactor/src/single-writer-transactor.ts` handles this process, passing the heavy lifting down to a specific `ShardWriter`.
 
 ```mermaid
 sequenceDiagram
@@ -59,23 +59,23 @@ sequenceDiagram
     end
 ```
 
-1. **Begin.** The transaction captures a snapshot timestamp: the last timestamp that was fully committed on this shard. Every read this transaction makes is answered "as of" that moment, no matter how long the transaction takes to run.
-2. **Execute.** Your mutation's code runs. Reads go to the document store at the snapshot timestamp, but first they check whether this same transaction already wrote that document (more on that below, it's called read-your-own-writes). Every read is recorded. Every write is staged, held in memory, not yet written to the store.
-3. **Commit.** A three-phase process, covered in detail in the next section, that either succeeds and applies everything atomically, or fails with a conflict.
-4. **Rollback.** If anything goes wrong, or a conflict is detected, the staged writes and recorded reads are simply discarded. Nothing was ever visible to anyone else, so there's nothing to undo.
+1. **Begin.** First, the transaction grabs a snapshot timestamp. This represents the most recent commit on the shard. Any data the transaction looks at is shown exactly as it existed at that moment, even if the transaction takes a while to finish.
+2. **Execute.** Now your mutation code actually runs. When you read data, it pulls from the store using that snapshot timestamp. But it also double checks to see if this very same transaction already modified that data. We call this reading your own writes, and we will get into it more later. The system writes down every piece of data you look at. Any changes you make are just staged in memory for now, not saved to the main store yet.
+3. **Commit.** We use a neat three step process here, which we will unpack in the next section. It either works perfectly and saves everything in one fell swoop, or it spots a conflict and stops.
+4. **Rollback.** If a conflict pops up or something else goes sideways, we simply toss out those staged writes and the list of what we read. Since nobody else could see those changes anyway, it is like they never even happened.
 
-A transaction that only reads (a `query` function, or a mutation that happens to write nothing) skips straight past the commit machinery. There's nothing to validate or apply, so it never touches the single-writer lock at all.
+If you have a transaction that is only reading data, like a query or a mutation that does not actually change anything, it gets to skip the entire commit process. There is simply nothing to check or save, so it never even looks at the single writer lock.
 
-## Read set and write set: the same shape, two jobs
+## Read sets and write sets do double duty
 
-As a mutation runs, the transaction keeps track of two things:
+While your mutation is doing its thing, the transaction quietly keeps an eye on two lists:
 
-- The **read set**: every document, index range, or table scan the mutation looked at.
-- The **write set**: every document the mutation is about to change.
+- The **read set**: a log of every document, index range, or table scan the mutation peeked at.
+- The **write set**: a list of every single document the mutation is preparing to update.
 
-Both are recorded using the exact same representation: a **key range**. A key range just means "this table (or index), from this byte-encoded key to that byte-encoded key." A single document read is a range that starts and ends at the same key, a "point" range. A `.collect()` over an index is a range spanning many keys. A full table scan is the widest possible range for that table. Keys are byte-encoded so comparing two ranges for overlap is a cheap, ordinary comparison. No per-type logic needed.
+The cool part is that we record both of these lists using the exact same format, which we call a **key range**. A key range is simply our way of saying "look at this table or index, starting from this encoded key and ending at that one." If you read one specific document, that is a range where the start and end keys are identical, often called a point range. When you run `.collect()` on an index, it creates a range that covers a whole bunch of keys. A full table scan is just the biggest possible range you can make for that table. Since the keys are encoded as bytes, it is incredibly fast and easy to check if two ranges overlap without writing special code for different types of data.
 
-That shared representation isn't just a shortcut. It's the core of the whole system, because the same read set gets used for two completely different jobs at two completely different times:
+Using the same format for both sets is way more than just a clever shortcut. It is actually the beating heart of the whole setup. We take that one read set and use it for two totally different tasks at different stages:
 
 ```mermaid
 flowchart TB
@@ -84,29 +84,29 @@ flowchart TB
     RS --> SUB["Subscription invalidation<br/>while the query stays live"]
 ```
 
-- **At commit time**, the read set (together with the snapshot timestamp it was read at) is what Phase 1 validation checks against: did anything in here change since my snapshot?
-- **While a query is subscribed**, that same read set is handed to the sync tier. When a later commit's write set arrives, the sync tier intersects it against every live subscription's read set. Any overlap means this query might now return something different, so it re-runs and pushes the update. See `/docs/contributing/architecture/reactivity` for that half of the story.
+- **When it is time to commit**, we take the read set and its snapshot timestamp into Phase 1 validation. We are basically asking, "did any of this data change since I took my snapshot?"
+- **While someone is actively watching a query**, we pass that read set over to the sync tier. Whenever a new commit brings in a fresh write set, the sync tier checks if it overlaps with what any live subscriptions are looking at. If they cross paths, it means the query results might have changed, so it runs the query again and sends out the update. You can read all about that side of things in `/docs/contributing/architecture/reactivity`.
 
-One recorded read set, two consumers. Get this representation right and both correctness (OCC) and reactivity fall out of it almost for free.
+So we get two massive benefits from tracking just one read set. Once you nail down this format, you get both airtight data safety and live reactivity practically as a bonus.
 
-## The three-phase commit
+## The three step commit
 
-Commit is where the interesting work happens. It's intentionally short, so the single-writer lock is held for as little time as possible.
+The commit phase is where the real action happens. We keep it intentionally short and sweet so that the single writer lock is not tied up for long.
 
-**Phase 1: Validate.** Has any commit since this transaction's snapshot written something it read? The read set (as key ranges) is intersected against the write sets of recent commits.
+**Phase 1: Validating.** We check if any commits that happened after our snapshot messed with data we were looking at. We do this by seeing if our read set overlaps with the write sets from recent commits.
 
-- If anything intersects, the whole transaction is rejected with an `OccConflictError`. Nothing is applied.
-- The transaction's own staged writes are excluded from this check. Reading back something you just wrote in the same transaction is expected, not a conflict.
+- If we find an overlap, we stop the whole transaction right there and throw an `OccConflictError`. None of your changes get saved.
+- We specifically ignore your transaction's own pending writes during this check. It is perfectly normal to read something you just updated in your own transaction, so that does not count as a conflict.
 
-**Phases 2 and 3: Apply and allocate, atomically, inside the store.** If validation passes, every staged document and index update is handed to the document store's `commitWrite` with a placeholder timestamp, and the store allocates the real commit timestamp *inside its own atomicity domain*, stamps every row with it, and lands them all in one atomic operation. Allocating the timestamp any earlier, outside the store, would open a window where a timestamp had been promised but nothing was written yet; doing both in one step means that window simply doesn't exist. (See [Storage & the MVCC log](/docs/contributing/architecture/storage) for the store's side of this.)
+**Phases 2 and 3: Applying and allocating together.** If everything looks good, we hand all your staged updates over to the document store's `commitWrite` function using a temporary timestamp. The store then creates the actual official commit timestamp deep inside its own secure process, marks every single row with it, and saves everything all at once. If we tried to make the timestamp earlier, before talking to the store, we would create a risky gap where a timestamp exists but the data is not actually saved yet. Doing it all in one swift motion completely avoids that trap. Check out [Storage and the MVCC log](/docs/contributing/architecture/storage) if you want to see how the store handles this.
 
-Only after that atomic step succeeds does the transaction publish the returned timestamp as the shard's new last-committed clock and return its result: the commit timestamp, plus the write set (the "written ranges") that becomes the input to reactive invalidation.
+Once that big save is successful, the transaction announces the new timestamp as the latest time for the shard. It then hands back the commit timestamp along with the write set, which the system uses to figure out what live queries need updating.
 
-A transaction that staged no writes at all (a pure read) short-circuits before Phase 1. There's nothing to validate and nothing to apply, so it never takes the lock and never burns a timestamp.
+If your transaction was only reading and did not actually stage any writes, it smartly skips out before Phase 1 even starts. Since there are no changes to check or save, it never bothers grabbing the lock or using up a timestamp.
 
-## How a conflict is actually detected
+## Spotting conflicts in the wild
 
-The mechanism is one check, applied uniformly: **a range-set intersection against recent commits**. Each `ShardWriter` keeps an in-memory ring of recent commits, each remembered as `(ts, write ranges)`. Validation walks that ring and asks, for every commit newer than this transaction's snapshot: do its write ranges intersect my validated read ranges? One intersection anywhere is a conflict (`packages/transactor/src/shard-writer.ts`).
+We use one simple, consistent check to spot trouble: **checking for overlapping ranges against recent commits**. Every `ShardWriter` keeps a running memory of recent commits, jotting them down as a timestamp and a set of write ranges. During validation, the system looks through this list and asks a simple question for any commit newer than our snapshot: do these new writes step on any of the data I was reading? If it finds even one overlap, it flags a conflict. You can see this in action in `packages/transactor/src/shard-writer.ts`.
 
 ```mermaid
 flowchart TD
@@ -115,17 +115,17 @@ flowchart TD
     I -->|"no"| OK["Validation passes"]
 ```
 
-Because reads of every shape are recorded as key ranges (the previous section), this one check covers all the cases you'd otherwise need special logic for:
+Since we cleverly record every type of read as a key range, this single check beautifully handles scenarios that would normally require a bunch of custom code:
 
-- **Point read of one document.** A point range. A newer commit that wrote that document intersects it.
-- **Range scan or table scan.** The scanned interval. A newer commit that changed any row in it intersects, and so does a brand-new "phantom" row inserted into it, since an insert's write range lands inside the scanned interval just like an update's does. A scan that missed a new matching row would silently produce a wrong answer, so phantoms have to be caught, and the range representation catches them for free.
-- **Read of absence.** Checking "does this document exist?" and finding nothing still records the range that was probed. A commit that has since created a matching document writes into that range, and conflicts.
+- **Reading a single document.** This is just a point range. If a newer commit touches that exact document, it causes an overlap.
+- **Scanning a range or a whole table.** This covers a wide interval. If a newer commit updates any row in there, it overlaps. Even better, if someone sneaks a brand new "phantom" row into that space, its write range lands right in your scanned area. It is crucial to catch these phantoms so your scan does not accidentally give you the wrong answer by missing new data, and our range system catches them effortlessly.
+- **Checking if something is missing.** If you ask if a document exists and find out it does not, the system still remembers that you checked that specific spot. If another commit comes along and creates that document, it writes right into the space you were looking at and triggers a conflict.
 
-In every case, the transaction's own writes are excluded. You never conflict with yourself.
+No matter what you are doing, the system always ignores your transaction's own writes. You are never going to trip over your own feet.
 
-Note what validation does *not* do: it never walks a document's `prev_ts` history chain, and it never re-reads the store at all. The ring is in memory, and pure range arithmetic decides the answer. (Under group commit, the same intersection is also checked against any staged-but-unlanded batches, so a write that hasn't reached the ring yet still can't be missed. The ring is pruned only past the oldest snapshot any active transaction still holds.)
+It is also worth mentioning what validation completely skips. It never digs through a document's history chain, and it absolutely never goes back to re-read the main store. The list of recent commits lives entirely in memory, and the system figures everything out using simple math on the key ranges. If group commit is running, it also checks against any batches that are queued up but not saved yet, ensuring nothing slips through the cracks. The system only cleans up this list of recent commits when they are older than the oldest snapshot still in use by any active transaction.
 
-## Deterministic replay: how a conflict gets resolved
+## How we bounce back from a conflict
 
 <Callout type="info" title="The failed attempt is discarded, not patched">
 
@@ -133,15 +133,15 @@ When Phase 1 throws an `OccConflictError`, nothing from that attempt survives. T
 
 </Callout>
 
-On each retry, the writer discards everything from the failed attempt, takes a brand new snapshot, and runs your entire mutation function again from the top: same arguments, fresh reads, fresh writes.
+Whenever we retry, the writer completely scraps everything from the failed attempt. It grabs a shiny new snapshot and runs your entire mutation function again right from the beginning using the same arguments but with fresh reads and writes.
 
-This is safe, and not as wasteful as it sounds, for one reason: mutations are required to be deterministic functions of the database and their arguments. No `Math.random()`, no `Date.now()`, no network calls. Given the same inputs and the same database state, a mutation always produces the same writes. Replaying it on a fresh snapshot after a conflict isn't a guess or a workaround. It's simply re-deriving the correct answer against up-to-date data.
+This might sound like a lot of wasted effort, but it is actually totally safe and efficient for one key reason: your mutations have to be completely predictable based only on the database and their arguments. You can't use things like `Math.random()`, `Date.now()`, or make network calls. Because your mutation always creates the exact same writes if given the same inputs and database state, replaying it on a fresh snapshot is not just a hacky workaround. It is actually calculating the perfect, correct answer based on the most up-to-date data available.
 
-This replay is bounded (a default retry ceiling), so a mutation that keeps colliding under heavy contention eventually surfaces the conflict to the caller instead of retrying forever. It's also exactly why queries and mutations can't touch the clock, randomness, or the network directly. That non-determinism has to live in [actions](/docs/core-concepts/actions) instead, which run outside a transaction and are never replayed this way.
+We do put a cap on how many times it will retry. If a mutation just keeps running into conflicts because the database is super busy, it will eventually stop and let the caller know about the problem instead of spinning its wheels forever. This is exactly why your queries and mutations aren't allowed to play with the clock, random numbers, or network requests. If you need to do those unpredictable things, you put them in [actions](/docs/core-concepts/actions) instead. Actions live entirely outside of transactions and never have to deal with getting replayed like this.
 
-## Read-your-own-writes
+## Seeing your own updates
 
-Within a single mutation, this needs to work:
+When you are writing a mutation, a flow like this just needs to work naturally:
 
 ```ts
 const user = await ctx.db.get(userId);
@@ -150,39 +150,39 @@ const updated = await ctx.db.get(userId);
 // updated.credits is 10, even though nothing has been committed yet
 ```
 
-The write to `userId` is only staged at this point. It hasn't reached the document store yet. But the very next read has to see it anyway, or the mutation's own logic would be reading stale data mid-execution. Concile handles this by checking the transaction's own staged writes before falling through to the document store: a `get()` call first asks "did this transaction already write this document?" and only asks the store if the answer is no.
+At that exact moment, your update to `userId` is just hovering in the staging area. It has not actually hit the document store yet. However, the very next line of code needs to see that update, otherwise your mutation would be working with old data right in the middle of running. Concile takes care of this by always checking your transaction's staged writes before it bothers asking the document store. When you call `get()`, it first checks if you already tweaked that document, and only heads to the store if you haven't.
 
-The same idea applies to scans. A `.collect()` over an index merges the transaction's pending writes over the persisted results, so a document you just inserted shows up in a scan you run afterward, in the right sorted position, and a document you just deleted disappears from one, all before anything is actually committed. This keeps a mutation's view of the database internally consistent from its own perspective, even though nothing it has written is visible to anyone else yet.
+This same magic works for scanning data too. When you run `.collect()` on an index, it smoothly blends your pending writes right over the saved results. So if you just added a document, it pops up perfectly sorted in your scan. If you just deleted one, it vanishes from the results. All of this happens seamlessly before anything is officially saved. This guarantees that your mutation always has a consistent, logical view of the database, even while its changes remain totally invisible to everyone else.
 
-## From write set to reactivity
+## Turning writes into live updates
 
-When Phase 3 finishes, the commit produces exactly the payload the rest of the system needs: the assigned commit timestamp, plus the write set, the key ranges that were just written, described the same way read sets are. That pair is handed off (Concile calls it an "oplog delta") to the sync tier, whose job is to intersect it against every live subscription's stored read set and decide who needs a fresh push. That intersection logic, not the WebSocket plumbing around it, is the actual reactivity engine. It's covered in `/docs/contributing/architecture/reactivity`.
+Once Phase 3 wraps up, the commit hands over exactly what the rest of the system is waiting for: the official commit timestamp and the write set. Those are the key ranges that just got updated, described in the exact same format we use for reading. Concile bundles these together into what we call an "oplog delta" and passes it to the sync tier. The sync tier then takes that delta and checks it against the read sets of everyone who is actively watching a query to figure out who needs fresh data. That core logic of checking for overlaps is the true heart of the reactivity engine, rather than the web sockets that carry the messages. You can explore how all that works in `/docs/contributing/architecture/reactivity`.
 
-The important thing to take away here: reactivity isn't a notification system bolted onto the database. It falls directly out of the same read-set/write-set bookkeeping that OCC already needed for correctness. There's only one source of truth about what changed and what each query depended on, and both correctness and liveness are computed from it.
+The big takeaway here is that reactivity is not just some notification system slapped on top of the database. It emerges completely naturally from the exact same tracking systems we built to keep our optimistic concurrency control safe and accurate. We have one single, reliable source of truth showing what changed and what data each query cares about, and we use it to power both rock-solid correctness and instant live updates.
 
-## Limits: protecting the one writer you have
+## Keeping your only writer safe
 
-Because every mutation on a shard funnels through a single lock and a single retry loop, a single runaway mutation could, in principle, monopolize it: scanning millions of rows, staging an unbounded number of writes, or retrying forever. Concile bounds this with a per-transaction resource budget, called headroom.
+Since every mutation on a given shard has to pass through one single lock and retry loop, a poorly behaved mutation could technically take over and ruin things for everyone by scanning millions of rows, queuing up endless writes, or endlessly retrying. Concile prevents this by giving every transaction a strict resource budget that we call headroom.
 
 <Accordions type="single">
 
 <Accordion title="How the HeadroomTracker works">
 
-Each transaction carries a `HeadroomTracker` (`packages/transactor/src/headroom.ts`) with two caps: a maximum number of documents read and a maximum number of documents written. Both default to the same value, 4,096 (`DEFAULT_HEADROOM`), and callers can override either per run.
+Every single transaction brings along a `HeadroomTracker`, which you can find in `packages/transactor/src/headroom.ts`. It sets two hard limits: one for the maximum number of documents you can read, and another for how many you can write. They both start with a default limit of 4,096, known as `DEFAULT_HEADROOM`, though you can tweak either one for a specific run if you need to.
 
-Exceeding a limit aborts the mutation immediately with a `HeadroomExceededError`. This is deliberately not treated as a conflict and is never retried, since retrying a mutation that's simply too big would just fail the same way again.
+If you blow past either limit, the mutation stops immediately and throws a `HeadroomExceededError`. We specifically do not treat this like a normal conflict, so it does not get a retry. After all, retrying a mutation that is just fundamentally too big would only end up failing the exact same way.
 
-The limits do two jobs at once. They keep one mutation from starving the single-writer shard for everyone else, and they put a ceiling under the OCC retry loop above: a transaction whose read set keeps growing without bound would otherwise be increasingly likely to conflict with something, retry, grow further, and never converge.
+These limits pull double duty. First, they make sure no single greedy mutation can hog the single writer shard and block everyone else. Second, they act as a safety net for the retry loop we talked about earlier. If a transaction's read set just kept growing endlessly, it would become more and more likely to clash with something else, forcing it to retry and grow even more until it completely stalled out.
 
 </Accordion>
 
 </Accordions>
 
-## What this page didn't cover
+## What we left out
 
-Two things are deliberately out of scope here, each covered elsewhere:
+We intentionally skipped over two topics here because they have their own dedicated pages:
 
-- **How the write set turns into pushed updates to subscribed clients.** That's the sync tier's job, described in `/docs/contributing/architecture/reactivity`.
-- **How index-range scans, filters, and pagination decide exactly which key ranges to record.** That's the query engine's job, described in `/docs/contributing/architecture/query-engine`.
+- **How we turn write sets into live updates for users.** The sync tier handles this magic, and you can read all about it in `/docs/contributing/architecture/reactivity`.
+- **How scans, filters, and pagination figure out exactly which key ranges to watch.** That is up to the query engine, which you can dive into at `/docs/contributing/architecture/query-engine`.
 
-Both build directly on the read-set/write-set machinery this page describes. Neither changes how commits themselves work.
+Both of these systems rely heavily on the same read set and write set mechanics we covered on this page, but neither of them changes the core way our commits actually work.

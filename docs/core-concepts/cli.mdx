@@ -5,9 +5,7 @@ description: Every concile command and its flags.
 
 {/* diataxis: reference */}
 
-Every concile project runs on one binary: `concile` (package `@concile/cli`). This page covers
-every command it ships, exactly as implemented in `packages/cli/src/cli.ts` and its command modules:
-every flag, every environment-variable equivalent, and every fail-fast check each command performs.
+Every single Concile project relies on a handy binary called `concile` (which comes bundled in the `@concile/cli` package). On this page, we'll take a tour of all the commands it brings to the table. This guide is based directly on how things are wired up under the hood in `packages/cli/src/cli.ts` and its companion modules. You'll get to know all the flags, the environment variables you can use instead, and the quick safety checks each command runs before kicking into gear.
 
 ```bash
 concile <command> [options]
@@ -324,7 +322,7 @@ verbatim:
 
 ```text
 ✗ deploy failed: deploy not enabled on target (start serve with --allow-deploy)
-✗ serve target needs a url — pass --url or set deploy.targets.serve settings / CONCILE_DEPLOY_URL
+✗ serve target needs a url - pass --url or set deploy.targets.serve settings / CONCILE_DEPLOY_URL
 ✗ CONCILE_ADMIN_KEY is required to deploy to a serve target
 ✗ deploy failed: could not reach <url>: <error>
 ✗ deploy failed: <server-reported reason, e.g. a rejected schema change>

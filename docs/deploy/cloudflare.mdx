@@ -5,8 +5,7 @@ description: concile deploy --target cloudflare provisions a Durable-Object-nati
 
 {/* diataxis: how-to */}
 
-concile has two Cloudflare deployment paths. Most projects want the first one; the Containers
-path is experimental and gives up scheduled work (details [below](#the-alternative-path-cloudflare-containers-experimental)).
+Concile gives you two cool ways to deploy on Cloudflare. Most folks will want to go with the first approach since it's the smoothest. The Containers path is still experimental and doesn't handle scheduled work yet, but you can totally read more about it [below](#the-alternative-path-cloudflare-containers-experimental) if you're curious!
 
 | | Durable-Object-native (this page's main path) | Containers (alternative) |
 |---|---|---|
@@ -17,13 +16,9 @@ path is experimental and gives up scheduled work (details [below](#the-alternati
 
 ## The recommended path: Durable-Object-native
 
-`concile deploy --target cloudflare` provisions `@concile/runtime-cloudflare`'s Durable Object
-host via `wrangler deploy`. A [Durable Object](https://developers.cloudflare.com/durable-objects/)
-is Cloudflare's stateful primitive: a single-instance, globally addressable object with its own
-storage and single-threaded execution. One Durable Object is the OCC writer, the DO-SQLite store, every
-hibernatable WebSocket, and the wake alarm that fires scheduled functions/crons/triggers even
-though the DO idles between requests. It's a **single global DO** in v1, not a sharded fleet. See
-[Scaling](/docs/deploy/scaling) for the paid-tier multi-shard follow-on.
+When you run `concile deploy --target cloudflare`, we set up a Durable Object host from `@concile/runtime-cloudflare` using `wrangler deploy`. If you aren't familiar with it, a [Durable Object](https://developers.cloudflare.com/durable-objects/) is Cloudflare's way of handling state. It gives you a globally addressable, single-instance object that has its own storage and runs on a single thread. 
+
+In this setup, one Durable Object takes care of everything. It acts as the OCC writer, manages your DO-SQLite store, handles all hibernatable WebSockets, and even triggers your scheduled functions and crons. The best part is that it wakes itself up for those scheduled tasks, even if it goes idle between requests! Keep in mind that for v1, this is a **single global DO** rather than a sharded fleet. If you're looking to scale out later, check out our [Scaling](/docs/deploy/scaling) guide for details on the paid-tier multi-shard options.
 
 <Steps>
 
@@ -35,8 +30,7 @@ though the DO idles between requests. It's a **single global DO** in v1, not a s
 npm i -D wrangler
 ```
 
-Authenticate locally with `wrangler login`, or in CI set `CLOUDFLARE_API_TOKEN` (and typically
-`CLOUDFLARE_ACCOUNT_ID`) as environment variables. Don't run `wrangler login` in CI.
+Authenticate locally by running `wrangler login`. If you're setting this up in CI, you'll want to use environment variables instead. Just set `CLOUDFLARE_API_TOKEN` and, usually, `CLOUDFLARE_ACCOUNT_ID`. Make sure to avoid running `wrangler login` in your CI environment!
 
 </Step>
 
@@ -62,13 +56,9 @@ Authenticate locally with `wrangler login`, or in CI set `CLOUDFLARE_API_TOKEN` 
 }
 ```
 
-Your worker source needs only a few lines: `export class ConcileDO extends
-ConcileDurableObject { … }` plus `export default createWorkerHandler("CONCILE_DO")`.
-`concile deploy` doesn't scaffold this file for you. It reconciles bindings into an existing
-`wrangler.jsonc`, additively, never dropping a field you hand-wrote.
+Your worker source file only needs a few simple lines of code: `export class ConcileDO extends ConcileDurableObject { … }` and `export default createWorkerHandler("CONCILE_DO")`. Just note that `concile deploy` won't generate this file for you. Instead, it looks at your existing `wrangler.jsonc` and carefully adds any necessary bindings without ever overwriting the fields you wrote yourself.
 
-You also need a `concile/` directory with committed `_generated/`, the same requirement as
-`concile serve`. `concile deploy` refreshes codegen before packaging.
+Just like with `concile serve`, you will also need a `concile/` directory that contains a committed `_generated/` folder. Don't worry about keeping it perfectly up to date, as `concile deploy` will automatically refresh your generated code before packaging everything up.
 
 </Step>
 
@@ -80,18 +70,14 @@ You also need a `concile/` directory with committed `_generated/`, the same requ
 concile deploy --target cloudflare --env production
 ```
 
-`concile deploy --target cloudflare`:
+When you run `concile deploy --target cloudflare`, here is what happens behind the scenes:
 
-- Checks and adds `durable_objects.bindings`, `migrations`, and `compatibility_flags` in
-  `wrangler.jsonc` if missing (byte-for-byte unchanged, comments included, if nothing was missing).
-- Shells out to `wrangler deploy`, passing `--env <name>` through when your config's
-  `environments.<name>` sets `wranglerEnv`.
-- Prints the deployed URL, parsed from wrangler's own output.
+- It double checks your `wrangler.jsonc` file. If `durable_objects.bindings`, `migrations`, or `compatibility_flags` are missing, it adds them for you. If everything is already there, it leaves your file completely untouched, keeping all your comments and formatting intact!
+- It runs `wrangler deploy` for you. If you have `wranglerEnv` set in your configuration under `environments.<name>`, it will pass `--env <name>` right along.
+- Finally, it parses wrangler's output and prints your shiny new deployed URL to the terminal.
 
 <Callout type="info">
-  `--dry-run` runs preflight and packaging (validate wrangler, refresh codegen, reconcile
-  `wrangler.jsonc`) and skips the actual `wrangler deploy`, useful for validating a PR. `--check`
-  fails if your committed `concile/_generated/` has drifted from a fresh codegen run.
+  If you want to test things out without making any real changes, you can use the `--dry-run` flag. This runs through all the preflight checks and packaging steps, like validating wrangler and refreshing your generated code, but skips the actual deployment. It is super handy for checking a PR! You can also use the `--check` flag, which will fail if your committed `concile/_generated/` folder is out of sync with a fresh code generation run.
 </Callout>
 
 Configure environments in `concile.config.ts`:
@@ -125,9 +111,7 @@ export default defineConfig({
 wrangler secret put CONCILE_ADMIN_KEY
 ```
 
-`CONCILE_ADMIN_KEY` is required. The DO fails fast on an empty admin key. `concile deploy`
-doesn't manage secrets: `wrangler secret put` is a one-time, out-of-band step, the same way
-`CLOUDFLARE_API_TOKEN` itself never belongs in `wrangler.jsonc`.
+Make sure to set your `CONCILE_ADMIN_KEY`, as it is strictly required. The Durable Object will immediately fail if the admin key is missing. Since `concile deploy` doesn't handle secrets directly, running `wrangler secret put` is just a quick, one-time step you'll do on your own. It is exactly like how you wouldn't want to put your `CLOUDFLARE_API_TOKEN` inside your `wrangler.jsonc` file!
 
 </Step>
 
@@ -139,7 +123,7 @@ doesn't manage secrets: `wrangler secret put` is a one-time, out-of-band step, t
 
 <Accordion title="File storage (R2)">
 
-If your app uses [file storage](/docs/core-concepts/file-storage), turn on an R2 binding:
+If your application makes use of [file storage](/docs/core-concepts/file-storage), you can easily turn on an R2 binding like this:
 
 ```ts
 cloudflare: {
@@ -149,8 +133,7 @@ cloudflare: {
 },
 ```
 
-`concile deploy --target cloudflare` reconciles an `r2_buckets` binding into `wrangler.jsonc`.
-Create the bucket once, out-of-band:
+When you run `concile deploy --target cloudflare`, it will automatically add an `r2_buckets` binding to your `wrangler.jsonc` file. All you need to do is create the bucket yourself one time:
 
 ```bash
 wrangler r2 bucket create my-app-storage
@@ -160,10 +143,7 @@ wrangler r2 bucket create my-app-storage
 
 <Accordion title="Pinning the DO's region">
 
-A Durable Object is single-homed and never moves once created. By default it lands near whoever
-first reaches it. Set `CONCILE_DO_LOCATION_HINT` (one of the 11 Cloudflare region codes, for
-example `enam`) as a Worker environment variable to pin it explicitly. Only the *first* request
-after a fresh deploy honors the hint.
+Durable Objects like to stay put and they will not move around once they are created. By default, they will set up shop close to whoever visits them first. If you prefer, you can set `CONCILE_DO_LOCATION_HINT` as a Worker environment variable to choose a specific location. Just use one of the 11 Cloudflare region codes, like `enam`. Keep in mind that only the very *first* request after a fresh deployment will actually pay attention to this hint!
 
 </Accordion>
 
@@ -173,23 +153,16 @@ after a fresh deploy honors the hint.
 
 | | |
 |---|---|
-| Reactive queries/mutations, WebSocket sync | Full support. Writer and subscription index are the same in-process object, no RPC hop. |
-| Scheduled functions, crons, [triggers](/docs/components/triggers) | Work. The DO's own alarm wakes due timers through idle/hibernation. |
-| File storage | Supported via the R2 binding above. |
-| Scale | Single global DO in v1, not a sharded fleet. See [Scaling](/docs/deploy/scaling) for the paid-tier multi-shard router. |
+| Reactive queries/mutations, WebSocket sync | We offer full support here! Both the writer and the subscription index live in the exact same object, meaning you don't have to deal with any extra network hops. |
+| Scheduled functions, crons, [triggers](/docs/components/triggers) | These work wonderfully. The DO has its own built-in alarm that will wake up your timers even if it is idle or hibernating. |
+| File storage | Fully supported using the R2 binding we mentioned above. |
+| Scale | For v1, you get a single global DO rather than a sharded fleet. If you need more power, take a look at our [Scaling](/docs/deploy/scaling) guide to learn about the paid-tier multi-shard router. |
 
 ## Global tables (D1)
 
-`.global()` on a table definition puts that table in [Cloudflare
-D1](https://developers.cloudflare.com/d1/) (a shared relational database) instead of a Durable
-Object's local store, so it's the same data no matter which shard or DO a mutation or query runs
-on. It exists for data that must be globally unique or globally consistent: a `users` table keyed
-by email, an `orgs` table keyed by slug. It's the natural companion to the paid-tier multi-shard
-router (each shard-DO has its own local store, exactly wrong for account lookups), and it works on
-the single-DO host too whenever a D1 binding is wired.
+When you add `.global()` to a table definition, it stores that table in [Cloudflare D1](https://developers.cloudflare.com/d1/) (which is a shared relational database) rather than inside a Durable Object's local store. This means you get access to the exact same data regardless of which shard or DO is running your query! This is perfect for information that needs to be globally unique or consistent across your app, like a `users` table organized by email or an `orgs` table organized by a slug. It pairs beautifully with our paid-tier multi-shard router, and you can even use it on a single-DO host by simply wiring up a D1 binding.
 
-`.global()` is mutually exclusive with `.shardKey()`: a table is either sharded or global, never
-both (declaring both throws at schema build time).
+Just remember that `.global()` and `.shardKey()` cannot be used together. A table can be sharded or global, but never both! If you try to declare both, you will get an error when building your schema.
 
 ```ts title="concile/schema.ts"
 import { defineSchema, defineTable, v } from "@concile/values";
@@ -206,41 +179,19 @@ export default defineSchema({
 });
 ```
 
-Reads and writes route to D1 automatically; the function body looks like any other table's.
-`ctx.db.get(id)` and equality index queries (`.eq(field, value)`, optionally `.take(n)`) are
-supported. A mutation that inserts a global row and reads it back in the same handler sees its own
-write (a per-mutation overlay provides read-your-own-writes before the write ever hits D1), and a
-row written through one shard-DO is readable through another immediately after commit. A violated
-unique constraint rejects the mutation with an error naming the table and field.
+The great thing is that reads and writes are automatically routed to D1, and your function body will look exactly the same as it does for any other table! We support `ctx.db.get(id)` as well as equality index queries like `.eq(field, value)` and optionally `.take(n)`. If you have a mutation that inserts a global row and reads it back right away, it will successfully see its own write. Also, once a row is written through one shard-DO, it becomes instantly readable through any other shard right after the commit! If a unique constraint is violated, the mutation will be rejected and give you a helpful error naming the specific table and field.
 
-Subscriptions to a `.global()` table are live, via the same `useQuery` as any other table, but the
-mechanism is a poller, not commit-time push: a DO with at least one live global subscription checks
-a D1 version counter about every 2 seconds and pushes only on change (a DO with none polls
-nothing). Expect a global change to surface within roughly that interval; use an
-[optimistic update](/docs/client/optimistic-updates) if the writing client's own UI needs to
-reflect it instantly.
+If you want to subscribe to a `.global()` table, you can do so easily using the same `useQuery` hook as your other tables. Behind the scenes, this works using a poller instead of a commit-time push. A DO with at least one active global subscription will check a D1 version counter roughly every 2 seconds, and it only pushes updates when something actually changes. If a DO doesn't have any subscriptions, it won't poll at all! You can expect global changes to show up within that two-second window, but if your writing client's UI needs to feel instantaneous, we highly recommend adding an [optimistic update](/docs/client/optimistic-updates).
 
-Honest boundaries, all fail-fast rather than silent:
+We believe in honest boundaries, so any limitations will fail quickly rather than failing silently:
 
-- **No co-writes.** One mutation writes global tables or sharded/root tables, never both (a D1
-  write can't enlist in a shard's local transaction, so allowing both would admit a partial
-  commit). Split into two mutations.
-- **Equality-only queries.** Range comparisons, `.order()`, filters, and `.paginate()` on a
-  `.global()` table are rejected with a clear error.
-- **`{ unique: true }` means D1.** The same option on a non-global table's index is rejected at
-  schema-load time, since a per-shard store can't enforce it globally.
-- **Row policies aren't supported here yet.** An authz read or write policy on a `.global()` table
-  is rejected (`read policies are not yet supported on .global() tables`), never silently skipped.
-- **Cloudflare only.** Without a D1 binding, any read or write against a `.global()` table fails
-  fast naming the table. You can still declare `.global()` in a schema you also run locally; you
-  just can't exercise those tables outside Cloudflare.
+- **No co-writes.** A single mutation can write to either global tables or sharded/root tables, but it can never write to both. A D1 write cannot join a shard's local transaction, so allowing both could lead to partial commits. The fix is easy, just split them into two separate mutations!
+- **Equality-only queries.** If you try to use range comparisons, `.order()`, filters, or `.paginate()` on a `.global()` table, we will reject it with a clear and friendly error message.
+- **`{ unique: true }` means D1.** If you try to use this option on a non-global table's index, it will be rejected when loading the schema. A per-shard store just cannot enforce global uniqueness.
+- **Row policies aren't supported here yet.** If you try to apply an authz read or write policy on a `.global()` table, we will politely reject it with an error instead of silently skipping it.
+- **Cloudflare only.** If you don't have a D1 binding, any read or write to a `.global()` table will fail and let you know which table caused the issue. You are completely free to declare `.global()` in a schema that you run locally, but you won't be able to interact with those tables outside of Cloudflare.
 
-Wiring: the `d1_databases` binding is currently manual (unlike the DO/R2 bindings the deploy target
-reconciles). Create the database once with `wrangler d1 create <name>`, add
-`{ "binding": "DB", "database_name": "...", "database_id": "..." }` to `wrangler.jsonc`, and pass
-it through your DO subclass's `appConfig` as `d1: bindingD1Client(env.DB)` (from
-`@concile/docstore-d1`). The D1 tables and indexes for every `.global()` table are created
-automatically on first boot with the binding present; there's no migration step.
+For the wiring part, setting up the `d1_databases` binding is a manual step right now. Simply create the database once using `wrangler d1 create <name>`, add `{ "binding": "DB", "database_name": "...", "database_id": "..." }` to your `wrangler.jsonc` file, and pass it through your DO subclass's `appConfig` as `d1: bindingD1Client(env.DB)` (which you can import from `@concile/docstore-d1`). We handle the rest! The D1 tables and indexes for all of your `.global()` tables are automatically created the very first time you boot with the binding present. No migration steps required!
 
 ## CI: GitHub Actions
 
@@ -268,49 +219,31 @@ jobs:
 ```
 
 <Callout type="info">
-  Every target's preflight requires credentials up front and fails fast with an actionable error
-  in non-interactive mode (`CI=true`). It never prompts or hangs waiting on stdin.
+  Every target's preflight check needs your credentials up front. If you are running in a non-interactive mode like CI (`CI=true`), it will fail fast and give you a helpful error message so you know exactly what to fix. It will never prompt you or hang indefinitely waiting for input!
 </Callout>
 
 ## The alternative path: Cloudflare Containers (experimental)
 
-If you specifically want the same portable `concile serve` image (SQLite/Postgres storage
-options) you'd run anywhere else, running inside a Cloudflare Container instead of a Durable
-Object, that's possible too. It's hand-wired though (no `concile deploy` integration), and it has
-a correctness gap worth knowing before you pick it.
+If you really want to use the exact same portable `concile serve` image you would run anywhere else (with SQLite or Postgres storage options), you can run it inside a Cloudflare Container instead of a Durable Object! Just keep in mind that this approach is hand-wired and does not integrate with `concile deploy`. There are also some specific behaviors you should know about before making your choice.
 
 <Callout type="warn" title="Scheduled work does not fire">
-  Scheduled functions, crons, triggers, and the file-storage reaper do not fire. Cloudflare stops
-  the container about 5 seconds after the last request, the same mechanism that gives
-  scale-to-zero. A cron set for 03:00 only runs if traffic happens to arrive at 03:00. Use this
-  path only for a request-driven app that doesn't depend on any of those.
+  When using this path, scheduled functions, crons, triggers, and the file-storage reaper will not fire on their own. Cloudflare is designed to stop the container about 5 seconds after the last request to help you scale down to zero. This means a cron scheduled for 3:00 AM will only run if a user happens to send a request at exactly 3:00 AM. We recommend this path only for purely request-driven apps that do not rely on scheduled tasks.
 </Callout>
 
-It uses Workers (a stateless router), Containers (running the shipped `concile serve` image),
-and R2 as the object-store substrate. R2 has to be the source of truth because container disk is
-ephemeral. You'll need a Workers Paid plan (about $5/mo, Containers and DOs have no free tier), an
-R2 bucket, and Docker able to build `linux/amd64` (cross-build explicitly on Apple Silicon:
-`docker build --platform linux/amd64`). Your app must be baked into the image, since Containers
-don't support bind mounts:
+This setup relies on Workers acting as a stateless router, Containers to run the `concile serve` image, and R2 as your object-store substrate. Since container storage is temporary, R2 must be your single source of truth. To make this work, you will need a Workers Paid plan (which is around $5 per month, as Containers and DOs do not have a free tier), an R2 bucket, and a Docker setup capable of building for `linux/amd64`. If you are using Apple Silicon, you will need to cross-build by running `docker build --platform linux/amd64`. Since Containers do not support bind mounts, your application has to be baked right into the image:
 
 ```dockerfile
 FROM concile:latest
 COPY ./concile /app/concile
 ```
 
-Point `serve` at R2 with `--object-store` (`s3+https://<account-id>.r2.cloudflarestorage.com/<bucket>?region=auto&forcePathStyle=true`).
-Expect warm cold-starts around 4.5s (about 7.3s cold) and writes that are structurally slower than
-a local-disk host, since every commit is an R2 CAS round trip.
+You will need to point `serve` at R2 using the `--object-store` flag like this: `s3+https://<account-id>.r2.cloudflarestorage.com/<bucket>?region=auto&forcePathStyle=true`. You should expect warm cold-starts to take about 4.5 seconds, or around 7.3 seconds for a true cold start. Writes will also be a bit slower compared to a local-disk host, simply because every commit requires a round trip to R2.
 
-Choose this path only if scale-to-zero economics matter more than write latency and you don't need
-scheduled work. Otherwise prefer the Durable-Object-native path above, or
-[Docker self-hosting](/docs/deploy/self-hosting) for a non-Cloudflare target.
+We suggest choosing this path only if scaling to zero is more important to your budget than fast write latency, and you are absolutely sure you don't need scheduled tasks! Otherwise, we highly recommend sticking with the Durable-Object-native path we talked about earlier, or exploring [Docker self-hosting](/docs/deploy/self-hosting) if you want to leave Cloudflare altogether.
 
 ## Moving data between hosts
 
-The two Cloudflare paths, and non-Cloudflare hosts, store data in different physical topologies.
-Data doesn't teleport between them. Export a portable dump from one deployment and import it into
-another:
+Because the two Cloudflare paths and our non-Cloudflare hosts store data in different ways, your data won't automatically sync between them. If you need to move things around, you can easily export a portable dump from one setup and import it into another:
 
 ```bash
 CONCILE_ADMIN_KEY=… concile migrate export --url https://source.example.com --out dump.json
@@ -318,16 +251,12 @@ CONCILE_ADMIN_KEY=… concile migrate import --url https://target.example.com --
 ```
 
 <Callout type="warn">
-  Deploy the matching schema on the target first. Import refuses if table numbers don't match the
-  dump's. Import targets a fresh deployment, not a merge, and is single-shard only.
+  Please remember to deploy your matching schema on the target environment first! The import process will politely refuse to run if your table numbers do not match the ones in your dump file. Keep in mind that imports are meant for fresh deployments rather than merging data, and they only support a single shard right now.
 </Callout>
 
 ## Related
 
-- [Deploy and build](/docs/deploy/deploy-and-build): `concile deploy`'s `serve` target and
-  `concile build`, the other ways to ship a change.
-- [Scaling](/docs/deploy/scaling): the paid-tier multi-shard Cloudflare router and the Postgres
-  fleet, for when a single node (DO or otherwise) isn't enough.
-- [Self-hosting with Docker](/docs/deploy/self-hosting): the non-Cloudflare baseline.
-- [Vite plugin](/docs/deploy/vite-plugin): local development for a Vite app that talks to this
-  deployment.
+- [Deploy and build](/docs/deploy/deploy-and-build): Learn more about the `serve` target in `concile deploy` and `concile build`, which give you other great ways to ship your changes.
+- [Scaling](/docs/deploy/scaling): Check this out if you need more power! This guide covers the paid-tier multi-shard Cloudflare router and the Postgres fleet for times when a single node is just not enough.
+- [Self-hosting with Docker](/docs/deploy/self-hosting): A fantastic baseline option if you want to skip Cloudflare entirely.
+- [Vite plugin](/docs/deploy/vite-plugin): Everything you need to know about setting up local development for a Vite app that talks to your deployment.

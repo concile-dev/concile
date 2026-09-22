@@ -5,13 +5,13 @@ description: How fast concile is, measured under matched conditions with every c
 
 {/* diataxis: explanation */}
 
-concile's performance is measured, not asserted. Every number on this page comes from a reproducible benchmark you can run yourself (`bun run bench:*`), reported with the conditions it was measured under.
+We believe in measuring performance, not just making bold claims. Every number you see on this page comes from a fully reproducible benchmark that you can run yourself (using `bun run bench:*`). We also clearly state the exact conditions under which each measurement was taken.
 
-The short version: a clean-room TypeScript engine that lands in the same league as the Rust reference implementation it's modeled on (Convex), with fast reactive push and honest, well-understood ceilings on one node and across many.
+The short version: Concile is a fresh TypeScript engine that competes in the exact same league as the Rust reference implementation it was modeled after (Convex). It delivers extremely fast reactive pushes and has honest, well-understood performance limits whether you run it on a single node or across a cluster.
 
 ## How to read these numbers
 
-Benchmarks are easy to get wrong, usually by accident, by comparing two things under different conditions. The classic trap: run your own system natively and the competitor inside a Docker container (which adds real overhead on a Mac), and you'll look dramatically faster. But you've measured the container, not the software.
+Benchmarks are notoriously easy to get wrong. Usually, it happens by accident when you compare two systems under slightly different conditions. The classic trap is running your own system natively while running your competitor inside a Docker container (which adds noticeable overhead on a Mac). You might look dramatically faster, but you're really just measuring the container penalty, not the software.
 
 <Callout type="warn" title="Ballparks, not guarantees">
 

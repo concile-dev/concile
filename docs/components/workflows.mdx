@@ -5,18 +5,11 @@ description: Durable multi-step orchestration.
 
 {/* diataxis: explanation */}
 
-Some jobs take more than one step. Reserve the stock, charge the card, mark the order fulfilled,
-maybe with a sleep or a wait for an external signal in between. `@concile/workflow` runs that
-whole sequence durably.
+Sometimes jobs just take more than one step. You might need to reserve stock, charge a card, and then mark the order as fulfilled, maybe even taking a pause or waiting for an external signal in the middle. `@concile/workflow` handles that entire sequence for you, dependably and durably.
 
-A workflow survives a process restart because it isn't held in memory. Each step's outcome is
-journaled to a durable table, and concile **replays the whole handler from the top** every time
-the run advances. A step that already succeeded resolves instantly from the journal, so only a
-genuinely new step does real work.
+A workflow easily survives a process restart because it is not just floating in memory. The result of every step gets logged into a durable table, and concile actually **replays the whole handler from the very beginning** every time the run moves forward. If a step already succeeded, it resolves instantly by checking the journal, meaning only a genuinely new step ends up doing any real work.
 
-It's built on [`@concile/scheduler`](/docs/components/scheduling) (`requires: ["scheduler"]`),
-not a replacement for it. Every step dispatches through the scheduler's own job queue, so it
-inherits the scheduler's retry and backoff, dead lettering, and cascading cancel.
+It relies on [`@concile/scheduler`](/docs/components/scheduling) (`requires: ["scheduler"]`) rather than replacing it. Because every step goes through the scheduler's own job queue, it gets to inherit all of the scheduler's great features like retries, backoffs, dead lettering, and cascading cancels.
 
 ## The model: deterministic replay, not checkpointing
 
