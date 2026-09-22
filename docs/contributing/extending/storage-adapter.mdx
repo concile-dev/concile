@@ -275,11 +275,11 @@ them.
 ### DO-SQLite: the same class, a different driver
 
 Cloudflare Durable Objects ship their own embedded SQLite (`ctx.storage.sql`). Rather than
-reimplement the MVCC logic a third time, `@concile/docstore-do-sqlite` reuses `SqliteDocStore` **verbatim**
-and only supplies a new `DatabaseAdapter` (`DoSqliteAdapter`) that talks to the Durable Object's SQL
-surface instead of `node:sqlite`. This is the cleanest illustration of why the adapter seam is drawn
-where it is: SQLite-shaped logic (schema, query building, transaction semantics) lives once in
-`docstore-sqlite`; only the thin driver differs per platform.
+reimplement the MVCC logic a third time, `@concile/docstore-do-sqlite` reuses `SqliteDocStore`
+**verbatim** and only supplies a new `DatabaseAdapter` (`DoSqliteAdapter`) that talks to the Durable
+Object's SQL surface instead of `node:sqlite`. This is the cleanest illustration of why the adapter
+seam is drawn where it is: SQLite-shaped logic (schema, query building, transaction semantics) lives
+once in `docstore-sqlite`; only the thin driver differs per platform.
 
 ## Physically schemaless: the pattern to copy
 
@@ -291,10 +291,10 @@ to match. Instead:
 - **One `indexes` table** holds every logical index's entries, discriminated by an `index_id`
   column.
 
-Both are versioned by `ts`, exactly as described above. Adding an application table or field is a **data**
-change (a new value of `table_id` starts appearing), never a schema migration. This is precisely why
-the Postgres adapter needs no per-app migration step as `schema.ts` evolves. There is nothing to
-migrate: the physical schema was already general enough to hold it.
+Both are versioned by `ts`, exactly as described above. Adding an application table or field is a
+**data** change (a new value of `table_id` starts appearing), never a schema migration. This is
+precisely why the Postgres adapter needs no per-app migration step as `schema.ts` evolves. There is
+nothing to migrate: the physical schema was already general enough to hold it.
 
 ## How a new adapter gets accepted: the conformance suite
 

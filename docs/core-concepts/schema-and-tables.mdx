@@ -157,10 +157,10 @@ defineTable({
 })
 ```
 
-A field wrapped in `v.optional` is considered present only when the property exists on the object **and**
-is not `undefined`. This means both `{ }` and `{ assigneeId: undefined }` count as "absent" for
-validation purposes. But when it is present, the value gets checked against the inner validator just
-like normal.
+A field wrapped in `v.optional` is considered present only when the property exists on the object
+**and** is not `undefined`. This means both `{ }` and `{ assigneeId: undefined }` count as "absent"
+for validation purposes. But when it is present, the value gets checked against the inner validator
+just like normal.
 
 Keep in mind that `v.optional` is specifically a *field* modifier, not a general purpose "maybe
 undefined" wrapper. It only really makes sense as a value in the object you pass to `defineTable` or
@@ -491,8 +491,8 @@ this gate end to end, and to learn what a rejected deploy actually leaves runnin
 ## Physically schemaless storage
 
 Beneath the surface of `schema.ts`, concile's storage is actually completely **schemaless**. Whether
-you are using the SQLite or Postgres adapters, your app's tables and fields are treated as raw *data*,
-not as strict DDL.
+you are using the SQLite or Postgres adapters, your app's tables and fields are treated as raw
+*data*, not as strict DDL.
 
 There is a small, fixed set of internal storage tables shared across every app. These act as an
 append-only log of `{id, value, ...}` entries. The tables you declare, like `conversations` or
@@ -502,9 +502,9 @@ When you add a field to `schema.ts`, it does not trigger an `ALTER TABLE` comman
 because there simply is no per-app table to alter. The new field just starts appearing, and getting
 validated, in any newly-written documents.
 
-This clever mechanism is what makes the additive-only rule discussed earlier a matter of pure *validation*,
-rather than forcing a migration against physical storage. Nothing ever has to catch up with a schema
-change since the storage layer never possessed app-shaped columns to begin with.
+This clever mechanism is what makes the additive-only rule discussed earlier a matter of pure
+*validation*, rather than forcing a migration against physical storage. Nothing ever has to catch up
+with a schema change since the storage layer never possessed app-shaped columns to begin with.
 
 ## Where to go next
 

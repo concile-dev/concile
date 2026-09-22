@@ -331,8 +331,8 @@ queue**. One bad mutation can never wedge everything queued behind it. A codeles
 backs off (the same jittered-exponential shape `@concile/scheduler` uses for its own retries) and
 resends starting from the failed unit, never skipping it.
 
-Set `poisonPolicy: "pause"` for the stricter, opt-in posture: halt the whole drain the moment *anything*
-fails, and let the user intervene:
+Set `poisonPolicy: "pause"` for the stricter, opt-in posture: halt the whole drain the moment
+*anything* fails, and let the user intervene:
 
 ```ts
 const client = new ConcileClient(transport, {
@@ -429,11 +429,11 @@ redone.
 ## Multi-tab safety
 
 Each tab mints its **own `clientId`** at construction, never reused across a reload, so two tabs'
-entries can never collide on the same `(clientId, seq)` pair. All tabs against the same origin share **one
-durable queue**, though, and a [Web
-Locks](https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API)-elected leader tab drains the **entire
-shared queue**: every tab's entries under their own recorded identity, not just the leader's own
-writes.
+entries can never collide on the same `(clientId, seq)` pair. All tabs against the same origin share
+**one durable queue**, though, and a [Web
+Locks](https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API)-elected leader tab drains the
+**entire shared queue**: every tab's entries under their own recorded identity, not just the
+leader's own writes.
 
 If the leader tab closes mid-drain, another open tab takes over the lock and finishes the job.
 Nothing is lost or double-applied, because correctness comes from the server-side receipts, not from
@@ -465,10 +465,11 @@ latency, not a bug, proven end-to-end in `packages/cli/test/crosstab-e2e.test.ts
 
 </Callout>
 
-If your UI genuinely cannot tolerate even that one transient frame, write the registry updater as **idempotent,
-keyed on a client-supplied id** ([`mintId`](#client-supplied-ids-create-then-reference-chains)):
-mint the id before the mutation is sent, use it as the placeholder row's `_id`, and have the updater
-check whether a row with that id is already present before inserting:
+If your UI genuinely cannot tolerate even that one transient frame, write the registry updater as
+**idempotent, keyed on a client-supplied id**
+([`mintId`](#client-supplied-ids-create-then-reference-chains)): mint the id before the mutation is
+sent, use it as the placeholder row's `_id`, and have the updater check whether a row with that id
+is already present before inserting:
 
 ```ts
 const messageId = mintId("messages"); // minted once, before the mutation call
@@ -657,10 +658,11 @@ tables. Calling `mintId("_storage")` compiles and throws at runtime.
 
 The engine never trusts the client's map either way: every minted id is validated server-side at
 insert, so a stale `_generated/ids.ts` (one that predates a schema change) produces a loud, typed
-rejection, never a silent wrong-table write. Two stable error codes surface a rejection: **`INVALID_CLIENT_ID`**
-(malformed, wrong table, sharded table, or off the default ring) and **`ID_ALREADY_IN_USE`** (a
-document with that id already exists, since an outbox resend never re-executes a committed mutation,
-this means either an astronomical collision or an app bug, never a silent merge).
+rejection, never a silent wrong-table write. Two stable error codes surface a rejection:
+**`INVALID_CLIENT_ID`** (malformed, wrong table, sharded table, or off the default ring) and
+**`ID_ALREADY_IN_USE`** (a document with that id already exists, since an outbox resend never
+re-executes a committed mutation, this means either an astronomical collision or an app bug, never a
+silent merge).
 
 <Accordions type="single">
 
@@ -698,9 +700,9 @@ when you went offline, and exactly one of three things happens:
   anything you'd otherwise reach for a CRDT for. The outbox has no opinion about what counts as a
   duplicate at the data level.
 - **It fails terminally.** Your handler threw, or a validation or authorization check rejected it.
-  If your handler needs a queued entry to terminal-fail (rather than retry as transient), throw a **typed,
-  coded** error. A plain `Error` carries no code on the wire, so the drain can't tell it apart from
-  an infrastructure hiccup and treats it as transient by design.
+  If your handler needs a queued entry to terminal-fail (rather than retry as transient), throw a
+  **typed, coded** error. A plain `Error` carries no code on the wire, so the drain can't tell it
+  apart from an infrastructure hiccup and treats it as transient by design.
 
 There's no fourth branch where the outbox tries to reconcile your write against someone else's.
 That's a deliberate scope line: conflict handling is your mutation handler's job, exactly as it

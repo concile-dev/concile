@@ -168,8 +168,8 @@ optimistic-concurrency conflict. You can read more about how that works in
 | Reconnect bandwidth, nothing changed while away | full resend | roughly 99% less |
 | Handler re-executions on reconnect, 50 unchanged subscriptions | 50 | 0 |
 
-You can find the sources for these metrics in the project `CHANGELOG.md`, specifically versions 0.0.1
-through 0.0.4, where each benchmark scenario is named. Keep in mind that all these figures are
+You can find the sources for these metrics in the project `CHANGELOG.md`, specifically versions
+0.0.1 through 0.0.4, where each benchmark scenario is named. Keep in mind that all these figures are
 single-node measurements taken on a developer laptop. The real takeaway here is the shape of each
 win, like making the cost proportional to what actually changed or eliminating re-execution
 entirely. That fundamental efficiency is what travels to other hardware, rather than the absolute

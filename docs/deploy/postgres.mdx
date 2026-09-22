@@ -110,7 +110,8 @@ Error: another Concile engine is already connected to this database (advisory lo
 This setup gives you fantastic single-node durability. It allows you to use Postgres as a powerful,
 externally-managed database for one writer. However, it is not designed for clustering or running
 multiple engines simultaneously for high availability. If you are interested in multi-node scaling,
-be sure to check out the [Scaling](/docs/deploy/scaling) guide for details on `concile serve --fleet`.
+be sure to check out the [Scaling](/docs/deploy/scaling) guide for details on `concile serve
+--fleet`.
 
 <Callout type="warn" title="Known limitations">
   **Single pinned connection, no automatic reconnect.** The engine relies on exactly one Postgres

@@ -379,9 +379,9 @@ The effective ordered list is `[provider, ...fallbacks]`. On a delivery attempt,
 `providerName`, visible in the dashboard's data browser. A provider's label is its own `.name` if it
 sets one, else a positional default (`"primary"`, `"fallback-1"`, `"fallback-2"`, …).
 
-**Webhooks with multiple providers.** The delivery-webhook route is unchanged and still keyed by *channel*,
-not provider (`POST /api/notifications/webhooks/email`). No vendor-dashboard callback URL needs to
-change when you add a fallback.
+**Webhooks with multiple providers.** The delivery-webhook route is unchanged and still keyed by
+*channel*, not provider (`POST /api/notifications/webhooks/email`). No vendor-dashboard callback URL
+needs to change when you add a fallback.
 
 When a channel has fallbacks, an inbound webhook call tries every configured provider's `verify()`
 in order and applies the event using whichever one matches first. Only the *primary* (index 0)
@@ -638,8 +638,8 @@ production.
 
 Every `send` carries a **category**: a free-form string you choose (`"marketing"`, `"security"`,
 `"comments"`, and so on). A send that names none uses `defaultCategory` (`"default"` unless
-configured otherwise). A user can opt a `(category, channel)` pair out. A suppressed send is skipped **before**
-it ever writes a queued row or reaches a provider.
+configured otherwise). A user can opt a `(category, channel)` pair out. A suppressed send is skipped
+**before** it ever writes a queued row or reaches a provider.
 
 **Default-allow.** With no preference row at all, every category/channel is enabled. Preferences are
 opt-*out*, not opt-*in*. Resolution is most-specific-wins: a channel-specific row for a category
@@ -753,9 +753,9 @@ export const joinTeam = mutation({
 
 ### Sending to a topic (action-only)
 
-`ctx.notifications.sendToTopic(args)` fans a send out to every current subscriber of a topic. It's **action-only**
-(paging through an arbitrarily large subscriber list is bulk work, same reasoning as any other bulk
-read from an action):
+`ctx.notifications.sendToTopic(args)` fans a send out to every current subscriber of a topic. It's
+**action-only** (paging through an arbitrarily large subscriber list is bulk work, same reasoning as
+any other bulk read from an action):
 
 ```ts
 export const announce = action({
@@ -819,9 +819,9 @@ defaults, the first retry waits 500ms to 1,000ms (not ~250ms), the second 1s to 
 
 Whether a failure is retried depends on how the provider's `send` throws:
 
-- A **plain `Error`** (or any throw that isn't a `NotificationSendError`) is treated as **retryable**:
-  a transient 5xx/network blip. The row goes back to `queued` with a backed-off `nextAttemptAt` and
-  its `attempts` count incremented.
+- A **plain `Error`** (or any throw that isn't a `NotificationSendError`) is treated as
+  **retryable**: a transient 5xx/network blip. The row goes back to `queued` with a backed-off
+  `nextAttemptAt` and its `attempts` count incremented.
 - `new NotificationSendError(message, { retryable: false })` (for example, a 4xx bad-recipient
   response) is a **permanent** failure: the driver dead-letters the message to `status: "failed"`
   immediately, no retry. The shipped `resendEmail`/`twilioSms` adapters already classify their own
@@ -905,11 +905,11 @@ Resend/Svix signs the request body, not the URL, so it's unaffected either way.
 
 `deliveryStatus` is a **second, independent axis** from the send-lifecycle `status`
 (`queued`/`sending`/`sent`/`failed`). A message can be `status: "sent"` and later pick up
-`deliveryStatus: "delivered"`, then `"opened"`, then `"clicked"` as webhooks arrive. It's written **monotonically**
-by lifecycle rank (`dropped` < `bounced`/`complained`/`failed_permanent` < `delivered` < `opened` <
-`clicked`), so a redelivered or out-of-order webhook event is a no-op rather than regressing a later
-status back to an earlier one. Because it's an ordinary field on the `messages` row, subscribing to
-a query over it sees the update reactively, with no polling.
+`deliveryStatus: "delivered"`, then `"opened"`, then `"clicked"` as webhooks arrive. It's written
+**monotonically** by lifecycle rank (`dropped` < `bounced`/`complained`/`failed_permanent` <
+`delivered` < `opened` < `clicked`), so a redelivered or out-of-order webhook event is a no-op
+rather than regressing a later status back to an earlier one. Because it's an ordinary field on the
+`messages` row, subscribing to a query over it sees the update reactively, with no polling.
 
 **Spam complaints** are recorded on a separate, orthogonal `complainedAt` timestamp, not folded into
 `deliveryStatus`. A complaint always arrives *after* `delivered`, so applying the monotonic rank
@@ -945,11 +945,11 @@ defineNotifications({
   once its *oldest* buffered item has waited out the window (`"hourly"` = 1h, `"daily"` = 24h,
   `"weekly"` = 7d). The same recurring driver that delivers queued sends and reclaims stuck ones
   also flushes due digests on every pass.
-- **Per-group transaction isolation.** Each `(recipient, category)` group's flush runs in its **own**
-  transaction. If your `digestTemplate` throws for one recipient's item shape, only that recipient's
-  flush fails (caught and logged). It can never abort the whole driver pass and wedge delivery of
-  every *other* queued notification (including critical auth OTPs) on the node. A failed flush's
-  items stay un-flushed and retry on the next pass, never claimed-but-dropped.
+- **Per-group transaction isolation.** Each `(recipient, category)` group's flush runs in its
+  **own** transaction. If your `digestTemplate` throws for one recipient's item shape, only that
+  recipient's flush fails (caught and logged). It can never abort the whole driver pass and wedge
+  delivery of every *other* queued notification (including critical auth OTPs) on the node. A failed
+  flush's items stay un-flushed and retry on the next pass, never claimed-but-dropped.
 - **Preferences are re-checked at flush**, not at buffer time. An opt-out recorded anytime before
   the flush suppresses the whole combined digest for that recipient/category, through the same
   `recordSend` gate every other send uses.

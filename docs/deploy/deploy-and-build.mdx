@@ -517,10 +517,10 @@ concile build --dir concile --target linux-x64 --outfile ./dist/server-linux --n
 4. **Cleans up the generated entrypoint.**
 
 **Why we skip `--bytecode`:** The generated entrypoint boots up with a top-level `await` to make
-sure the runtime fully starts before it begins serving. Unfortunately, `bun build --compile --bytecode`
-will flat out reject top-level await. Since cold-start speed really doesn't matter much for a
-long-running self-hosted server binary, `concile build` simply omits `--bytecode` instead of trying
-to restructure the entire entrypoint around it.
+sure the runtime fully starts before it begins serving. Unfortunately, `bun build --compile
+--bytecode` will flat out reject top-level await. Since cold-start speed really doesn't matter much
+for a long-running self-hosted server binary, `concile build` simply omits `--bytecode` instead of
+trying to restructure the entire entrypoint around it.
 
 </Accordion>
 
@@ -631,10 +631,10 @@ WantedBy=multi-user.target
 | Runtime dependency | `serve` already running | Bun/Node only to build; the binary itself needs nothing | Docker |
 | Postgres | Whatever the target `serve` was started with | `--database-url` flag, same as `serve` | Same as `serve` |
 
-In practice, these options aren't mutually exclusive at all. You could easily run `concile serve --allow-deploy`
-inside a container and use `concile deploy` against it for all your day-to-day shipping. Then, you
-can just fall back to fully rebuilding the image on those rare occasions when you actually need to
-change the composed component set.
+In practice, these options aren't mutually exclusive at all. You could easily run `concile serve
+--allow-deploy` inside a container and use `concile deploy` against it for all your day-to-day
+shipping. Then, you can just fall back to fully rebuilding the image on those rare occasions when
+you actually need to change the composed component set.
 
 ## Related
 

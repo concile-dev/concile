@@ -125,8 +125,8 @@ Every admin-gated area (like the `/_admin/*` API that the dashboard runs on, `/_
 
 <Callout type="warn" title="The key is only baked in on a loopback bind">
 
-The ephemeral key is only ever embedded in the dashboard's HTML when the bind is loopback: `--ip 127.0.0.1`
-(the default), `::1`, or `localhost`.
+The ephemeral key is only ever embedded in the dashboard's HTML when the bind is loopback: `--ip
+127.0.0.1` (the default), `::1`, or `localhost`.
 
 On any other bind (like `--ip 0.0.0.0` or a real network interface), the dashboard is served without
 the key baked in, even if the key itself is ephemeral. Instead, the app prompts you for it, and the

@@ -221,10 +221,11 @@ system (`@concile/values`, which gives you the handy `v.string()`, `v.object()`,
 you use in `schema.ts`):
 
 1. **Checking arguments on the way in.** If you declare a function with an `args` validator (like
-   `query({ args: { ... }, handler })`), we check the incoming arguments against that validator *before*
-   your handler even gets to run. If things don't match up, we throw an `ArgumentValidationError`
-   that points out exactly which field messed up and why. The only exception here is `httpAction`s,
-   which skip this step because they take a raw `Request` instead of structured arguments.
+   `query({ args: { ... }, handler })`), we check the incoming arguments against that validator
+   *before* your handler even gets to run. If things don't match up, we throw an
+   `ArgumentValidationError` that points out exactly which field messed up and why. The only
+   exception here is `httpAction`s, which skip this step because they take a raw `Request` instead
+   of structured arguments.
 2. **Checking documents when writing.** Whenever you use `ctx.db.insert` or `ctx.db.replace`, we
    validate the data you're trying to write against the target table's schema (assuming you declared
    one in `schema.ts`). If the data doesn't match the schema, we throw a `DocumentValidationError`

@@ -46,6 +46,9 @@ jobs:
           fi
       - run: bun install --frozen-lockfile
       - run: bun run build
+      - name: docs prose stays wrapped
+        run: bun run check:docs-wrap
+        if: steps.diffkind.outputs.versions_only != 'true'
       - run: bun run typecheck
         if: steps.diffkind.outputs.versions_only != 'true'
       - run: bun run test

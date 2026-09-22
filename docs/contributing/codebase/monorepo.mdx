@@ -145,7 +145,8 @@ that package.** The repository naturally evolved in a different direction as it 
 we shipped instead:
 
 - The storage interface (`DocStore`) lives in **`packages/docstore`**, not `contracts`.
-- The value, validator, and schema system (`Value`, `v`, `defineSchema`) lives in **`packages/values`**.
+- The value, validator, and schema system (`Value`, `v`, `defineSchema`) lives in
+  **`packages/values`**.
 - The error hierarchy (`ConcileError`) lives in **`packages/errors`**.
 
 So, if you are reading an older document that mentions `@concile/contracts`, just mentally swap it
@@ -156,10 +157,10 @@ names now.
 
 ## The mental model: layers, bottom to top
 
-The most helpful thing to understand about this repository is that our packages are organized into **layers**.
-A layer is only allowed to depend on the layers below it, and never on the ones above it. Once you
-get the hang of these layers, you will often be able to guess exactly where a piece of code lives
-before you even open a file!
+The most helpful thing to understand about this repository is that our packages are organized into
+**layers**. A layer is only allowed to depend on the layers below it, and never on the ones above
+it. Once you get the hang of these layers, you will often be able to guess exactly where a piece of
+code lives before you even open a file!
 
 Starting from the bottom and working our way up:
 
@@ -288,13 +289,13 @@ concile dev backend right alongside a Vite dev server.
 
 ## Components: opt-in mini-backends
 
-The `components/` directory is home to six packages: **auth**, **authz**, **scheduler**, **workflow**, **triggers**,
-and **notifications**. Each one of these is a completely self-contained feature, bringing its own
-tables, functions, and background tasks when needed. We don't turn any of them on by default.
-Instead, a project can opt into using one by composing it inside `concile.config.ts`. Behind the
-scenes, we build every single one of them the exact same way, sitting on top of the `component`
-package's composition seam and utilizing the `executor`'s function-calling machinery. We don't
-special-case anything about them in the engine.
+The `components/` directory is home to six packages: **auth**, **authz**, **scheduler**,
+**workflow**, **triggers**, and **notifications**. Each one of these is a completely self-contained
+feature, bringing its own tables, functions, and background tasks when needed. We don't turn any of
+them on by default. Instead, a project can opt into using one by composing it inside
+`concile.config.ts`. Behind the scenes, we build every single one of them the exact same way,
+sitting on top of the `component` package's composition seam and utilizing the `executor`'s
+function-calling machinery. We don't special-case anything about them in the engine.
 
 If you are feeling adventurous and want to build your own, check out [Building a custom
 component](/docs/contributing/extending/custom-component). It walks you through all the different
@@ -303,13 +304,13 @@ seams you get with `defineComponent`, such as `schema`, `context`, `modules`, `d
 
 ## The `ee/` directory: our reserved area for paid scaling
 
-You will find three packages under `ee/packages/`: **fleet** (for distributed Tier 2 scale-out), **objectstore-substrate**,
-and **runtime-cloudflare-shard**. While the source code for these is available to look at, they fall
-under a **separate commercial license** that doesn't convert to Apache like the rest of the
-repository. We draw the line at gating scale rather than self-hosting. Single-node self-hosting is
-free and always will be, but the `ee/` code is what a paid license key unlocks to help you scale up.
-If you are curious, you can read the full story in [Licensing & the ee/
-split](/docs/contributing/licensing).
+You will find three packages under `ee/packages/`: **fleet** (for distributed Tier 2 scale-out),
+**objectstore-substrate**, and **runtime-cloudflare-shard**. While the source code for these is
+available to look at, they fall under a **separate commercial license** that doesn't convert to
+Apache like the rest of the repository. We draw the line at gating scale rather than self-hosting.
+Single-node self-hosting is free and always will be, but the `ee/` code is what a paid license key
+unlocks to help you scale up. If you are curious, you can read the full story in [Licensing & the
+ee/ split](/docs/contributing/licensing).
 
 ## A quick look at our tooling
 
@@ -337,8 +338,8 @@ split](/docs/contributing/licensing).
 Our cross-package tests import their dependencies from the built `dist/` output, rather than
 directly from `src/`. This means if you tweak something in `packages/values/src/...` and then
 immediately run tests for `packages/query-engine` without rebuilding, you will actually be testing
-against the *old* compiled version of `values`. Make sure to run `bun run build`, or `bun run --filter
-@concile/values build`, after making edits to a package that other tests rely on!
+against the *old* compiled version of `values`. Make sure to run `bun run build`, or `bun run
+--filter @concile/values build`, after making edits to a package that other tests rely on!
 </Callout>
 
 Here are some common commands you will likely use:

@@ -69,9 +69,10 @@ commands resolve storage through the same boot path.
 
 `dev` reads `CONCILE_ADMIN_KEY` if set (blank/whitespace-only counts as unset, with a warning). If
 it's unset, `dev` **generates an ephemeral key for this run only**. That generated key gets embedded
-directly into the (otherwise unauthenticated) dashboard HTML, but **only** when the key is ephemeral *and*
-the bind address is loopback (`127.0.0.1`, `::1`, or `localhost`). A persistent operator-supplied
-key, or any non-loopback bind, never gets embedded: the dashboard SPA prompts for it instead.
+directly into the (otherwise unauthenticated) dashboard HTML, but **only** when the key is ephemeral
+*and* the bind address is loopback (`127.0.0.1`, `::1`, or `localhost`). A persistent
+operator-supplied key, or any non-loopback bind, never gets embedded: the dashboard SPA prompts for
+it instead.
 
 ### Startup output
 
@@ -290,8 +291,8 @@ import`, `deploy` has **no** `--admin-key` flag. The target must have been start
 `--allow-deploy` (or `CONCILE_ALLOW_DEPLOY=1`).
 
 What it does, in order: (1) transpiles every `.ts` file under `--dir` with esbuild's `transform`
-(types stripped, import specifiers untouched: bare `@concile/*` imports resolve against the *target's*
-`node_modules`, relative imports resolve within the pushed tree); (2) probes `GET
+(types stripped, import specifiers untouched: bare `@concile/*` imports resolve against the
+*target's* `node_modules`, relative imports resolve within the pushed tree); (2) probes `GET
 /_admin/deploy/modules` for the server's current per-module hashes; (3) if the probe answers,
 `POST`s a delta payload (`{changed, unchanged}`) to `/_admin/deploy` with `Authorization: Bearer
 <adminKey>`, falling back to a full `{files}` push when the probe fails or the server reports a
@@ -474,8 +475,8 @@ Prints `generated <dir>/_generated` on success.
 Changes a **stopped** Postgres fleet's shard count. This is an offline maintenance tool, not a
 live-resharding feature. Every fleet node must be stopped first (an in-flight fleet leaves the
 lease/shard bookkeeping inconsistent with a reshard in progress). Requires the `@concile/fleet`
-package (dynamic-imported; core `packages/cli` has zero static dependency on it, mirroring `serve --fleet`'s
-own gate).
+package (dynamic-imported; core `packages/cli` has zero static dependency on it, mirroring `serve
+--fleet`'s own gate).
 
 ```bash
 concile fleet reshard --shards 4 --database-url postgres://...

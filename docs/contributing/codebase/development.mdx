@@ -104,10 +104,10 @@ When one package depends on another, like when `@concile/cli` depends on `@conci
 tests resolve the dependency using the built files in the `dist/` folder. This is exactly how a
 normal npm user would consume the package, rather than pulling directly from the `src/` folder.
 
-This means if you make an edit to `packages/values/src/index.ts` and then immediately run `bun run --filter
-@concile/cli test`, you won't see your changes. The test will silently keep running against the old
-compiled code in `dist/`. To see your updates, you need to run `bun run build` or `bun run --filter
-@concile/values build` to refresh the `dist/` folder first.
+This means if you make an edit to `packages/values/src/index.ts` and then immediately run `bun run
+--filter @concile/cli test`, you won't see your changes. The test will silently keep running against
+the old compiled code in `dist/`. To see your updates, you need to run `bun run build` or `bun run
+--filter @concile/values build` to refresh the `dist/` folder first.
 
 <Callout title="A warning about git checkout" type="warn">
 

@@ -469,10 +469,11 @@ await t.finishScheduledFunctions();  // drains EVERYTHING due (incl. cascades) t
 
 - **`advanceTimers(ms)`** pushes the virtual clock forward by exactly `ms` milliseconds and triggers
   a single pass of the scheduler driver. Think of it as a quick, one-off version of
-  `finishScheduledFunctions`. Similar to how fake timers like `advanceTimersByTime` work, it will **not**
-  process jobs that are scheduled beyond that `ms` window. It will always move the clock forward (or
-  throw an error if you provided a custom `now` function), even if you haven't composed a scheduler,
-  because controlling time is a fundamental feature of the harness, not just a scheduler trick.
+  `finishScheduledFunctions`. Similar to how fake timers like `advanceTimersByTime` work, it will
+  **not** process jobs that are scheduled beyond that `ms` window. It will always move the clock
+  forward (or throw an error if you provided a custom `now` function), even if you haven't composed
+  a scheduler, because controlling time is a fundamental feature of the harness, not just a
+  scheduler trick.
 - **`finishScheduledFunctions()`** repeatedly bumps the virtual clock forward in large chunks and
   runs the driver. It only stops when it checks the scheduler's internal `jobs` table and sees that
   absolutely nothing is pending or in progress. This method processes every job that is currently

@@ -195,12 +195,12 @@ try {
 ### The pre-first-open case
 
 While the very first connection attempt is still pending, the transport buffers frames and flushes
-them the moment the socket opens. That covers normal connection latency. If that first attempt *fails*
-before ever opening (constructed while offline, or a network blip on load), the buffered frames are
-dropped, not held: the transport announces the close, and recovery moves up a level. When a socket
-finally does open, the client runs the same reopen sequence (`SetAuth` replay, resubscribe, flush
-unsent mutations) as a mid-session reconnect, rebuilding everything from its own state rather than
-from replayed raw frames.
+them the moment the socket opens. That covers normal connection latency. If that first attempt
+*fails* before ever opening (constructed while offline, or a network blip on load), the buffered
+frames are dropped, not held: the transport announces the close, and recovery moves up a level. When
+a socket finally does open, the client runs the same reopen sequence (`SetAuth` replay, resubscribe,
+flush unsent mutations) as a mid-session reconnect, rebuilding everything from its own state rather
+than from replayed raw frames.
 
 The same holds for any later down period: once a socket has opened at least once (with reconnect
 on), a frame sent while disconnected is deliberately dropped rather than buffered, because the

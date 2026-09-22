@@ -47,12 +47,12 @@ You will notice two things happening in parallel here. Keeping these straight is
 understanding how the whole component ticks.
 
 - The **range calls** on the builder (like `.eq(field, value)`, along with one
-  `.gt`/`.gte`/`.lt`/`.lte` bound per direction on the next indexed field) are compiled into a **scan
-  interval**. This is basically a contiguous slice of the index that the storage layer can jump
-  directly to, which means rows outside this slice are totally ignored.
+  `.gt`/`.gte`/`.lt`/`.lte` bound per direction on the next indexed field) are compiled into a
+  **scan interval**. This is basically a contiguous slice of the index that the storage layer can
+  jump directly to, which means rows outside this slice are totally ignored.
 - Anything else, like a `.where(op, field, value)` call, becomes a **post-filter**. This includes
-  fields the index doesn't even cover. The post-filter is simply a check that runs on each row *after*
-  it has been read from the scan interval.
+  fields the index doesn't even cover. The post-filter is simply a check that runs on each row
+  *after* it has been read from the scan interval.
 
 This distinction is really important. Only the scan interval dictates what actually gets recorded as
 "read." If a post-filter rejects 999 out of 1000 rows in the interval, it does not shrink your
@@ -177,13 +177,13 @@ To produce those intervals, the planner simply walks down the index's field list
 3. Then, it stops. Any fields after that point are not used to narrow the scan at all. If your query
    still needs to check them, those constraints simply turn into a `.where(...)` post-filter.
 
-There is a really important asymmetry to keep in mind here. The `gt` and `lt` operators are *exclusive*,
-so the engine calculates a bound that is the very next possible key after or before your given
-value. It does this using the handy `indexKeyRangeEnd` and `indexKeyRangeStart` helpers that built
-the prefix range to begin with. On the flip side, `gte` and `lte` are *inclusive*, so they just use
-the value's own encoded key directly. This perfectly matches the `[start, end)` number line we
-talked about earlier. Here, `start` is always inclusive, `end` is always exclusive, and an `end:
-null` simply means "no upper bound, just scan all the way to the end of the index."
+There is a really important asymmetry to keep in mind here. The `gt` and `lt` operators are
+*exclusive*, so the engine calculates a bound that is the very next possible key after or before
+your given value. It does this using the handy `indexKeyRangeEnd` and `indexKeyRangeStart` helpers
+that built the prefix range to begin with. On the flip side, `gte` and `lte` are *inclusive*, so
+they just use the value's own encoded key directly. This perfectly matches the `[start, end)` number
+line we talked about earlier. Here, `start` is always inclusive, `end` is always exclusive, and an
+`end: null` simply means "no upper bound, just scan all the way to the end of the index."
 
 Just a quick heads up, we don't currently ship a full search or vector-index planner. This page
 focuses entirely on the ordered index-range and table-scan path that is available today. If you are

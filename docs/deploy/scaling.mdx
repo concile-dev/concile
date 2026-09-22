@@ -98,8 +98,8 @@ Feel free to check out the [glossary](/docs/reference/glossary) for the complete
 Running `concile serve --fleet` spins up a small, balanced fleet of `concile serve` processes that
 all share a single Postgres database. You won't find any coordinator service or primary/replica
 flags here! Every node runs the exact same command, and the fleet figures out who does what using a
-lease stored right in the database. The first node to grab a Postgres advisory lock becomes the **writer**,
-and all the rest automatically become **sync nodes**.
+lease stored right in the database. The first node to grab a Postgres advisory lock becomes the
+**writer**, and all the rest automatically become **sync nodes**.
 
 ### Starting a fleet node
 
@@ -206,12 +206,12 @@ sauce that keeps your primary read load from growing as your fleet gets bigger.
 
 ### Read-your-own-writes
 
-When a mutation succeeds on **any** node, you're guaranteed that an immediate follow-up read on **that
-same node** will see the write. This is true even on a sync node that's answering from its own local
-replica! Under the hood, the node waits for its replica to catch up to the mutation's commit before
-handing back the result, with a 5-second maximum wait time. If it hits that 5-second limit, the
-mutation will still return instead of hanging forever. In that very rare case, a read immediately
-following it might be a little stale.
+When a mutation succeeds on **any** node, you're guaranteed that an immediate follow-up read on
+**that same node** will see the write. This is true even on a sync node that's answering from its
+own local replica! Under the hood, the node waits for its replica to catch up to the mutation's
+commit before handing back the result, with a 5-second maximum wait time. If it hits that 5-second
+limit, the mutation will still return instead of hanging forever. In that very rare case, a read
+immediately following it might be a little stale.
 
 **This awesome feature covers `action` calls too**, including their inner writes. An action's own
 response doesn't have a single commit of its own, but the engine is smart enough to track the
@@ -261,16 +261,16 @@ fanning out to many more connections.
   writes seamlessly!
 - **A writer that's alive but stuck** (due to a GC pause, a frozen process, or a hung transaction)
   is a completely different kind of failure. Because the process never exits, another node actually
-  has to notice and take over. Every writer's lease carries a time limit called **`CONCILE_FLEET_LEASE_TTL_MS`**
-  (defaulting to `15000`), which it has to keep renewing to stay the writer. Once it stops renewing,
-  another node simply waits out the limit and takes the lease away by fencing it. Any commit the
-  stuck writer had in flight at that exact moment is aborted safely rather than being allowed to
-  land, meaning a write is never left half-applied. The new writer also terminates the stuck
-  writer's database sessions so it can't wake up and quietly keep writing. We measured this
-  end-to-end with the TTL shortened to 4 seconds for testing, and takeover completed about 4.5
-  seconds after the writer wedged! If the frozen writer ever revives, it discovers its lease is gone
-  and exits on its own. A process supervisor can then restart it, allowing it to rejoin as an
-  ordinary sync node.
+  has to notice and take over. Every writer's lease carries a time limit called
+  **`CONCILE_FLEET_LEASE_TTL_MS`** (defaulting to `15000`), which it has to keep renewing to stay
+  the writer. Once it stops renewing, another node simply waits out the limit and takes the lease
+  away by fencing it. Any commit the stuck writer had in flight at that exact moment is aborted
+  safely rather than being allowed to land, meaning a write is never left half-applied. The new
+  writer also terminates the stuck writer's database sessions so it can't wake up and quietly keep
+  writing. We measured this end-to-end with the TTL shortened to 4 seconds for testing, and takeover
+  completed about 4.5 seconds after the writer wedged! If the frozen writer ever revives, it
+  discovers its lease is gone and exits on its own. A process supervisor can then restart it,
+  allowing it to rejoin as an ordinary sync node.
 - Lowering `CONCILE_FLEET_LEASE_TTL_MS` makes a wedged-writer takeover much faster, but it comes at
   the cost of a healthy writer needing to renew more often (which means a transient GC pause could
   trigger an unnecessary failover). Raising it does the exact opposite. Just remember to set the
@@ -457,14 +457,14 @@ strictly for Postgres (`--database-url` or `CONCILE_DATABASE_URL` absolutely mus
 Postgres URL) and it will flat-out refuse to run against a fleet that has any live nodes. You must
 stop every fleet node first!
 
-The reason this operation is both safe and remarkably fast is because a fleet shard is just a **logical
-commit-serialization lane over one shared Postgres database**, not a physical partition of your
-data. The routing system always recomputes which shard a document belongs to directly from its key,
-meaning nothing about a document's storage actually depends on the shard count. Resharding moves
-absolutely no rows! It just updates the persisted shard count and creates or deletes the per-shard
-lease rows to match. This all happens in one transaction, healing every remaining shard's frontier
-forward so your fleet comes back up fully consistent. After a successful reshard, just update
-`CONCILE_FLEET_SHARDS` (or unset it entirely) on every node before restarting your fleet. The
+The reason this operation is both safe and remarkably fast is because a fleet shard is just a
+**logical commit-serialization lane over one shared Postgres database**, not a physical partition of
+your data. The routing system always recomputes which shard a document belongs to directly from its
+key, meaning nothing about a document's storage actually depends on the shard count. Resharding
+moves absolutely no rows! It just updates the persisted shard count and creates or deletes the
+per-shard lease rows to match. This all happens in one transaction, healing every remaining shard's
+frontier forward so your fleet comes back up fully consistent. After a successful reshard, just
+update `CONCILE_FLEET_SHARDS` (or unset it entirely) on every node before restarting your fleet. The
 command's own output will even tell you exactly the new count to use.
 
 ### On a fleet: parallel commits on the writer
@@ -588,9 +588,10 @@ does!
 
 ## Tier 3: the object-storage substrate (`@concile/objectstore-substrate`)
 
-Tier 2's very own benchmark honestly calls out its ceiling: since every fleet node commits to the *same*
-Postgres database, multi-node write scale-out is real but sublinear. The shared store is exactly
-what gets contended, not the engine! Tier 3 fixes this by removing the shared database entirely.
+Tier 2's very own benchmark honestly calls out its ceiling: since every fleet node commits to the
+*same* Postgres database, multi-node write scale-out is real but sublinear. The shared store is
+exactly what gets contended, not the engine! Tier 3 fixes this by removing the shared database
+entirely.
 
 In Tier 3, storage and compute are completely separated. The object-storage bucket (whether it's S3,
 R2, MinIO, or any S3-compatible store) acts as a write-only durable log (made up of immutable
@@ -616,11 +617,11 @@ CONCILE_ADMIN_KEY=secret concile serve --dir concile \
   single-process store. If you try an unsupported scheme, it gets safely rejected rather than
   silently falling back to the filesystem. Just note that this is mutually exclusive with `--fleet`,
   so you'll have to pick one write-scaling story!
-- **`--shards N` / `CONCILE_FLEET_SHARDS`** (only for object-store boots) lets you size a **multi-shard
-  single-node writer**, meaning this node will own and write all N lanes itself. `N = 1` is the
-  default single-shard path, which remains completely unchanged. This requires `--object-store` and
-  is invalid if you try combining it with `--replica` (since a replica is always
-  single-shard-per-lane but tails every lane the bucket has) or `--fleet`.
+- **`--shards N` / `CONCILE_FLEET_SHARDS`** (only for object-store boots) lets you size a
+  **multi-shard single-node writer**, meaning this node will own and write all N lanes itself. `N =
+  1` is the default single-shard path, which remains completely unchanged. This requires
+  `--object-store` and is invalid if you try combining it with `--replica` (since a replica is
+  always single-shard-per-lane but tails every lane the bucket has) or `--fleet`.
 - **`--replica` / `CONCILE_REPLICA`** boots your node as a **read-only replica** of an
   object-storage bucket. It neatly materializes and tails every shard lane the bucket currently has
   (which it figures out directly from the bucket's persisted globals). It serves queries and
@@ -703,10 +704,10 @@ since the bucket's persisted count is authoritative anyway).
 
 ### Current limits
 
-- **Write-forwarding to a multi-shard bucket just isn't supported yet.** Running `--replica --writer-url`
-  against a bucket with more than one shard lane will fail fast at boot with a very clear "not yet
-  supported" error, rather than risking a latent per-lane timing hazard. Don't worry though,
-  per-lane forwarding is planned as future work!
+- **Write-forwarding to a multi-shard bucket just isn't supported yet.** Running `--replica
+  --writer-url` against a bucket with more than one shard lane will fail fast at boot with a very
+  clear "not yet supported" error, rather than risking a latent per-lane timing hazard. Don't worry
+  though, per-lane forwarding is planned as future work!
 - **A real-cloud benchmark is treated as a documented manual run**, rather than a CI-gated number.
   That's because it requires live cloud credentials (like AWS S3 or R2) instead of the local MinIO
   or filesystem harnesses this substrate is otherwise thoroughly proven against.
@@ -727,9 +728,9 @@ all yet! The long-term intent, based on the project's business model, is that a 
 will unlock the `license.has("scale")` capability that these packages rely on. It's the scaling
 capability that the key gates, never your deployment location. You can always deploy anywhere on
 your own infrastructure at any tier! The key just affects whether you can scale past a single
-writer. Keep in mind that core concile has no hard dependency on either `ee/` package. Both `serve --fleet`
-and `serve --object-store` load their package dynamically using `import()`, meaning a deployment
-that never opts into scale-out won't even resolve them.
+writer. Keep in mind that core concile has no hard dependency on either `ee/` package. Both `serve
+--fleet` and `serve --object-store` load their package dynamically using `import()`, meaning a
+deployment that never opts into scale-out won't even resolve them.
 
 ## Related
 

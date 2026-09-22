@@ -327,9 +327,9 @@ would if you were working in a standard workspace checkout.
 
 The `runner` stage operates as the image's built-in, non-root `bun` user, which has a uid of 1000,
 while `/data` is set up as a `VOLUME`. Here's the catch: a **fresh** named volume inherits the
-ownership of whatever directory it's mounted over during the image build process. Because the `COPY --chown=bun:bun`
-step earlier only updates the ownership for the copied application files and not for directories
-created later, the volume ends up owned by `root:root`.
+ownership of whatever directory it's mounted over during the image build process. Because the `COPY
+--chown=bun:bun` step earlier only updates the ownership for the copied application files and not
+for directories created later, the volume ends up owned by `root:root`.
 
 Without a fix, the non-root `bun` user can't create the `/data/db.sqlite` file due to a permissions
 error (`EACCES`). This causes the container to enter a crash loop right away on the very first

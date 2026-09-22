@@ -144,8 +144,9 @@ writes to one shared Postgres. The bottleneck moved from "one writer" to "one sh
 Splitting the database itself, so each shard has its own storage, is a known future direction, not
 yet built. This is honest sublinear scale-out: real, with a clearly identified next ceiling.
 
-Reactivity crosses the fleet too: when a writer on one node commits, a subscriber connected to a *different*
-node receives the push at **~15 to 16 ms p50**, flat across fleet widths of 1, 2, and 4 nodes.
+Reactivity crosses the fleet too: when a writer on one node commits, a subscriber connected to a
+*different* node receives the push at **~15 to 16 ms p50**, flat across fleet widths of 1, 2, and 4
+nodes.
 
 </Tab>
 

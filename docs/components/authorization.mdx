@@ -155,10 +155,10 @@ admin is created normally, by an already-bootstrapped admin calling `assignRole`
 
 ## Materialized effective permissions
 
-Rather than re-walking role inheritance on every check, authz **materializes** permissions at *write*
-time (when a role is assigned or revoked) into an `effective_permissions` table. A check (`can`) is
-then at most four indexed point-reads (the candidate keys `res:act`, `res:*`, `*:act`, `*:*`), never
-a graph walk.
+Rather than re-walking role inheritance on every check, authz **materializes** permissions at
+*write* time (when a role is assigned or revoked) into an `effective_permissions` table. A check
+(`can`) is then at most four indexed point-reads (the candidate keys `res:act`, `res:*`, `*:act`,
+`*:*`), never a graph walk.
 
 The internals are tucked away below; you don't need them to use the component.
 
@@ -485,10 +485,10 @@ flowchart LR
   the subscription re-runs: a revoked `documents:update` flips a subscribed
   `can("documents:update")` query from `true` back to `false`, live, without the client refetching
   anything.
-- Because the index is keyed `(scopeType, scopeId, userId, permission)`, invalidation is **surgical**:
-  revoking one permission re-runs only the subscriptions that actually checked *that* permission for *that*
-  user in *that* scope. An unrelated subscription checking a different permission for the same user
-  does not re-run.
+- Because the index is keyed `(scopeType, scopeId, userId, permission)`, invalidation is
+  **surgical**: revoking one permission re-runs only the subscriptions that actually checked *that*
+  permission for *that* user in *that* scope. An unrelated subscription checking a different
+  permission for the same user does not re-run.
 - A row policy's compiled filter is merged into the query the same way any other filter is, so its
   read-set is the query's read-set. Revoking a role that a `read` policy's `auth.can(...)` depends
   on re-runs and re-filters every live subscription over that table: rows the caller can no longer

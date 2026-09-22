@@ -101,13 +101,13 @@ disagree with one another.
 
 ## The DocStore seam: one interface, several backends
 
-Everything we've talked about so far (the log, the tombstones, and the versioned indexes) is *implemented*
-by something called a `DocStore` (which you can find defined in `packages/docstore/src/types.ts`).
-This is the sole interface that the rest of the engine (like the transactor, the query engine, the
-scheduler, and really everything else) is written against. This is a crucial detail: **the engine
-only ever imports this interface, and never a specific database driver.** As long as a system can
-satisfy `DocStore` (by performing an ordered, point-in-time range scan, and an atomic batch write),
-it qualifies as a valid storage backend.
+Everything we've talked about so far (the log, the tombstones, and the versioned indexes) is
+*implemented* by something called a `DocStore` (which you can find defined in
+`packages/docstore/src/types.ts`). This is the sole interface that the rest of the engine (like the
+transactor, the query engine, the scheduler, and really everything else) is written against. This is
+a crucial detail: **the engine only ever imports this interface, and never a specific database
+driver.** As long as a system can satisfy `DocStore` (by performing an ordered, point-in-time range
+scan, and an atomic batch write), it qualifies as a valid storage backend.
 
 ```mermaid
 flowchart TD
@@ -371,9 +371,9 @@ is purely a code-level check, not a database one.
 
 ## Document identity: ids that validate themselves
 
-There's one more piece that's definitely worth understanding, and that's what a document id actually *is*.
-Internally, a document's identity is just a combination of `{ tableNumber, internalId }`. It's a
-small number that identifies its table, plus 16 random bytes. The `k57x3n8j...` style string that
+There's one more piece that's definitely worth understanding, and that's what a document id actually
+*is*. Internally, a document's identity is just a combination of `{ tableNumber, internalId }`. It's
+a small number that identifies its table, plus 16 random bytes. The `k57x3n8j...` style string that
 you see floating around in application code is produced by encoding that specific pair:
 
 ```

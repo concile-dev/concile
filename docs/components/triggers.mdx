@@ -113,8 +113,8 @@ last batch's changes, possibly inside a larger batch if new commits landed in th
 batch boundary is not stable across redelivery), but every change's `changeId` is stable. A document
 written twice before the cursor reaches it produces both revisions in the log, not one coalesced
 update. There is no ordering guarantee across different triggers, and one delivery is in flight per
-trigger at a time: a slow handler backs up only its own trigger's backlog, never another trigger's. **Handlers
-must be idempotent, or dedup on `changeId`.**
+trigger at a time: a slow handler backs up only its own trigger's backlog, never another trigger's.
+**Handlers must be idempotent, or dedup on `changeId`.**
 
 </Callout>
 

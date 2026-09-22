@@ -234,10 +234,10 @@ over `(key, ts, orderKey)` for every row currently sitting in the subscription's
 export function driftChecksum(rows: Map<string, RowVersion>): string
 ```
 
-The client recomputes this exact same fold after applying a diff. Folding the `orderKey` in means a *missed
-reorder* gets caught too, not just a missed add/edit/remove. If there is a mismatch, the response is
-never to guess or crash. Instead, that one query just throws away its diffed state and resyncs from
-a full re-run.
+The client recomputes this exact same fold after applying a diff. Folding the `orderKey` in means a
+*missed reorder* gets caught too, not just a missed add/edit/remove. If there is a mismatch, the
+response is never to guess or crash. Instead, that one query just throws away its diffed state and
+resyncs from a full re-run.
 
 Just to be honest about one caveat: the checksum catches bugs in the differ or the apply path. It
 structurally *cannot* catch a misclassified handler, since a checksum over an already-wrong value
@@ -252,10 +252,10 @@ below, you'll see it has no such field). Instead, the mechanism lives entirely o
 
 Diffing a *count*-bounded page comes with a pull-in problem: if a row is deleted, we'd need to pull
 in whatever the next unseen row past the boundary is. That means we'd have to do a storage read,
-which the diff path explicitly forbids. So instead, at load time, the page is pinned to the fixed **`[startBound,
-endBound)` key interval** it actually covered. This is held as server-side page metadata directly on
-the subscription. From that point on, it's diffed as an ordinary two-sided-bound range, and we just
-reuse `rangeChangesFor` without any changes.
+which the diff path explicitly forbids. So instead, at load time, the page is pinned to the fixed
+**`[startBound, endBound)` key interval** it actually covered. This is held as server-side page
+metadata directly on the subscription. From that point on, it's diffed as an ordinary
+two-sided-bound range, and we just reuse `rangeChangesFor` without any changes.
 
 The fields `nextCursor`, `hasMore`, and `scanCapped` are captured at that load time and carried
 through every incremental diff untouched. They only move on the next real reset. A page's row count
@@ -338,7 +338,8 @@ there is no drift checksum to catch it, since RERUN subs don't have one). Becaus
 live re-run re-upserts the registry entry, and `SetAuth` re-keys it to the new identity.
 
 When measured: 50 unchanged RERUN subscriptions re-execute **0** handlers on reconnect with the skip
-turned on, versus 50 with it off. A partial-change variant re-executes exactly 1 (see `CHANGELOG.md` 0.0.4).
+turned on, versus 50 with it off. A partial-change variant re-executes exactly 1 (see `CHANGELOG.md`
+0.0.4).
 
 ## The wire protocol: versions, not just messages
 

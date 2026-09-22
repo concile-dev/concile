@@ -115,13 +115,14 @@ While your mutation is doing its thing, the transaction quietly keeps an eye on 
 - The **read set**: a log of every document, index range, or table scan the mutation peeked at.
 - The **write set**: a list of every single document the mutation is preparing to update.
 
-The cool part is that we record both of these lists using the exact same format, which we call a **key
-range**. A key range is simply our way of saying "look at this table or index, starting from this
-encoded key and ending at that one." If you read one specific document, that is a range where the
-start and end keys are identical, often called a point range. When you run `.collect()` on an index,
-it creates a range that covers a whole bunch of keys. A full table scan is just the biggest possible
-range you can make for that table. Since the keys are encoded as bytes, it is incredibly fast and
-easy to check if two ranges overlap without writing special code for different types of data.
+The cool part is that we record both of these lists using the exact same format, which we call a
+**key range**. A key range is simply our way of saying "look at this table or index, starting from
+this encoded key and ending at that one." If you read one specific document, that is a range where
+the start and end keys are identical, often called a point range. When you run `.collect()` on an
+index, it creates a range that covers a whole bunch of keys. A full table scan is just the biggest
+possible range you can make for that table. Since the keys are encoded as bytes, it is incredibly
+fast and easy to check if two ranges overlap without writing special code for different types of
+data.
 
 Using the same format for both sets is way more than just a clever shortcut. It is actually the
 beating heart of the whole setup. We take that one read set and use it for two totally different

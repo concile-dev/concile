@@ -198,11 +198,11 @@ Being straight about this matters more than making the diagram look complete:
   in the commercial `ee/` tree rather than the open-core engine). A log-fed fleet of writers
   coordinates through Postgres-backed leases, and replicas tail the commit log to stay current.
   Measured multi-node throughput on a shared Postgres backing store tops out around **1.75x at 3
-  nodes** today. That's useful, but it means the practical path to real write scale is adding *shards*
-  (each with its own single writer), not just adding more nodes against one shared store.
+  nodes** today. That's useful, but it means the practical path to real write scale is adding
+  *shards* (each with its own single writer), not just adding more nodes against one shared store.
 - **The wire protocol is JSON, not a custom binary format.** An early sketch of this design
-  considered a compact binary delta protocol. What actually shipped instead is JSON carrying *differential*
-  updates (only what changed, not the whole result set again). See [Reactivity &
+  considered a compact binary delta protocol. What actually shipped instead is JSON carrying
+  *differential* updates (only what changed, not the whole result set again). See [Reactivity &
   sync](/docs/contributing/architecture/reactivity) for how that differential path works. It gets
   most of the bandwidth win without the complexity of a bespoke wire format.
 

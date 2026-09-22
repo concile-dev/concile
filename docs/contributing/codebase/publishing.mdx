@@ -33,13 +33,13 @@ since there is no "pending publisher" state. This creates a classic chicken and 
 genuinely new package can't be OIDC-published on its very first release. We use a token fallback to
 close that gap automatically:
 
-- The workflow passes the **`NPM_TOKEN`** repo secret to `release.mjs` as **`CONCILE_NPM_FALLBACK_TOKEN`**.
-  We use a private variable name rather than `NPM_TOKEN` because setting `NPM_TOKEN` would make the
-  changesets action switch every package to token auth, which defeats the purpose of OIDC. The
-  `release.mjs` script tries OIDC first for each package and, only if that fails, retries **that
-  specific package** with the token written to a temporary userconfig. Existing packages stay
-  completely tokenless, while a brand-new one self-publishes on merge with **no human
-  intervention**.
+- The workflow passes the **`NPM_TOKEN`** repo secret to `release.mjs` as
+  **`CONCILE_NPM_FALLBACK_TOKEN`**. We use a private variable name rather than `NPM_TOKEN` because
+  setting `NPM_TOKEN` would make the changesets action switch every package to token auth, which
+  defeats the purpose of OIDC. The `release.mjs` script tries OIDC first for each package and, only
+  if that fails, retries **that specific package** with the token written to a temporary userconfig.
+  Existing packages stay completely tokenless, while a brand-new one self-publishes on merge with
+  **no human intervention**.
 
 - Once the new package exists on the registry, you should give it a trusted publisher so future
   releases will be tokenless too. You can do this either on its npmjs.com **package → Settings →

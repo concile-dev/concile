@@ -117,9 +117,9 @@ ctx.db.delete(id): Promise<void>
 
 <Callout type="warn" title="There is no ctx.db.patch()">
 
-You will only find `insert`, `replace`, and `delete` available. Remember that `replace` expects the *entire*
-document, not just a partial update. If you want to tweak just a single field, you need to read the
-document first and then write back all of its fields, whether you changed them or not.
+You will only find `insert`, `replace`, and `delete` available. Remember that `replace` expects the
+*entire* document, not just a partial update. If you want to tweak just a single field, you need to
+read the document first and then write back all of its fields, whether you changed them or not.
 
 </Callout>
 
@@ -141,10 +141,10 @@ double check every `insert` and `replace` against it before setting up the write
 the wrong type, is missing a required field, or includes extra fields not in the schema, it will get
 rejected with a `DocumentValidationError` (code `DOCUMENT_VALIDATION`). When this happens, your
 entire handler's transaction rolls back completely, just like it would for any other error. Keep in
-mind that this check is completely separate from argument validation. While `args` makes sure the *caller*
-sent the right stuff, write validation verifies what your *handler* is actually trying to save.
-These can definitely be different, especially if your handler calculates or adds default fields that
-the caller never provided.
+mind that this check is completely separate from argument validation. While `args` makes sure the
+*caller* sent the right stuff, write validation verifies what your *handler* is actually trying to
+save. These can definitely be different, especially if your handler calculates or adds default
+fields that the caller never provided.
 
 If you have an older table or one without a validator, it will just skip this check altogether.
 Write validation only steps in if your table has a schema, which means it will never break your
@@ -155,10 +155,10 @@ older tables that were made before this feature existed.
 The entire handler in a mutation runs as one **serializable transaction**. When it reads data, it
 looks at a perfectly consistent snapshot captured at the transaction's `snapshotTs`. Any write it
 makes gets staged in an in-memory buffer that no one else can see until the handler finishes
-successfully. Interestingly, if you use `ctx.db.get` inside the very same handler, you actually *will*
-see your own staged writes! Then, everything commits all at once. If the handler hits an error and
-throws, none of the writes go through. You never have to worry about partial writes. If your
-mutation inserts three rows and then crashes, absolutely nothing gets saved.
+successfully. Interestingly, if you use `ctx.db.get` inside the very same handler, you actually
+*will* see your own staged writes! Then, everything commits all at once. If the handler hits an
+error and throws, none of the writes go through. You never have to worry about partial writes. If
+your mutation inserts three rows and then crashes, absolutely nothing gets saved.
 
 This all-or-nothing approach gives our engine the perfect moment to trigger reactivity, which is the
 commit itself. You never have to guess when a write took place, because a mutation either completely
@@ -282,9 +282,9 @@ export const createSteps = mutation({
 You can set up a **shard key** for a table in its schema by using `.shardKey("fieldName")`. This is
 super cool because it routes every document in that table to one of your deployment's shards based
 on the value of that specific field! This is actually the underlying magic that makes Tier-2
-multi-node scaling work. If you have a table without a `.shardKey()`, it is considered **unsharded**.
-In that case, all of its documents live happily on the single **default ring**, which happens to be
-exactly where every mutation runs unless it specifically asks to use sharding.
+multi-node scaling work. If you have a table without a `.shardKey()`, it is considered
+**unsharded**. In that case, all of its documents live happily on the single **default ring**, which
+happens to be exactly where every mutation runs unless it specifically asks to use sharding.
 
 If you are writing a mutation that touches a sharded table, you have to let us know which shard it
 should route to by using `shardBy`:
@@ -313,12 +313,13 @@ export const send = mutation({
 ```
 
 Here is the quick breakdown! `shardBy` is just a field name taken from your `args`, or you can
-provide a function like `(args) => value`. We figure it out and hash it to a specific shard **before**
-your transaction even begins. During the build process, our codegen double-checks your string
-`shardBy` against the table's `.shardKey()`. Then, when your app is running, our engine enforces
-shard ownership rules across every tier, even if you are just on a single node. Keep in mind that if
-your table does not have a `.shardKey()`, none of this matters. Your mutations will run normally as
-if they were completely unsharded, just like they did before this feature was introduced.
+provide a function like `(args) => value`. We figure it out and hash it to a specific shard
+**before** your transaction even begins. During the build process, our codegen double-checks your
+string `shardBy` against the table's `.shardKey()`. Then, when your app is running, our engine
+enforces shard ownership rules across every tier, even if you are just on a single node. Keep in
+mind that if your table does not have a `.shardKey()`, none of this matters. Your mutations will run
+normally as if they were completely unsharded, just like they did before this feature was
+introduced.
 
 If you are curious about the exact rules for ownership and the specific error messages we send when
 things go wrong, you can find all that info under **Shard ownership rules** in the Going deeper
@@ -360,8 +361,8 @@ might compile fine, but it will definitely throw an error when you try to run it
 
 If you want to read about the exact steps the engine uses to validate things during an insert, the
 v1 restriction that limits this to unsharded tables on the default ring, or the purity rules for
-combining a client-supplied id with an optimistic update, you will find all the details in the **Going
-deeper** section below.
+combining a client-supplied id with an optimistic update, you will find all the details in the
+**Going deeper** section below.
 
 ## Calling component facades from a mutation
 

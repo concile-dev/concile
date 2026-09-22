@@ -93,10 +93,10 @@ reactive fan-out.
 </Steps>
 
 If validation fails (a conflicting write landed first), the engine throws a conflict error and the
-caller **replays the mutation's handler from scratch** against the new snapshot. This is only safe *because*
-mutations are deterministic (see [The determinism contract](#the-determinism-contract) below):
-replaying the same deterministic code against fresh data is guaranteed to reproduce a correct
-result, not a guess.
+caller **replays the mutation's handler from scratch** against the new snapshot. This is only safe
+*because* mutations are deterministic (see [The determinism contract](#the-determinism-contract)
+below): replaying the same deterministic code against fresh data is guaranteed to reproduce a
+correct result, not a guess.
 
 ## The data model: an append-only MVCC log
 
@@ -205,10 +205,10 @@ required inspecting all 10,000, so write throughput degraded with subscription c
 
 The fix is a data-structure change, not more threads. Read ranges are indexed in a **per-keyspace
 augmented interval tree** (a treap keyed by range start, each node carrying its subtree's maximum
-end), bucketed first by keyspace, since a write range can only ever overlap subscriptions on the *same*
-table-and-index. A write's affected subscriptions are found by a tree query: cost scales with the
-number of matches, not the number of subscribers. Subscriptions on the table-level fallback path are
-kept in a separate per-table set and matched directly. It's cheap, just coarse in what triggers
+end), bucketed first by keyspace, since a write range can only ever overlap subscriptions on the
+*same* table-and-index. A write's affected subscriptions are found by a tree query: cost scales with
+the number of matches, not the number of subscribers. Subscriptions on the table-level fallback path
+are kept in a separate per-table set and matched directly. It's cheap, just coarse in what triggers
 them.
 
 The same benchmark, re-run after indexing, shows the effect on that pathological cell:

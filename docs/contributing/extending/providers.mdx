@@ -30,11 +30,11 @@ By the end of this page you'll be able to:
 ## Notifications: one interface per channel
 
 The `@concile/notifications` package organizes message delivery into **channels** like `email`,
-`sms`, `push`, and `in_app`. Think of a channel as the *type of message* you are sending, while a **provider**
-is the service that *actually delivers it*. For instance, Resend and a simple `console.log` both act
-as email providers. Twilio handles SMS, while Expo, FCM, and APNs take care of push notifications.
-The `in_app` channel is a bit unique because it doesn't need an external vendor. The engine simply
-adds a new row directly into the user's inbox table.
+`sms`, `push`, and `in_app`. Think of a channel as the *type of message* you are sending, while a
+**provider** is the service that *actually delivers it*. For instance, Resend and a simple
+`console.log` both act as email providers. Twilio handles SMS, while Expo, FCM, and APNs take care
+of push notifications. The `in_app` channel is a bit unique because it doesn't need an external
+vendor. The engine simply adds a new row directly into the user's inbox table.
 
 ```mermaid
 flowchart LR

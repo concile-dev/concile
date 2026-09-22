@@ -203,13 +203,13 @@ flowchart TD
 ## Testing expectations before you land
 
 Unit tests that check a mechanism in isolation are completely necessary, but they are **not
-sufficient**. The absolute rule for anything that crosses package boundaries is that you must **prove
-it end to end through the real `concile dev` or `concile serve` server**, not just with an isolated
-mechanism test. These tests live in `packages/cli/test/*-e2e.test.ts`. We already have dozens of
-them for things like auth flows, workflows, triggers, deploy, and storage. They are crucial because
-they catch bugs that an isolated unit test structurally cannot see. For example, they will find if
-two components wire together wrong, or if a feature works nicely against a mock but fails against
-the real transport layer.
+sufficient**. The absolute rule for anything that crosses package boundaries is that you must
+**prove it end to end through the real `concile dev` or `concile serve` server**, not just with an
+isolated mechanism test. These tests live in `packages/cli/test/*-e2e.test.ts`. We already have
+dozens of them for things like auth flows, workflows, triggers, deploy, and storage. They are
+crucial because they catch bugs that an isolated unit test structurally cannot see. For example,
+they will find if two components wire together wrong, or if a feature works nicely against a mock
+but fails against the real transport layer.
 
 <Callout type="warn" title="Two easy-to-miss gotchas">
 
@@ -235,13 +235,13 @@ bun run lint
 ## Review discipline
 
 Beyond a normal code review, concile uses staged reviews at each pipeline step. You can expect a
-plan review, an engineering review, a design review where relevant, and, most importantly, a **whole-branch
-final review** before any multi-slice or multi-package change lands. This is not just ceremony.
-Across many shipped slices, the whole-branch review has caught real blocker-class bugs that the
-smaller, per-task reviews completely missed (like a security gap that only became visible once two
-components were composed together). If your change touches more than one package, always run a
-whole-branch review before asking for a merge. It has a proven track record of finding things that
-are genuinely worth finding.
+plan review, an engineering review, a design review where relevant, and, most importantly, a
+**whole-branch final review** before any multi-slice or multi-package change lands. This is not just
+ceremony. Across many shipped slices, the whole-branch review has caught real blocker-class bugs
+that the smaller, per-task reviews completely missed (like a security gap that only became visible
+once two components were composed together). If your change touches more than one package, always
+run a whole-branch review before asking for a merge. It has a proven track record of finding things
+that are genuinely worth finding.
 
 ## Licensing: a CLA or DCO is required
 
