@@ -11,7 +11,42 @@ import { createTestRenderer } from "@opentui/core/testing";
 import { createRoot } from "@opentui/react";
 import { App } from "../src/app";
 
-const settle = (ms = 200) => new Promise((r) => setTimeout(r, ms));
+/**
+ * Render repeatedly until the frame shows what we are waiting for.
+ *
+ * The screen fills from async bridge calls, so sleeping a fixed number of
+ * milliseconds is really a guess about how fast the machine is. The guess held
+ * on a laptop and failed on CI, where the rows had not arrived inside 300ms and
+ * the assertion read an empty table. Waiting on the state instead of the clock
+ * removes the guess: a slow machine just polls a few more times.
+ *
+ * On timeout it throws with the last frame, because "expected to contain 'ada'"
+ * against a blank screen says nothing about which step stalled.
+ */
+async function renderUntil(
+  view: {
+    flush: () => Promise<unknown>;
+    renderOnce: () => Promise<unknown>;
+    captureCharFrame: () => string;
+  },
+  want: (frame: string) => boolean,
+  // Under `bun test`'s 5s default, so this throws with the frame attached
+  // rather than the runner killing the test with a generic timeout. Still
+  // ~13x the fixed 300ms wait it replaces.
+  { timeoutMs = 4_000, stepMs = 25 } = {},
+): Promise<string> {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    await view.flush();
+    await view.renderOnce();
+    const frame = view.captureCharFrame();
+    if (want(frame)) return frame;
+    if (Date.now() >= deadline) {
+      throw new Error(`renderUntil timed out after ${timeoutMs}ms. Last frame:\n${frame}`);
+    }
+    await new Promise((r) => setTimeout(r, stepMs));
+  }
+}
 
 const bridge = {
   deployment: {
@@ -55,16 +90,15 @@ test("opens on an app table with rows, groups internals under 'system'", async (
     width: 100,
     height: 20,
   });
+  const view = { flush, renderOnce, captureCharFrame };
   createRoot(renderer).render(<App bridge={bridge} />);
-  await settle(120);
-  await flush();
-  await renderOnce();
+  // Wait for the shell before sending input, or the keypress lands on nothing.
+  await renderUntil(view, (f) => f.includes("concile"));
   mockInput.pressKey("2");
-  await settle(300);
-  await flush();
-  await renderOnce();
-
-  const frame = captureCharFrame();
+  // The data browser is ready once a row from getTableData() is on screen. If
+  // it opened on an empty internal table instead, this times out and prints the
+  // frame, which is the regression this file exists to catch.
+  const frame = await renderUntil(view, (f) => f.includes("ada"));
   // Landed on auditLog (the first app table with rows) — not _storage.
   expect(frame).toContain("auditLog");
   expect(frame).not.toContain("no documents in");
