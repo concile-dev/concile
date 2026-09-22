@@ -1,24 +1,18 @@
 name: E2E
 
 on:
-  # Runs on PRs so a broken fleet, storage or outbox path is caught before it lands, not an hour
-  # after. Kept on push to main as well, deliberately: a PR's run tests that PR merged onto main
-  # as of that moment, so once another PR lands in between, the combination that actually
-  # reaches main has not been exercised. main is what the release job and Vercel ship from, so it
-  # gets its own verdict. merge_group is the hook for a merge queue if one is enabled later.
+  # Runs on pull requests, so a broken fleet, storage or outbox path is caught before it lands,
+  # not an hour after. Not on push to main: branch protection requires a PR to be up to date with
+  # main before it can merge, so the tree that lands is exactly the tree the PR run tested, and a
+  # second run would only repeat it. (A direct push to main bypassing PRs gets no checks from any
+  # workflow; the fix for that is "enforce for admins" in branch protection, not a duplicate run.)
+  # merge_group is the hook for a merge queue if one is enabled later.
   #
   # Not a required check yet. Make it required only after watching its failure rate on real PRs:
   # a required lane that flakes trains people to re-run without reading, and then it gates nothing.
   # Note for that day: with paths-ignore, a docs-only PR produces no check at all, and a missing
   # required check blocks the merge. Requiring it means dropping paths-ignore in favour of a
   # change-detection step inside the job.
-  push:
-    branches: [main]
-    paths-ignore:
-      - "**.md"
-      - "www/**"
-      - "docs/**"
-      - ".changeset/**"
   pull_request:
     branches: [main]
     paths-ignore:
