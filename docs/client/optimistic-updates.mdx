@@ -5,11 +5,22 @@ description: Instant local UI with exact rollback.
 
 {/* diataxis: how-to */}
 
-When you run a mutation, it takes a quick round trip. Your function executes on the server, saves the changes, and sends the result back through the WebSocket. Even though this only takes a few milliseconds, it can feel a bit sluggish if you're waiting for a chat message to send or a task to be checked off.
+When you run a mutation, it takes a quick round trip. Your function executes on the server, saves
+the changes, and sends the result back through the WebSocket. Even though this only takes a few
+milliseconds, it can feel a bit sluggish if you're waiting for a chat message to send or a task to
+be checked off.
 
-That is where `withOptimisticUpdate` comes in to save the day. It lets you skip the waiting game. You can show the expected result the very instant your user clicks. Then, it seamlessly swaps in the actual saved data without any annoying flickering. The moment your temporary guess goes away, the real data takes its place on the exact same frame.
+That is where `withOptimisticUpdate` comes in to save the day. It lets you skip the waiting game.
+You can show the expected result the very instant your user clicks. Then, it seamlessly swaps in the
+actual saved data without any annoying flickering. The moment your temporary guess goes away, the
+real data takes its place on the exact same frame.
 
-In this guide, we will walk you through the entire v1 setup. We cover `useMutation(...).withOptimisticUpdate(...)`, the `OptimisticLocalStore` that your updater works with, and the behind the scenes magic that guarantees a smooth swap. Just keep in mind that we don't use a `defineLocalMutators` registry, pending or failed queue accessors, or optimistic support for actions since actions don't have a commit timestamp to help manage the layers. You can learn more about that in [Actions](/docs/core-concepts/actions).
+In this guide, we will walk you through the entire v1 setup. We cover
+`useMutation(...).withOptimisticUpdate(...)`, the `OptimisticLocalStore` that your updater works
+with, and the behind the scenes magic that guarantees a smooth swap. Just keep in mind that we don't
+use a `defineLocalMutators` registry, pending or failed queue accessors, or optimistic support for
+actions since actions don't have a commit timestamp to help manage the layers. You can learn more
+about that in [Actions](/docs/core-concepts/actions).
 
 ## Chain `.withOptimisticUpdate` onto `useMutation`
 
@@ -99,8 +110,7 @@ interface OptimisticLocalStore {
       description: "The timestamp fixed when the mutation was created, stable across every replay.",
       type: "() => number",
     },
-  }}
-/>
+  }} />
 
 `placeholderId`/`now` are covered in full detail in [Purity rules](#purity-rules) below.
 
@@ -144,8 +154,8 @@ export const list = query({
 Add `returns` and `getQuery(api.messages.list, ...)` infers `Array<{_id: Id<"messages">, ...}> |
 undefined` with no cast needed. A query with no `returns` validator still works: `getQuery` against
 it just falls back to the untyped `Value` shape. And `returns` isn't a cost you pay only for
-optimistic updates. It's also what gives the server itself return-value validation (see
-[Argument validation](/docs/core-concepts/mutations#argument-validation)).
+optimistic updates. It's also what gives the server itself return-value validation (see [Argument
+validation](/docs/core-concepts/mutations#argument-validation)).
 
 ### The pending-row type-widening recipe
 
@@ -195,17 +205,17 @@ updater from scratch over the fresh base. Your updater has to be a pure, determi
 - **`placeholderId(table)`** returns the same id every time this mutation's updater replays. Call it
   twice in one run and you get two distinct ids (it's ordinal-distinct per call within a run), and
   every other pending mutation gets different ids again, seeded from that entry's own entropy. Under
-  the hood it's built as `` `${entryEntropy}:${table}:${callOrdinal}` ``. Treat the exact shape as an
-  opaque, unspecified string and never parse it.
+  the hood it's built as `` `${entryEntropy}:${table}:${callOrdinal}` ``. Treat the exact shape as
+  an opaque, unspecified string and never parse it.
 - **`now()`** returns the timestamp fixed when the mutation was created. It's stable across every
   replay, and stands in for `_creationTime` on a row you're inserting.
 
 <Callout type="error" title="Never call crypto.randomUUID() or Date.now() inside an updater">
 
-Use `store.placeholderId(table)` and `store.now()` instead, always. Either impure call mints a
-fresh value on every replay. React, keying off it, sees a brand-new row instead of the same
-optimistic row re-rendering: remounts, list-key churn, and lost input focus, on every unrelated
-server push while your mutation is pending.
+Use `store.placeholderId(table)` and `store.now()` instead, always. Either impure call mints a fresh
+value on every replay. React, keying off it, sees a brand-new row instead of the same optimistic row
+re-rendering: remounts, list-key churn, and lost input focus, on every unrelated server push while
+your mutation is pending.
 
 This is an easy mistake to make. The store's shape is designed so the deterministic path is also the
 easy path, not so the impure path is blocked by a lint rule. There isn't one.
@@ -215,9 +225,9 @@ easy path, not so the impure path is blocked by a lint rule. There isn't one.
 ### `placeholderId()` is never a real id
 
 `placeholderId()` is deterministic but non-decodable. It doesn't round-trip through the server's id
-codec, and it isn't a real row. It exists only so your optimistically-inserted object has some stable
-`_id` to key a React list on, until the real row arrives and replaces it in the same atomic swap the
-reconciliation contract below describes.
+codec, and it isn't a real row. It exists only so your optimistically-inserted object has some
+stable `_id` to key a React list on, until the real row arrives and replaces it in the same atomic
+swap the reconciliation contract below describes.
 
 <Callout type="error" title="Never pass a placeholderId() value as a mutation argument">
 
@@ -226,8 +236,8 @@ real id once the create it names has committed. There never will be.
 
 If you need to create a row and immediately reference it in a second mutation call (say, create a
 conversation, then send the first message into it), mint a real id instead with `mintId` from your
-app's generated `_generated/ids.ts`. See
-[Client-supplied ids](/docs/client/offline-sync#client-supplied-ids) in the offline guide.
+app's generated `_generated/ids.ts`. See [Client-supplied
+ids](/docs/client/offline-sync#client-supplied-ids) in the offline guide.
 
 Mint outside the updater, at args-construction time (minting consults randomness). Inside the
 updater, read the id from `args` like any other field, never call `mintId` there. Awaiting the
@@ -248,8 +258,8 @@ reactive state.
 `Object.freeze` only locks the top-level object or array you were handed. A nested object or array
 one level down isn't frozen, and can still be mutated in place without throwing. Always
 copy-and-replace (`[...list, newRow]`, `{...doc, field: x}`) at every level rather than mutate,
-exactly what the freeze itself is trying to remind you to do. It's gated on
-`process.env.NODE_ENV !== "production"`, so it costs nothing at runtime in a production build.
+exactly what the freeze itself is trying to remind you to do. It's gated on `process.env.NODE_ENV
+!== "production"`, so it costs nothing at runtime in a production build.
 
 </Callout>
 
@@ -298,14 +308,14 @@ Calling a mutation with `withOptimisticUpdate`:
    previous layer's result, in call order. If an earlier one fails, later ones just replay over the
    corrected base. They're unaffected.
 6. A layer that's confirmed but somehow never observes its own inclusion (a lost frame) gets dropped
-   after 10 seconds with a console warning. No wrong guess and no dropped frame can wedge a stale row
-   on screen indefinitely.
+   after 10 seconds with a console warning. No wrong guess and no dropped frame can wedge a stale
+   row on screen indefinitely.
 
 The demo app's rapid-fire vote button exercises stacking directly. Click it several times before any
 response arrives, and each click's `+1` layers on the last, all rendering instantly. Closing a poll
 and then voting against it exercises exact rollback: the server rejects the vote, and the count
-snaps back to exactly what it was before, never an inverse `-1` applied on top of whatever it happens
-to be now.
+snaps back to exactly what it was before, never an inverse `-1` applied on top of whatever it
+happens to be now.
 
 ## The promise resolves at commit, not at the flicker-free gate
 
@@ -324,8 +334,8 @@ forever.
 
 So the guarantee here is "committed," not "your optimistic guess has been definitively superseded."
 Those are almost always indistinguishable in practice, but not quite always. See the two residuals
-below. If you're porting code that relies on await-then-local-cache-read semantics, the
-[migration guide](/docs/reference/migrate-from-convex) covers the difference.
+below. If you're porting code that relies on await-then-local-cache-read semantics, the [migration
+guide](/docs/reference/migrate-from-convex) covers the difference.
 
 </Callout>
 
@@ -337,9 +347,9 @@ These are known, inherent-to-the-design edge cases, not bugs.
   actually computed (say the server derives a field your updater didn't predict, or applies business
   logic your guess didn't replicate), the swap from your guess to the real value is still a single
   atomic frame, never a flicker, but the content of that frame can visibly "snap" if the two differ.
-  This is inherent to optimism over an arbitrary server-side mutation: the more of the server's logic
-  your updater predicts, the smaller the snap. The demo app has a dedicated wrong-guess toggle that
-  guesses `+2` while the server commits `+1`, so you can watch this snap happen on purpose.
+  This is inherent to optimism over an arbitrary server-side mutation: the more of the server's
+  logic your updater predicts, the smaller the snap. The demo app has a dedicated wrong-guess toggle
+  that guesses `+2` while the server commits `+1`, so you can watch this snap happen on purpose.
 - **`QueryFailed`-on-confirm.** If the very server push that would confirm your mutation instead
   carries a `QueryFailed` for the query your updater patched (the query itself started erroring),
   the gate still closes (the timestamp advanced) and your optimistic layer is dropped. But under
@@ -363,17 +373,17 @@ fixed at the source, not papered over client-side.
 shard X could have that commit's confirming server push carry a re-run of the cross-shard query that
 read a snapshot lagging shard X. That's because the write's commit timestamp was fanned out to every
 other shard's query oracle only after the write's own transaction resolved, not before its fan-out
-was published. The client, seeing its observed frontier advance to that commit's timestamp, correctly
-dropped the now-`completed` optimistic layer, but the base it adopted didn't yet contain the write.
-The result: a genuine flicker, the optimistic row vanishing for one frame before reappearing on a
-later push (and, with no further writes to trigger that later push, in the worst case never
-reappearing at all).
+was published. The client, seeing its observed frontier advance to that commit's timestamp,
+correctly dropped the now-`completed` optimistic layer, but the base it adopted didn't yet contain
+the write. The result: a genuine flicker, the optimistic row vanishing for one frame before
+reappearing on a later push (and, with no further writes to trigger that later push, in the worst
+case never reappearing at all).
 
 **The fix.** The transactor's write path gained an `onCommitted` hook, fired synchronously right
 after a shard's own commit is published but before that commit's fan-out payload becomes observable
 to any other shard's drain. It fans the new commit timestamp to every shard's query oracle at that
-point, so by the time a cross-shard subscription's re-run is triggered, every oracle involved already
-knows about the commit that triggered it, and the re-run reads a snapshot that includes it.
+point, so by the time a cross-shard subscription's re-run is triggered, every oracle involved
+already knows about the commit that triggered it, and the re-run reads a snapshot that includes it.
 
 The fix is proven with a dedicated test that fires a client's own optimistic cross-shard write
 concurrently with a separate client hammering a different shard, across 40 iterations, asserting the
@@ -388,8 +398,8 @@ before publishing" rule is what you need to preserve.
 
 ## Reconnect
 
-The WebSocket transport reconnects automatically by default (exponential backoff with jitter). Here's
-what survives a drop:
+The WebSocket transport reconnects automatically by default (exponential backoff with jitter).
+Here's what survives a drop:
 
 - **Unsent mutations survive.** They're retained and flushed, in order, once the connection reopens.
 - **In-flight mutations do not.** A sent mutation whose response never arrived has an unknowable
@@ -400,6 +410,6 @@ what survives a drop:
   a fresh session, and every live query re-subscribes against it. Replaying an old layer on top of a
   fresh session would replay it on top of its own echo.
 
-For durability across a reload or crash, not just a brief reconnect, see
-[Offline sync](/docs/client/offline-sync), which layers a durable outbox and cross-tab live
-rendering on top of everything described here.
+For durability across a reload or crash, not just a brief reconnect, see [Offline
+sync](/docs/client/offline-sync), which layers a durable outbox and cross-tab live rendering on top
+of everything described here.

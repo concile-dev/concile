@@ -5,9 +5,13 @@ description: Expose a plain HTTP endpoint for webhooks and REST calls with httpA
 
 {/* diataxis: how-to */}
 
-Let's be real, your webhooks don't care at all about the fancy sync protocol you're using. Services like Stripe, GitHub, and your email provider all want exactly the same thing: to `POST` a bit of JSON to a URL and get a quick response back.
+Let's be real, your webhooks don't care at all about the fancy sync protocol you're using. Services
+like Stripe, GitHub, and your email provider all want exactly the same thing: to `POST` a bit of
+JSON to a URL and get a quick response back.
 
-That's exactly where `httpAction` and a standard `http.ts` router come into play. They give you a clean, no-fuss HTTP endpoint that's fully wired into the exact same reactive engine powering the rest of your app. Let's walk through how to build one.
+That's exactly where `httpAction` and a standard `http.ts` router come into play. They give you a
+clean, no-fuss HTTP endpoint that's fully wired into the exact same reactive engine powering the
+rest of your app. Let's walk through how to build one.
 
 ```mermaid
 flowchart LR
@@ -24,13 +28,19 @@ flowchart LR
 
 ### Write the handler with httpAction
 
-Think of `httpAction` as an [action](/docs/core-concepts/actions) that speaks raw HTTP rather than relying on typed arguments. It takes a standard Web `Request` as input and returns a `Response`, but under the hood, it behaves just like any regular action.
+Think of `httpAction` as an [action](/docs/core-concepts/actions) that speaks raw HTTP rather than
+relying on typed arguments. It takes a standard Web `Request` as input and returns a `Response`, but
+under the hood, it behaves just like any regular action.
 
-- You can call `ctx.runQuery(ref, args)`, `ctx.runMutation(ref, args)`, or `ctx.runAction(ref, args)`. Each of these fires off a fresh, independent top-level run, just like you would expect in a normal action.
-- Native browser APIs like `fetch`, `Date.now()`, `Math.random()`, and your standard timers all work perfectly.
+- You can call `ctx.runQuery(ref, args)`, `ctx.runMutation(ref, args)`, or `ctx.runAction(ref,
+  args)`. Each of these fires off a fresh, independent top-level run, just like you would expect in
+  a normal action.
+- Native browser APIs like `fetch`, `Date.now()`, `Math.random()`, and your standard timers all work
+  perfectly.
 
 <Callout type="warn" title="No ctx.db">
-  An `httpAction` does not run inside a transaction. If you need it to read or write data, you will have to call a query, mutation, or action using one of the three methods mentioned above.
+  An `httpAction` does not run inside a transaction. If you need it to read or write data, you will
+  have to call a query, mutation, or action using one of the three methods mentioned above.
 </Callout>
 
 ```ts title="concile/http.ts"
@@ -46,9 +56,17 @@ export const receiveWebhook = httpAction(async (ctx, request) => {
 });
 ```
 
-You can pass either a simple handler function or a `{ handler }` object to `httpAction`. You won't find an `args` or `returns` validator option here like you do with `query`, `mutation`, or `action`. That is because your input is a raw `Request` rather than a validated argument object. You will need to parse and validate the body yourself, just like you would in any standard HTTP framework.
+You can pass either a simple handler function or a `{ handler }` object to `httpAction`. You won't
+find an `args` or `returns` validator option here like you do with `query`, `mutation`, or `action`.
+That is because your input is a raw `Request` rather than a validated argument object. You will need
+to parse and validate the body yourself, just like you would in any standard HTTP framework.
 
-Since the handler doesn't have access to `ctx.db`, you will need to handle actual data writes through `ctx.runMutation`. That mutation handles creating a write set and instantly fans out updates to any subscriptions currently watching the `messages` table (you can learn more about this in [Reactivity](/docs/core-concepts/reactivity)). This pattern is the foundation for every webhook you build in concile. You take HTTP in, use a mutation to handle the write, and get reactive fan-out updates for free.
+Since the handler doesn't have access to `ctx.db`, you will need to handle actual data writes
+through `ctx.runMutation`. That mutation handles creating a write set and instantly fans out updates
+to any subscriptions currently watching the `messages` table (you can learn more about this in
+[Reactivity](/docs/core-concepts/reactivity)). This pattern is the foundation for every webhook you
+build in concile. You take HTTP in, use a mutation to handle the write, and get reactive fan-out
+updates for free.
 
 </Step>
 
@@ -56,7 +74,9 @@ Since the handler doesn't have access to `ctx.db`, you will need to handle actua
 
 ### Register it in http.ts
 
-A typical `concile/http.ts` file usually has a default export of an `httpRouter()` that is populated with your `route()` calls. This is exactly how the engine finds and sets up your endpoints when your app loads:
+A typical `concile/http.ts` file usually has a default export of an `httpRouter()` that is populated
+with your `route()` calls. This is exactly how the engine finds and sets up your endpoints when your
+app loads:
 
 ```ts title="concile/http.ts"
 import { httpRouter } from "./_generated/server";
@@ -69,14 +89,22 @@ http.route({ path: "/webhooks/messages", method: "POST", handler: receiveWebhook
 export default http;
 ```
 
-Every time you call `route()`, you need to provide exactly one of either `path` or `pathPrefix`, along with an HTTP `method`:
+Every time you call `route()`, you need to provide exactly one of either `path` or `pathPrefix`,
+along with an HTTP `method`:
 
-- **`{ path, method, handler }`**: This is for exact matches. The incoming request's path has to match your `path` exactly, character for character.
-- **`{ pathPrefix, method, handler }`**: This handles prefix matches. As long as the request's path starts with your `pathPrefix`, it will match. For example, `pathPrefix: "/webhooks/"` will comfortably match both `/webhooks/messages` and `/webhooks/anything`.
+- **`{ path, method, handler }`**: This is for exact matches. The incoming request's path has to
+  match your `path` exactly, character for character.
+- **`{ pathPrefix, method, handler }`**: This handles prefix matches. As long as the request's path
+  starts with your `pathPrefix`, it will match. For example, `pathPrefix: "/webhooks/"` will
+  comfortably match both `/webhooks/messages` and `/webhooks/anything`.
 
-If you try to pass both, or if you forget to pass either one, the system will throw an error when registering the routes, telling you that ``http.route requires exactly one of `path` or `pathPrefix` ``.
+If you try to pass both, or if you forget to pass either one, the system will throw an error when
+registering the routes, telling you that ``http.route requires exactly one of `path` or `pathPrefix`
+``.
 
-Also, keep in mind that your `handler` needs to be a named export from one of your app modules, specifically something created by `httpAction(...)`. If you try to register an inline arrow function or a reference that cannot be resolved, your project will fail to load with a message like this:
+Also, keep in mind that your `handler` needs to be a named export from one of your app modules,
+specifically something created by `httpAction(...)`. If you try to register an inline arrow function
+or a reference that cannot be resolved, your project will fail to load with a message like this:
 
 ```
 http.route handler for "/webhooks/messages" must be an exported httpAction
@@ -89,11 +117,16 @@ http.route handler for "/webhooks/messages" must be an exported httpAction
 
 ### Understand match precedence
 
-If an incoming request happens to match more than one of your registered routes, the system figures out which one to use in a very predictable way:
+If an incoming request happens to match more than one of your registered routes, the system figures
+out which one to use in a very predictable way:
 
-1. The HTTP method always has to match. If you register a route for `POST`, it will never accidentally catch a `GET` request to that same path, whether it is an exact or prefix match.
-2. An exact `path` match always beats any `pathPrefix` route, even if the prefix is highly specific. The system checks for exact matches first and returns the result right away.
-3. When looking at multiple `pathPrefix` routes, the longest matching prefix takes the win. So, `pathPrefix: "/webhooks/stripe/"` will beat out `pathPrefix: "/webhooks/"` if the request is heading to `/webhooks/stripe/invoice`.
+1. The HTTP method always has to match. If you register a route for `POST`, it will never
+   accidentally catch a `GET` request to that same path, whether it is an exact or prefix match.
+2. An exact `path` match always beats any `pathPrefix` route, even if the prefix is highly specific.
+   The system checks for exact matches first and returns the result right away.
+3. When looking at multiple `pathPrefix` routes, the longest matching prefix takes the win. So,
+   `pathPrefix: "/webhooks/stripe/"` will beat out `pathPrefix: "/webhooks/"` if the request is
+   heading to `/webhooks/stripe/invoice`.
 
 ```ts title="concile/http.ts"
 http.route({ path: "/webhooks/stripe/health", method: "GET", handler: healthCheck });
@@ -113,8 +146,8 @@ There's no support for named path parameters (`/webhooks/:id`). A route only eve
 path or a prefix it starts with, so a handler that needs the rest of the path reads it itself, from
 `new URL(request.url).pathname`.
 
-An unmatched `{method, path}` combination, whether there's no exact match, no prefix match, or one of
-the reserved built-ins below already claimed it, falls through to a plain `404`.
+An unmatched `{method, path}` combination, whether there's no exact match, no prefix match, or one
+of the reserved built-ins below already claimed it, falls through to a plain `404`.
 
 </Step>
 
@@ -136,8 +169,8 @@ http.route({ path: "/api/foo", method: "GET", handler: whatever });
 
 A malformed `http.ts` fails loudly and immediately this way, rather than silently never firing or,
 worse, intercepting traffic meant for the engine. The reservation is a single predicate: the path is
-`/api`, starts with `/api/`, or matches `/^\/_/`. So `/apix` is fine (it doesn't start with `/api/`),
-but `/api`, `/api/`, and anything under `/api/...` are all rejected.
+`/api`, starts with `/api/`, or matches `/^\/_/`. So `/apix` is fine (it doesn't start with
+`/api/`), but `/api`, `/api/`, and anything under `/api/...` are all rejected.
 
 </Step>
 
@@ -165,16 +198,16 @@ whether it's called from the client SDK, another function, the scheduler, or, as
 ## Reading the caller's identity
 
 <Callout type="warn" title="No built-in verification">
-  If the request carries an `Authorization: Bearer <token>` header, that raw token is passed straight
-  through to the handler's context as its identity. concile does not decode, validate, or look up
-  the token for you. It's handed to your handler exactly as the caller sent it.
+  If the request carries an `Authorization: Bearer <token>` header, that raw token is passed
+  straight through to the handler's context as its identity. concile does not decode, validate, or
+  look up the token for you. It's handed to your handler exactly as the caller sent it.
 </Callout>
 
 If you need to check a webhook's authenticity (an HMAC signature, a shared secret, a provider's own
 signing scheme like Stripe's `Stripe-Signature` header or GitHub's `X-Hub-Signature-256`), verify it
-yourself inside the handler, reading whatever header the provider actually signs with, before calling
-`ctx.runMutation`. This is exactly what you'd do in any other HTTP framework. `httpAction` doesn't add
-or remove anything here.
+yourself inside the handler, reading whatever header the provider actually signs with, before
+calling `ctx.runMutation`. This is exactly what you'd do in any other HTTP framework. `httpAction`
+doesn't add or remove anything here.
 
 ## Hot reload
 
@@ -184,8 +217,8 @@ path calls with the freshly-resolved route table, and the very next request sees
 Nothing in the running WebSocket sync connections, active subscriptions, or in-flight mutations is
 disturbed. Only the HTTP route table itself is swapped in place.
 
-You can add, remove, or repoint a `http.route()` call and see it live within one reload cycle, with no
-server restart. Same DX as editing a query or mutation.
+You can add, remove, or repoint a `http.route()` call and see it live within one reload cycle, with
+no server restart. Same DX as editing a query or mutation.
 
 ## Going deeper
 
@@ -218,11 +251,11 @@ enforced both when the component is defined and again when it's composed into a 
   `/api/` or `/_`). This structural floor makes a component accidentally shadowing the entire
   reserved namespace impossible by construction, even if the engine's own reserved-prefix list is
   ever incomplete.
-- It must not collide, in either direction, with a built-in engine prefix (`/api/run`, `/api/health`,
-  `/api/sync`, `/api/storage/`, `/_admin/`, `/_fleet/`, `/_dashboard`). A component can't register
-  something more specific or more general than any of these.
-- Two composed components' route prefixes may not overlap either, one being a prefix of the other for
-  the same method, so that's rejected when components are composed together. First-match-by-
+- It must not collide, in either direction, with a built-in engine prefix (`/api/run`,
+  `/api/health`, `/api/sync`, `/api/storage/`, `/_admin/`, `/_fleet/`, `/_dashboard`). A component
+  can't register something more specific or more general than any of these.
+- Two composed components' route prefixes may not overlap either, one being a prefix of the other
+  for the same method, so that's rejected when components are composed together. First-match-by-
   declaration-order is never ambiguous.
 
 Component routes are matched by prefix, in declaration order, ahead of your app's own `http.ts`
@@ -230,9 +263,9 @@ routes. A component handler parses any sub-path itself (for example `<provider>/
 routes here carry no named parameters, matching how your own routes work.
 
 For an ordinary app, this is invisible: composing a component that ships one just works, without
-anything in your own `http.ts`. File storage's own `/api/storage/*` endpoints (upload, confirm, serve)
-are the always-on, built-in-rather-than-composed example of the same mechanism. See
-[File storage](/docs/core-concepts/file-storage).
+anything in your own `http.ts`. File storage's own `/api/storage/*` endpoints (upload, confirm,
+serve) are the always-on, built-in-rather-than-composed example of the same mechanism. See [File
+storage](/docs/core-concepts/file-storage).
 
 </Accordion>
 
@@ -252,9 +285,9 @@ A few things a general-purpose HTTP framework offers are deliberately not part o
   you need a preflight).
 - **Named path parameters** (`/webhooks/:id`). Routes match on an exact path or a prefix only. Read
   anything beyond the matched prefix from the request's own URL inside the handler.
-- **Per-route middleware.** There's no chain of route-scoped `use()` handlers. Cross-cutting concerns
-  like auth checks, logging, or rate limiting go inside the handler itself, or as a shared helper
-  function each handler calls.
+- **Per-route middleware.** There's no chain of route-scoped `use()` handlers. Cross-cutting
+  concerns like auth checks, logging, or rate limiting go inside the handler itself, or as a shared
+  helper function each handler calls.
 
 If you need any of these, build it inside the handler body. The primitives (`Request`, `Response`,
 `ctx.runQuery`/`runMutation`/`runAction`) are the same ones a hand-rolled Node or Bun HTTP server
@@ -269,5 +302,6 @@ would give you.
 - [Mutations](/docs/core-concepts/mutations): the only way a webhook's data actually gets written.
 - [Reactivity](/docs/core-concepts/reactivity): why a write from a webhook shows up in a live query
   with no extra code.
-- [File storage](/docs/core-concepts/file-storage): `_storage`'s own reserved `/api/storage/*` routes
-  are an example of the same reserved-route mechanism, built into the engine rather than a component.
+- [File storage](/docs/core-concepts/file-storage): `_storage`'s own reserved `/api/storage/*`
+  routes are an example of the same reserved-route mechanism, built into the engine rather than a
+  component.

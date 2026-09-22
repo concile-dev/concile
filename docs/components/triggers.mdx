@@ -5,9 +5,17 @@ description: React to table changes.
 
 {/* diataxis: explanation */}
 
-A trigger is just a handy little piece of code that automatically runs itself whenever a table changes. You can think of it like a traditional database trigger, but it is just a regular Concile function, and Concile makes sure it runs reliably without dropping any events.
+A trigger is just a handy little piece of code that automatically runs itself whenever a table
+changes. You can think of it like a traditional database trigger, but it is just a regular Concile
+function, and Concile makes sure it runs reliably without dropping any events.
 
-`@concile/triggers` will run a specific handler you choose whenever documents in a table you are keeping an eye on get inserted, updated, or deleted. It perfectly fills the gap between mutations, which happen synchronously and have no external effects, and [workflows](/docs/components/workflows), which are explicitly started by a caller. A trigger just reacts all on its own to something that has already happened. It is great for things like denormalized counters, keeping audit logs, fanning out notifications, kicking off a durable workflow, or keeping an external system in sync.
+`@concile/triggers` will run a specific handler you choose whenever documents in a table you are
+keeping an eye on get inserted, updated, or deleted. It perfectly fills the gap between mutations,
+which happen synchronously and have no external effects, and
+[workflows](/docs/components/workflows), which are explicitly started by a caller. A trigger just
+reacts all on its own to something that has already happened. It is great for things like
+denormalized counters, keeping audit logs, fanning out notifications, kicking off a durable
+workflow, or keeping an external system in sync.
 
 <Callout type="info" title="Opt-in component">
 
@@ -23,10 +31,10 @@ Like [`@concile/scheduler`](/docs/components/scheduling) and
 Every write in Concile lands in an append-only MVCC log. That log is the change feed itself, so
 there's no separate queue for anything to fall out of.
 
-A trigger owns one durable cursor row, `cursorTs`, recording how far it has read. A background driver
-loop wakes on every commit, reads the committed revisions after the cursor for the trigger's watched
-table (through a new engine seam, `DriverContext.readLog`), runs your handler with the batch, and only
-then advances the cursor.
+A trigger owns one durable cursor row, `cursorTs`, recording how far it has read. A background
+driver loop wakes on every commit, reads the committed revisions after the cursor for the trigger's
+watched table (through a new engine seam, `DriverContext.readLog`), runs your handler with the
+batch, and only then advances the cursor.
 
 Because there's no separate queue table to lose anything from, a missed change is impossible by
 construction. The only failure mode a crash can produce is redelivering a batch that already ran but
@@ -61,8 +69,8 @@ export default defineConfig({
 });
 ```
 
-`defineTriggers(opts)` takes a plain object. Each key is a watched table's app-visible name (the name
-as it appears in `schema.ts`), and its value configures that one trigger.
+`defineTriggers(opts)` takes a plain object. Each key is a watched table's app-visible name (the
+name as it appears in `schema.ts`), and its value configures that one trigger.
 
 <TypeTable
   type={{
@@ -82,18 +90,17 @@ as it appears in `schema.ts`), and its value configures that one trigger.
       type: "number",
       description: "The circuit breaker's threshold. Default 1000. See Recursion and the circuit breaker below.",
     },
-  }}
-/>
+  }} />
 
 A brand-new trigger, with no `fromStart`, starts at the log's current tip. It only sees changes
 committed after it was configured, not the table's pre-existing rows. This is deliberate: silently
 replaying an entire table through a newly added handler the first time it boots would be a
 surprising, unbounded-cost default.
 
-There's no `ctx.triggers.*` facade to call from a mutation. Unlike the scheduler, nothing in your own
-function code ever invokes a trigger directly. The whole surface is this declarative config, plus the
-`triggers:resume` mutation for un-pausing one (see [Pausing and resuming](#failure-handling-pausing-and-resuming)
-below).
+There's no `ctx.triggers.*` facade to call from a mutation. Unlike the scheduler, nothing in your
+own function code ever invokes a trigger directly. The whole surface is this declarative config,
+plus the `triggers:resume` mutation for un-pausing one (see [Pausing and
+resuming](#failure-handling-pausing-and-resuming) below).
 
 ## The delivery contract
 
@@ -102,45 +109,46 @@ Read this before writing a handler.
 <Callout type="warn" title="Delivery is bounded at-least-once, in-order per document">
 
 Never coalesced. A crash between a handler succeeding and its cursor advance landing redelivers the
-last batch's changes, possibly inside a larger batch if new commits landed in the meantime (the batch
-boundary is not stable across redelivery), but every change's `changeId` is stable. A document written
-twice before the cursor reaches it produces both revisions in the log, not one coalesced update. There
-is no ordering guarantee across different triggers, and one delivery is in flight per trigger at a
-time: a slow handler backs up only its own trigger's backlog, never another trigger's. **Handlers must
-be idempotent, or dedup on `changeId`.**
+last batch's changes, possibly inside a larger batch if new commits landed in the meantime (the
+batch boundary is not stable across redelivery), but every change's `changeId` is stable. A document
+written twice before the cursor reaches it produces both revisions in the log, not one coalesced
+update. There is no ordering guarantee across different triggers, and one delivery is in flight per
+trigger at a time: a slow handler backs up only its own trigger's backlog, never another trigger's. **Handlers
+must be idempotent, or dedup on `changeId`.**
 
 </Callout>
 
-In practice, your handler will occasionally see a change it already processed, after a crash, or (in a
-multi-node deployment) a default-shard failover. Treat `changeId` as that change's permanent, stable
-identity. Either make writing it twice harmless (an upsert keyed off something derived from the
-document, so it sets a counter to a value rather than incrementing it), or explicitly check-and-skip a
-seen `changeId`, as the audit-log handler below does.
+In practice, your handler will occasionally see a change it already processed, after a crash, or (in
+a multi-node deployment) a default-shard failover. Treat `changeId` as that change's permanent,
+stable identity. Either make writing it twice harmless (an upsert keyed off something derived from
+the document, so it sets a counter to a value rather than incrementing it), or explicitly
+check-and-skip a seen `changeId`, as the audit-log handler below does.
 
 ### `changeId`: the stable, redelivery-proof identity
 
-`changeId` is `"<table>:<id>:<ts>"`, the change's exact log coordinate. It never changes, regardless of
-which batch a redelivery happens to place it in, which is exactly what makes dedup possible. Your
+`changeId` is `"<table>:<id>:<ts>"`, the change's exact log coordinate. It never changes, regardless
+of which batch a redelivery happens to place it in, which is exactly what makes dedup possible. Your
 handler can't rely on stable batch boundaries, but it can always rely on this one field.
 
 <Callout type="info" title="Edge case: delete then re-insert">
 
-Re-inserting a document id that was previously deleted is not classified as a fresh `"insert"`. Its log
-entry's `prev_ts` still points at the tombstone the delete left behind, so `op` reads `"update"`, but
-`oldDoc` reads back `null` (the tombstone), not the value the document held before the delete. If your
-handler diffs `oldDoc`/`newDoc`, treat a `null` `oldDoc` on an `"update"` the same as a fresh document,
-not as "nothing changed."
+Re-inserting a document id that was previously deleted is not classified as a fresh `"insert"`. Its
+log entry's `prev_ts` still points at the tombstone the delete left behind, so `op` reads
+`"update"`, but `oldDoc` reads back `null` (the tombstone), not the value the document held before
+the delete. If your handler diffs `oldDoc`/`newDoc`, treat a `null` `oldDoc` on an `"update"` the
+same as a fresh document, not as "nothing changed."
 
 </Callout>
 
 ## Handlers and the change batch
 
-`handler` is an ordinary registered `mutation` or `action`, the same `mutation`/`action` builder from
-`./_generated/server` you'd use for anything else, whose path is internal. Concile's convention for
-"internal" is a `_`-prefixed function or module-segment name somewhere in the path (for example
+`handler` is an ordinary registered `mutation` or `action`, the same `mutation`/`action` builder
+from `./_generated/server` you'd use for anything else, whose path is internal. Concile's convention
+for "internal" is a `_`-prefixed function or module-segment name somewhere in the path (for example
 `notifications:_onMessage`, or a whole module named `_internal`), the same convention
 `@concile/scheduler` job targets use. There's no separate `internalMutation`/`internalAction`
-factory. The `_` prefix alone is what makes a function internal, meaning not directly client-callable.
+factory. The `_` prefix alone is what makes a function internal, meaning not directly
+client-callable.
 
 This is enforced at boot, before the driver ever tries to dispatch to it. Three checks run, and the
 first violation found throws immediately with an instructive message:
@@ -148,7 +156,8 @@ first violation found throws immediately with an instructive message:
 1. **Unknown path.** The configured `handler` doesn't resolve to any registered function at all.
 2. **Non-internal path.** The path resolves, but isn't `_`-prefixed. Trigger handlers must not be
    directly client-callable.
-3. **Wrong kind.** The path resolves and is internal, but is a `query`, not a `mutation` or `action`.
+3. **Wrong kind.** The path resolves and is internal, but is a `query`, not a `mutation` or
+   `action`.
 
 ```
 @concile/triggers: trigger "messages" references handler "notifications:_onMessage", which is
@@ -183,9 +192,10 @@ the transaction.
 
 <Tab value="Mutation handler">
 
-A mutation handler runs inside its own transaction, exactly like any other mutation. It has `ctx.db`,
-it's OCC-replayed on conflict, and any writes it makes are immediately visible and fan out reactively
-to any live subscription that overlaps them (the chat example's counter and audit-log pattern):
+A mutation handler runs inside its own transaction, exactly like any other mutation. It has
+`ctx.db`, it's OCC-replayed on conflict, and any writes it makes are immediately visible and fan out
+reactively to any live subscription that overlaps them (the chat example's counter and audit-log
+pattern):
 
 ```ts title="concile/audit.ts"
 import { mutation } from "./_generated/server";
@@ -222,8 +232,8 @@ denormalized counters, an audit table, chaining into `ctx.workflow.start`.
 <Tab value="Action handler">
 
 An action handler works the same way, but runs outside the transaction: no `ctx.db`, native
-`fetch`/`Date`/clock, exactly like any other [action](/docs/core-concepts/actions). This is the shape
-for notification fan-out or syncing to an external system:
+`fetch`/`Date`/clock, exactly like any other [action](/docs/core-concepts/actions). This is the
+shape for notification fan-out or syncing to an external system:
 
 ```ts title="concile/notifications.ts"
 import { action } from "./_generated/server";
@@ -257,34 +267,36 @@ commit fan-out.
 Each trigger has two wake sources, with no fixed-interval polling driving normal delivery:
 
 - **Reactive.** The engine's commit fan-out (`DriverContext.onCommit`) wakes a trigger whenever a
-  commit's touched tables include its own watched table, and only then. The subscription deliberately
-  ignores the triggers component's own `cursors` table entirely: an external `triggers:resume` call is
-  noticed by the periodic backstop beat instead, within about 30 seconds (see
-  [Failure handling](#failure-handling-pausing-and-resuming) below).
+  commit's touched tables include its own watched table, and only then. The subscription
+  deliberately ignores the triggers component's own `cursors` table entirely: an external
+  `triggers:resume` call is noticed by the periodic backstop beat instead, within about 30 seconds
+  (see [Failure handling](#failure-handling-pausing-and-resuming) below).
 - **Timer.** A failed delivery arms a single retry timer for that one trigger, at an exponential
   backoff delay (`@concile/scheduler`'s `computeBackoff`).
 
-A trigger's own routine cursor-bookkeeping writes (`_advanceCursor`/`_recordFailure`/`_pause`) do not
-themselves re-wake the loop. If they did, a trigger would perpetually rediscover its own housekeeping
-as new work and spin forever. Only a real write to the watched table wakes it reactively.
+A trigger's own routine cursor-bookkeeping writes (`_advanceCursor`/`_recordFailure`/`_pause`) do
+not themselves re-wake the loop. If they did, a trigger would perpetually rediscover its own
+housekeeping as new work and spin forever. Only a real write to the watched table wakes it
+reactively.
 
-On every wake, the driver drains as much as it can. It peeks the log's current stable bound once at the
-start of the attempt, then loops `readLog({ afterTs: cursorTs, tables: [name], limit: batchSize })`,
-advancing the cursor after each successful delivery (or immediately, at no cost, across a stretch of
-the log with no matching changes at all), until it reaches that bound, a delivery fails, or the breaker
-or max-failures trips. A wake that lands mid-drain doesn't get silently swallowed: the loop notices and
-takes one more full pass with a freshly re-peeked bound before it actually goes idle.
+On every wake, the driver drains as much as it can. It peeks the log's current stable bound once at
+the start of the attempt, then loops `readLog({ afterTs: cursorTs, tables: [name], limit: batchSize
+})`, advancing the cursor after each successful delivery (or immediately, at no cost, across a
+stretch of the log with no matching changes at all), until it reaches that bound, a delivery fails,
+or the breaker or max-failures trips. A wake that lands mid-drain doesn't get silently swallowed:
+the loop notices and takes one more full pass with a freshly re-peeked bound before it actually goes
+idle.
 
 <Accordions type="single">
 
 <Accordion title="The _initCursor race, and why it can't self-chase">
 
-A brand-new trigger's very first pass needs to know where "now" is before it can seed its cursor at the
-tip. It peeks the log's bound before creating its own cursor row, not after, because `_initCursor` is
-itself a write. A fresh peek taken after that write landed would see the trigger's own housekeeping
-insert and mistake it for one more change to catch up to: a self-chasing loop that never settles.
-Capturing the bound once, up front, and reusing that exact value for both the cursor seed and the
-pass's drain target sidesteps this entirely.
+A brand-new trigger's very first pass needs to know where "now" is before it can seed its cursor at
+the tip. It peeks the log's bound before creating its own cursor row, not after, because
+`_initCursor` is itself a write. A fresh peek taken after that write landed would see the trigger's
+own housekeeping insert and mistake it for one more change to catch up to: a self-chasing loop that
+never settles. Capturing the bound once, up front, and reusing that exact value for both the cursor
+seed and the pass's drain target sidesteps this entirely.
 
 </Accordion>
 
@@ -307,24 +319,24 @@ sharding: correctness doesn't depend on which topology the driver happens to be 
 
 If a handler throws, the identical batch, the same `changeId`s, possibly widened by new commits that
 landed in the meantime, is retried with exponential backoff. The cursor never advances past an
-undelivered batch, which is exactly what makes redelivery, not loss, the failure mode. `failureCount`
-persists on the trigger's cursor row (restart-safe); the in-memory backoff delay itself does not, so a
-process restart mid-backoff retries immediately rather than waiting out the remaining delay, an
-accepted, documented gap.
+undelivered batch, which is exactly what makes redelivery, not loss, the failure mode.
+`failureCount` persists on the trigger's cursor row (restart-safe); the in-memory backoff delay
+itself does not, so a process restart mid-backoff retries immediately rather than waiting out the
+remaining delay, an accepted, documented gap.
 
 After 8 consecutive failures (`MAX_CONSECUTIVE_FAILURES`), the trigger pauses itself (`state:
 "paused"`, `pausedReason: "max-failures"`, with an operator-visible error log) rather than retrying
 forever. A paused trigger stops consuming its backlog entirely until you call the `triggers:resume`
-mutation, directly, or from the dashboard's function runner, which clears the failure count and flips
-it back to `"running"`.
+mutation, directly, or from the dashboard's function runner, which clears the failure count and
+flips it back to `"running"`.
 
 Resuming isn't itself a write to the watched table, so the driver doesn't learn about it via the
 reactive commit fan-out. Instead, a periodic backstop timer (`BEAT_MS`, 30 seconds by default) wakes
 every configured trigger regardless, which is what notices an external `triggers:resume` call. A
 resumed trigger is picked back up eventually, within about 30 seconds, not the instant
-`triggers:resume` returns. (A host that stretches this backstop cadence, see `DriverContext.backstopMs`,
-trades a slower resume pickup for fewer wake-ups. The documented cost is exactly that stretched
-window, nothing else.)
+`triggers:resume` returns. (A host that stretches this backstop cadence, see
+`DriverContext.backstopMs`, trades a slower resume pickup for fewer wake-ups. The documented cost is
+exactly that stretched window, nothing else.)
 
 ### `triggers:cursors`: inspecting trigger state
 
@@ -345,8 +357,8 @@ interface CursorRow {
 
 ## Recursion and the circuit breaker
 
-A trigger's own handler writing back to its own watched table is delivered like any other write. This
-is intentional, DB-trigger semantics: legitimate patterns need it, like recomputing a field,
+A trigger's own handler writing back to its own watched table is delivered like any other write.
+This is intentional, DB-trigger semantics: legitimate patterns need it, like recomputing a field,
 normalizing a value on write, or chaining a state machine forward. It also means a handler that
 unconditionally writes to its watched table on every delivery will recurse: each of its own writes
 becomes a new change it delivers to itself.
@@ -356,9 +368,9 @@ deliveries in a fixed tumbling window (the count resets when a window's 10 secon
 than sliding continuously): default 1000 deliveries per 10-second window
 (`DEFAULT_MAX_DELIVERIES_PER_WINDOW` / `BREAKER_WINDOW_MS`), configurable per-trigger via
 `maxDeliveriesPerWindow`. Tripping it pauses the trigger with `pausedReason: "circuit-breaker"`
-instead of spinning the node, recognizably distinct from a `"max-failures"` pause, because the handler
-may have been succeeding on every single call. It was just running far too often. Fix the recursive
-write pattern, then `triggers:resume`.
+instead of spinning the node, recognizably distinct from a `"max-failures"` pause, because the
+handler may have been succeeding on every single call. It was just running far too often. Fix the
+recursive write pattern, then `triggers:resume`.
 
 ```ts title="concile/loops.ts"
 // The recursion footgun, deliberately: this handler writes its OWN watched table on every
@@ -397,18 +409,19 @@ Three more rules shape a batch:
 
 ## The cost of `fromStart`
 
-Setting `fromStart: true` replays a table's entire existing history: every revision ever committed, in
-commit order, through your handler. This is honestly documented as potentially expensive: on a large
-table this can be minutes of catch-up, not seconds, throttled by the same `batchSize`/byte budget as
-live delivery so it never becomes one unbounded delivery. Reach for it deliberately, for a new audit
-table that needs to backfill from day one, for example, not by default. The default (no `fromStart`)
-starts a brand-new trigger at the log's current tip precisely to avoid this cost by default.
+Setting `fromStart: true` replays a table's entire existing history: every revision ever committed,
+in commit order, through your handler. This is honestly documented as potentially expensive: on a
+large table this can be minutes of catch-up, not seconds, throttled by the same `batchSize`/byte
+budget as live delivery so it never becomes one unbounded delivery. Reach for it deliberately, for a
+new audit table that needs to backfill from day one, for example, not by default. The default (no
+`fromStart`) starts a brand-new trigger at the log's current tip precisely to avoid this cost by
+default.
 
 ## Composition pattern: a trigger that starts a workflow
 
 Triggers pair naturally with [durable workflows](/docs/components/workflows): react to a data change
-by kicking off a durable, multi-step, resumable workflow, instead of doing the multi-step work inline
-in the handler itself.
+by kicking off a durable, multi-step, resumable workflow, instead of doing the multi-step work
+inline in the handler itself.
 
 ```ts title="concile.config.ts"
 import { defineConfig } from "@concile/component";
@@ -450,9 +463,9 @@ export const _onOrderChange = mutation({
 });
 ```
 
-Every new order insert reactively kicks off a durable `fulfillOrder` run. The trigger is the reactive
-edge (data change to workflow start), and the workflow is the durable multi-step body: retries,
-resumability, and saga-style rollback if a step declares `compensate`, all coming from
+Every new order insert reactively kicks off a durable `fulfillOrder` run. The trigger is the
+reactive edge (data change to workflow start), and the workflow is the durable multi-step body:
+retries, resumability, and saga-style rollback if a step declares `compensate`, all coming from
 `@concile/workflow` itself, not from anything triggers-specific.
 
 ## What triggers are not
@@ -460,14 +473,14 @@ resumability, and saga-style rollback if a step declares `compensate`, all comin
 - **Not effectively-once.** Delivery is bounded at-least-once. Co-committing a mutation handler's
   cursor advance atomically with its own effects in one transaction would need a same-transaction
   sub-call seam that doesn't exist yet. Dedup on `changeId` in the meantime.
-- **Not a field-level or predicate filter.** A trigger watches an entire table. If you only care about
-  some changes (a specific field, a specific value transition), check inside the handler.
-- **Not ordered across tables.** Only within one trigger's own watched table, and only within that one
-  trigger: there's no cross-trigger ordering guarantee even on the same table.
+- **Not a field-level or predicate filter.** A trigger watches an entire table. If you only care
+  about some changes (a specific field, a specific value transition), check inside the handler.
+- **Not ordered across tables.** Only within one trigger's own watched table, and only within that
+  one trigger: there's no cross-trigger ordering guarantee even on the same table.
 - **Not dynamically registerable at runtime.** Like crons, a trigger is declared in
   `concile.config.ts` and fixed for the deployment's life. Adding or removing one needs a restart.
-- **Not a substitute for the scheduler or workflows.** A trigger reacts to data that already changed.
-  It doesn't schedule future work on its own (pair it with
+- **Not a substitute for the scheduler or workflows.** A trigger reacts to data that already
+  changed. It doesn't schedule future work on its own (pair it with
   `ctx.workflow.start`/`ctx.scheduler.runAfter` for that), and it doesn't orchestrate multi-step
   retryable logic itself. That's what workflows are for.
 
@@ -478,8 +491,8 @@ drops via `concile deploy`), so this mostly can't happen in the ordinary flow. B
 trigger watches does disappear from the schema (a local schema edit plus restart, say), there is no
 name-resolution error: the trigger simply stops matching any changes for that name. It goes quiet
 rather than pausing. Its cursor keeps advancing along with the log (a watched-but-nonexistent table
-just never contributes a change to scan), so nothing is flagged as broken. If a trigger seems to have
-stopped delivering, check that its watched table name still exists in the current schema.
+just never contributes a change to scan), so nothing is flagged as broken. If a trigger seems to
+have stopped delivering, check that its watched table name still exists in the current schema.
 
 ## Related
 

@@ -5,9 +5,16 @@ description: useQuery, useMutation, useAction.
 
 {/* diataxis: how-to */}
 
-Think of `@concile/client` as the framework-agnostic engine that powers the reactive sync protocol behind your app. It includes a transport layer, a `ConcileClient` built right on top of it, and a set of handy hooks (via `@concile/client/react`) that subscribe your components to queries and automatically re-render them whenever new data arrives.
+Think of `@concile/client` as the framework-agnostic engine that powers the reactive sync protocol
+behind your app. It includes a transport layer, a `ConcileClient` built right on top of it, and a
+set of handy hooks (via `@concile/client/react`) that subscribe your components to queries and
+automatically re-render them whenever new data arrives.
 
-In this guide, we will walk you through everything you need to know about the client. We cover how to build it, how transports work, and every single `ConcileClient` method. We also dive into React hooks, the wire lifecycle, authentication, typed codegen, and how to handle errors. If you are curious about the two biggest features we built on this client, check out our deep dives on [Optimistic updates](/docs/client/optimistic-updates) and [Offline sync](/docs/client/offline-sync).
+In this guide, we will walk you through everything you need to know about the client. We cover how
+to build it, how transports work, and every single `ConcileClient` method. We also dive into React
+hooks, the wire lifecycle, authentication, typed codegen, and how to handle errors. If you are
+curious about the two biggest features we built on this client, check out our deep dives on
+[Optimistic updates](/docs/client/optimistic-updates) and [Offline sync](/docs/client/offline-sync).
 
 ## Construct a client
 
@@ -22,9 +29,9 @@ const client = new ConcileClient(webSocketTransport(`${wsProtocol}://${location.
 ```
 
 `ConcileClient` itself never touches the network directly. Every method (`subscribe`, `query`,
-`mutation`, `action`, `setAuth`) goes through the transport. That's what makes an embedded, in-process
-connection (`loopbackTransport`) and a networked one (`webSocketTransport`) behave identically from
-the app's point of view.
+`mutation`, `action`, `setAuth`) goes through the transport. That's what makes an embedded,
+in-process connection (`loopbackTransport`) and a networked one (`webSocketTransport`) behave
+identically from the app's point of view.
 
 ### Constructor options
 
@@ -44,11 +51,11 @@ new ConcileClient(transport, {
 ```
 
 Everything outbox-related (`outbox`, `poisonPolicy`, `outboxMaxQueueSize`, `outboxLocks`,
-`outboxDeployment`, `outboxDrainIntervalMs`, `outboxChunkSize`, `outboxBroadcast`,
-`outboxBackoffMs` (a custom retry-delay function for the drain), `onOutboxPause` (fires when a
-`"pause"` poison policy halts the drain), `onClientReset`, `onMutationFailed`, `optimisticUpdates`)
-is documented in full in [Offline sync](/docs/client/offline-sync). A client constructed with no
-`outbox` behaves exactly as if none of this existed.
+`outboxDeployment`, `outboxDrainIntervalMs`, `outboxChunkSize`, `outboxBroadcast`, `outboxBackoffMs`
+(a custom retry-delay function for the drain), `onOutboxPause` (fires when a `"pause"` poison policy
+halts the drain), `onClientReset`, `onMutationFailed`, `optimisticUpdates`) is documented in full in
+[Offline sync](/docs/client/offline-sync). A client constructed with no `outbox` behaves exactly as
+if none of this existed.
 
 ## Transports
 
@@ -61,8 +68,8 @@ The client logic itself is transport-agnostic. There are two transports to pick 
 `loopbackTransport(connection)` is for an embedded, in-process connection: no network hop, used when
 the client and the engine run in the same process (tests, `@concile/test`, single-process
 deployments). It wraps anything shaped like `{ send, onMessage, close }` and never reconnects.
-`onReopen` is simply absent, and the client treats a transport without it as one that doesn't support
-reconnection.
+`onReopen` is simply absent, and the client treats a transport without it as one that doesn't
+support reconnection.
 
 </Tab>
 
@@ -103,8 +110,7 @@ const transport = webSocketTransport("wss://myapp.example.com/api/sync", {
       type: "(url: string) => WebSocket",
       default: "(url) => new WebSocket(url)",
     },
-  }}
-/>
+  }} />
 
 </Tab>
 
@@ -112,8 +118,8 @@ const transport = webSocketTransport("wss://myapp.example.com/api/sync", {
 
 ## Reconnection, in detail
 
-**The WebSocket transport reconnects by default.** This is the behavior an app gets for free unless it
-opts out with `{ reconnect: false }`.
+**The WebSocket transport reconnects by default.** This is the behavior an app gets for free unless
+it opts out with `{ reconnect: false }`.
 
 ### Backoff schedule
 
@@ -156,22 +162,22 @@ flowchart LR
 1. Replay `SetAuth`: if `setAuth(token)` was ever called, the same token is resent first, so every
    subscription that follows re-runs under the right identity.
 2. Resubscribe every live query: every subscription the app still holds open is re-sent as a fresh
-   `ModifyQuerySet`, and the server's reply is adopted as a brand-new baseline regardless of version.
-   There's no way to know what was missed while disconnected, so the client doesn't try to diff across
-   the gap. It re-establishes from scratch. If a query result hasn't changed since disconnect, the
-   server can answer with a lightweight `QueryUnchanged` instead of resending the full value. See
-   [Subscription lifecycle](#subscription-lifecycle-and-wire-messages) below.
+   `ModifyQuerySet`, and the server's reply is adopted as a brand-new baseline regardless of
+   version. There's no way to know what was missed while disconnected, so the client doesn't try to
+   diff across the gap. It re-establishes from scratch. If a query result hasn't changed since
+   disconnect, the server can answer with a lightweight `QueryUnchanged` instead of resending the
+   full value. See [Subscription lifecycle](#subscription-lifecycle-and-wire-messages) below.
 3. FIFO-flush only `unsent` mutations: any mutation that was queued because the socket was down when
    it was called goes out now, oldest first, reusing its original `requestId` so the promise created
    at the original `mutation()` call site is the one that eventually resolves.
 
-An `inflight` mutation (one whose `Mutation` frame had already been sent when the socket dropped) is a
-different story. Its outcome is genuinely unknowable: the server may or may not have received and
+An `inflight` mutation (one whose `Mutation` frame had already been sent when the socket dropped) is
+a different story. Its outcome is genuinely unknowable: the server may or may not have received and
 committed it before the drop. Without a durable outbox configured, that promise rejects with
 `MutationUndeliveredError` rather than being blindly resent, since a resend could double-apply a
-mutation that actually succeeded. With a durable outbox configured and armed (see
-[Offline sync](/docs/client/offline-sync)), the entry instead parks, and a later drain resolves it
-exactly once via server-side dedup.
+mutation that actually succeeded. With a durable outbox configured and armed (see [Offline
+sync](/docs/client/offline-sync)), the entry instead parks, and a later drain resolves it exactly
+once via server-side dedup.
 
 ```ts
 import { MutationUndeliveredError } from "@concile/client";
@@ -189,12 +195,12 @@ try {
 ### The pre-first-open case
 
 While the very first connection attempt is still pending, the transport buffers frames and flushes
-them the moment the socket opens. That covers normal connection latency. If that first attempt
-*fails* before ever opening (constructed while offline, or a network blip on load), the buffered
-frames are dropped, not held: the transport announces the close, and recovery moves up a level.
-When a socket finally does open, the client runs the same reopen sequence (`SetAuth` replay,
-resubscribe, flush unsent mutations) as a mid-session reconnect, rebuilding everything from its own
-state rather than from replayed raw frames.
+them the moment the socket opens. That covers normal connection latency. If that first attempt *fails*
+before ever opening (constructed while offline, or a network blip on load), the buffered frames are
+dropped, not held: the transport announces the close, and recovery moves up a level. When a socket
+finally does open, the client runs the same reopen sequence (`SetAuth` replay, resubscribe, flush
+unsent mutations) as a mid-session reconnect, rebuilding everything from its own state rather than
+from replayed raw frames.
 
 The same holds for any later down period: once a socket has opened at least once (with reconnect
 on), a frame sent while disconnected is deliberately dropped rather than buffered, because the
@@ -216,8 +222,8 @@ createRoot(root).render(
 );
 ```
 
-`useConcileClient()` reads it back out. It throws if called outside a `ConcileProvider` (every
-other hook below is built on it):
+`useConcileClient()` reads it back out. It throws if called outside a `ConcileProvider` (every other
+hook below is built on it):
 
 ```tsx
 import { useConcileClient } from "@concile/client/react";
@@ -252,9 +258,9 @@ function Chat({ conversationId }: { conversationId: string }) {
 
 Passing a codegen `api.*` reference infers typed args and a typed return value from the query's
 declared `args`/`returns` validators (see [Typed codegen api](#typed-codegen-api) below). Under the
-hood, `useQuery` calls `client.subscribe(...)` in an effect and re-subscribes only when the reference
-or its (serialized) arguments change. The subscription is torn down automatically when the component
-unmounts.
+hood, `useQuery` calls `client.subscribe(...)` in an effect and re-subscribes only when the
+reference or its (serialized) arguments change. The subscription is torn down automatically when the
+component unmounts.
 
 There's no manual refresh, no polling interval, and nothing to invalidate by hand. The component
 re-renders on its own whenever the query's read set is touched by a committed write. See
@@ -306,8 +312,8 @@ inside an event handler, or outside a React tree entirely.
 
 ### `client.mutation(ref, args?, opts?)`
 
-Runs a mutation. It resolves with its return value at commit (see
-[Promise timing](#the-mutation-promise-resolves-at-commit) below), or rejects with its error:
+Runs a mutation. It resolves with its return value at commit (see [Promise
+timing](#the-mutation-promise-resolves-at-commit) below), or rejects with its error:
 
 ```ts
 await client.mutation(api.messages.send, { conversationId, author, body });
@@ -315,9 +321,9 @@ await client.mutation(api.messages.send, { conversationId, author, body });
 
 `opts` accepts:
 
-- `optimisticUpdate`: render a predicted result before the round trip completes. See
-  [Optimistic updates](/docs/client/optimistic-updates) for the full `OptimisticLocalStore` API,
-  purity rules, and the no-flicker reconciliation contract.
+- `optimisticUpdate`: render a predicted result before the round trip completes. See [Optimistic
+  updates](/docs/client/optimistic-updates) for the full `OptimisticLocalStore` API, purity rules,
+  and the no-flicker reconciliation contract.
 - `transient: true`: skip the durable offline outbox for this call only, even when an `outbox` is
   configured on the client. It's meant for mutations that must never be durably replayed after a
   reload. The canonical example is an auth token refresh: blindly replaying a stale refresh token
@@ -373,7 +379,8 @@ returns the same bound callable, with no identity churn, as long as that referen
 (for example module-scoped, or memoized with `useCallback`). A fresh inline closure every render
 churns by necessity, since there's no way to detect "this is the same update" without a reference.
 Full coverage, including the store's `getQuery`/`setQuery`, `placeholderId()`/`now()` purity rules,
-and the no-flicker reconciliation contract, is in [Optimistic updates](/docs/client/optimistic-updates).
+and the no-flicker reconciliation contract, is in [Optimistic
+updates](/docs/client/optimistic-updates).
 
 `useAction` mirrors `useMutation` for actions: the side-effecting functions that run outside the
 transaction (`fetch`, timers, and so on):
@@ -385,16 +392,16 @@ const sendWelcomeEmail = useAction(api.users.sendWelcomeEmail);
 await sendWelcomeEmail({ userId });
 ```
 
-Unlike `useQuery`, neither `useMutation` nor `useAction` subscribes to anything. Calling the returned
-function runs the mutation or action once and returns a promise.
+Unlike `useQuery`, neither `useMutation` nor `useAction` subscribes to anything. Calling the
+returned function runs the mutation or action once and returns a promise.
 
 ## Subscription lifecycle and wire messages
 
-A `subscribe()`/`useQuery()` call sends a `ModifyQuerySet` frame adding the query. Unsubscribing (or a
-component unmounting) sends one removing it. In between, the server pushes `Transition` frames:
-batches of modifications, one per changed subscription, bracketed by a version pair so the client can
-detect a dropped frame and resync from scratch rather than silently miss an update. Each modification
-is one of:
+A `subscribe()`/`useQuery()` call sends a `ModifyQuerySet` frame adding the query. Unsubscribing (or
+a component unmounting) sends one removing it. In between, the server pushes `Transition` frames:
+batches of modifications, one per changed subscription, bracketed by a version pair so the client
+can detect a dropped frame and resync from scratch rather than silently miss an update. Each
+modification is one of:
 
 | Wire type | When | What the client does |
 |---|---|---|
@@ -403,10 +410,10 @@ is one of:
 | `QueryUnchanged` | A resubscribe's fresh re-run matched the value the client already had | Keep the existing value. No bytes for the value itself cross the wire. This is what lets a reconnect resubscribe skip resending unchanged data. |
 | `QueryDiff` | An incremental row-level diff for certain query shapes (by-id lookups, index-range scans, paginated pages) | Apply the row changes to a keyed map instead of replacing the whole value; a checksum lets the client detect drift and fall back to a full resync. |
 
-None of this is something app code touches directly. It's the mechanism `useQuery`'s live updates and
-reconnect's bandwidth savings are built on. The one part apps care about at the API level: `onError`
-on `subscribe()` fires exactly once per `QueryFailed`, and the last delivered value is never cleared
-out from under an `onUpdate` listener just because a later run failed.
+None of this is something app code touches directly. It's the mechanism `useQuery`'s live updates
+and reconnect's bandwidth savings are built on. The one part apps care about at the API level:
+`onError` on `subscribe()` fires exactly once per `QueryFailed`, and the last delivered value is
+never cleared out from under an `onUpdate` listener just because a later run failed.
 
 ## Auth: `setAuth`
 
@@ -419,9 +426,9 @@ client.setAuth(null); // sign out
 ```
 
 Sending `SetAuth` causes the server to re-run every live subscription under the new identity. Any
-query whose result depends on `ctx.auth` (or on an identity-scoped `db.get`) re-answers with whatever
-it evaluates to for the new caller, exactly like a write intersecting its read set. This is why the
-reconnect sequence replays `SetAuth` before resubscribing (see
+query whose result depends on `ctx.auth` (or on an identity-scoped `db.get`) re-answers with
+whatever it evaluates to for the new caller, exactly like a write intersecting its read set. This is
+why the reconnect sequence replays `SetAuth` before resubscribing (see
 [Reconnection](#reconnection-in-detail) above): the server must know the caller's identity before it
 re-establishes subscriptions, not after.
 
@@ -451,8 +458,8 @@ getFunctionPath(api.messages.list); // "messages:list"
 ```
 
 Every public entry point that accepts a function reference (`client.query`/`mutation`/`subscribe`/
-`action`, `useQuery`/`useMutation`/`useAction`) also accepts a raw string path or the untyped `anyApi`
-value directly. A generated typed `api` isn't required, just recommended.
+`action`, `useQuery`/`useMutation`/`useAction`) also accepts a raw string path or the untyped
+`anyApi` value directly. A generated typed `api` isn't required, just recommended.
 
 In the same spirit, `@concile/client` also exports an untyped `mintDocumentId`, the core mint
 underneath codegen's typed `mintId` helper for client-supplied ids. Reach for it only in hosts
@@ -510,8 +517,8 @@ ordinary `Error` with an optional `.code` string, distinguishable from all three
 
 For a durable outbox, a mutation can fail terminally with no live promise to reject. The call that
 originally enqueued it may be long gone: a prior page load, a retried entry, or a failure discovered
-already-recorded when the client starts up. `onMutationFailed`, passed at client construction, is how
-an app hears about those:
+already-recorded when the client starts up. `onMutationFailed`, passed at client construction, is
+how an app hears about those:
 
 ```ts
 new ConcileClient(transport, {
@@ -524,13 +531,13 @@ new ConcileClient(transport, {
 
 Without a handler registered, a failure like this logs loudly to `console.error` in dev mode rather
 than failing silently. It never double-fires for a failure the original caller's own promise already
-saw reject this session. Combine it with `usePendingMutations()` (below) for a full pending-mutations
-tray, see the recipe in [Offline sync](/docs/client/offline-sync).
+saw reject this session. Combine it with `usePendingMutations()` (below) for a full
+pending-mutations tray, see the recipe in [Offline sync](/docs/client/offline-sync).
 
 ## Observing pending mutations: `usePendingMutations`
 
-`usePendingMutations()` returns a live, reactive snapshot of the durable outbox: `[]` with no `outbox`
-configured, and forever after:
+`usePendingMutations()` returns a live, reactive snapshot of the durable outbox: `[]` with no
+`outbox` configured, and forever after:
 
 ```tsx
 import { usePendingMutations } from "@concile/client/react";
@@ -557,13 +564,14 @@ function PendingTray() {
 
 Each entry's `status` is one of `unsent`/`inflight`/`parked`/`completed`/`failed`. `retry()`/
 `dismiss()` are meaningful only on a `failed` entry (a terminal, server-recorded verdict) and are
-harmless no-ops otherwise: `retry()` re-enqueues under a fresh `(clientId, seq)` rather than reviving
-the old record, since a seq is never reused once minted. The hook re-reads on every local outbox
-change and on a cross-tab `BroadcastChannel` nudge, so a second browser tab's queued mutations show up
-here too. Non-React hosts get the same signal from `client.onOutboxChange(listener)`, which fires on
-every local outbox change and every cross-tab nudge, and returns an unsubscribe. The underlying client methods, `client.pendingMutations()` and `client.pendingSummary()`
-(count plus oldest-age, for a "changes may be lost soon" banner), are documented alongside the full
-durable-outbox model in [Offline sync](/docs/client/offline-sync).
+harmless no-ops otherwise: `retry()` re-enqueues under a fresh `(clientId, seq)` rather than
+reviving the old record, since a seq is never reused once minted. The hook re-reads on every local
+outbox change and on a cross-tab `BroadcastChannel` nudge, so a second browser tab's queued
+mutations show up here too. Non-React hosts get the same signal from
+`client.onOutboxChange(listener)`, which fires on every local outbox change and every cross-tab
+nudge, and returns an unsubscribe. The underlying client methods, `client.pendingMutations()` and
+`client.pendingSummary()` (count plus oldest-age, for a "changes may be lost soon" banner), are
+documented alongside the full durable-outbox model in [Offline sync](/docs/client/offline-sync).
 
 ## Notifications helpers
 
@@ -622,11 +630,11 @@ arrives: at commit, once the write is durable, carrying the commit's timestamp.
 Because the promise resolves at commit (not at the moment your own reactive feed has observed the
 write), the promise's resolution and the query re-render triggered by the same write can arrive in
 either order relative to each other. If you read freshly-committed state synchronously right after
-`await mutation(...)`, keep that in mind. See
-[Optimistic updates](/docs/client/optimistic-updates#the-promise-resolves-at-commit-not-at-the-flicker-free-gate)
-for exactly how the two are sequenced and why, and the
-[migration guide](/docs/reference/migrate-from-convex) if you are porting code that relied on
-earlier resolution timing.
+`await mutation(...)`, keep that in mind. See [Optimistic
+updates](/docs/client/optimistic-updates#the-promise-resolves-at-commit-not-at-the-flicker-free-gate)
+for exactly how the two are sequenced and why, and the [migration
+guide](/docs/reference/migrate-from-convex) if you are porting code that relied on earlier
+resolution timing.
 
 </Callout>
 
@@ -636,9 +644,9 @@ earlier resolution timing.
 client.close();
 ```
 
-Stops the durable-outbox drain (if any), tears down the transport, and rejects every in-flight action
-promise with a "connection closed" error. A closed client should be discarded: construct a new
-`ConcileClient` (with a fresh transport) rather than reusing a closed instance.
+Stops the durable-outbox drain (if any), tears down the transport, and rejects every in-flight
+action promise with a "connection closed" error. A closed client should be discarded: construct a
+new `ConcileClient` (with a fresh transport) rather than reusing a closed instance.
 
 ## Related
 

@@ -5,9 +5,15 @@ description: RBAC, ReBAC, and row policies.
 
 {/* diataxis: explanation */}
 
-Let's say your `documents` table needs a few different levels of access. Maybe some folks can read absolutely everything, while others can only see their team's documents, and a few can only look at things that were shared with them directly. Instead of painfully writing permission checks by hand for every single query and mutation, `@concile/authz` lets you handle all of this smoothly.
+Let's say your `documents` table needs a few different levels of access. Maybe some folks can read
+absolutely everything, while others can only see their team's documents, and a few can only look at
+things that were shared with them directly. Instead of painfully writing permission checks by hand
+for every single query and mutation, `@concile/authz` lets you handle all of this smoothly.
 
-It hooks you up with three great tools: role-based access control (RBAC) complete with inheritance and scoped grants, relationship-based access control (ReBAC) for those sharing-style permissions, and declarative row policies that automatically filter what a query shows and tightly control what a mutation can write.
+It hooks you up with three great tools: role-based access control (RBAC) complete with inheritance
+and scoped grants, relationship-based access control (ReBAC) for those sharing-style permissions,
+and declarative row policies that automatically filter what a query shows and tightly control what a
+mutation can write.
 
 | You want to say | Reach for | Looks like |
 |---|---|---|
@@ -57,8 +63,8 @@ export default defineConfig({ components: [auth, authz] });
 `permissions`, a documentation-only vocabulary hint (`{ resource: string[] }`). Nothing *enforces*
 `permissions` at runtime; the enforced source of truth is what a role's entries actually grant. It
 does feed the boot-reconcile's config hash, though, so editing it triggers a full
-effective-permissions rebuild on the next boot (see
-[Materialized effective permissions](#materialized-effective-permissions)).
+effective-permissions rebuild on the next boot (see [Materialized effective
+permissions](#materialized-effective-permissions)).
 
 Composing `authz` wires a typed `ctx.authz` facade into every query, mutation, and action, and
 installs your declared row policies at the kernel's read/write seam.
@@ -88,16 +94,15 @@ expanded into a concrete action list.
 
 - An unknown role grants nothing. Assigning a role name that isn't in `config.roles` produces no
   effective permissions at all. There's no error, it's simply a no-op grant.
-- An unassigned or unmatched permission is denied, not allowed. There's no implicit grant. A
-  `can()` check with no matching role or scope returns `false`.
+- An unassigned or unmatched permission is denied, not allowed. There's no implicit grant. A `can()`
+  check with no matching role or scope returns `false`.
 
 </Callout>
 
 ## Scoped role assignments
 
-A role can be granted **globally** or **scoped** to one resource: an org, a team, a single
-document. Every assignment is a row in `role_assignments`, keyed by `(userId, role, scopeType,
-scopeId)`:
+A role can be granted **globally** or **scoped** to one resource: an org, a team, a single document.
+Every assignment is a row in `role_assignments`, keyed by `(userId, role, scopeType, scopeId)`:
 
 ```ts
 await client.mutation(anyApi.authz.assignRole, { userId, role: "editor" });                                    // global
@@ -128,8 +133,8 @@ Both calls are idempotent: assigning a role the user already holds (in that scop
 ## Bootstrapping the first admin
 
 Because `assignRole` itself requires `authz:manage`, there is no way to grant the *first* role
-through the gated path since nobody holds `authz:manage` yet. `bootstrapFirstAdmin` is the
-one-time, trust-on-first-use exception:
+through the gated path since nobody holds `authz:manage` yet. `bootstrapFirstAdmin` is the one-time,
+trust-on-first-use exception:
 
 ```ts
 await client.mutation(anyApi.authz.bootstrapFirstAdmin, { userId, role: "admin" });
@@ -150,10 +155,10 @@ admin is created normally, by an already-bootstrapped admin calling `assignRole`
 
 ## Materialized effective permissions
 
-Rather than re-walking role inheritance on every check, authz **materializes** permissions at
-*write* time (when a role is assigned or revoked) into an `effective_permissions` table. A check
-(`can`) is then at most four indexed point-reads (the candidate keys `res:act`, `res:*`, `*:act`,
-`*:*`), never a graph walk.
+Rather than re-walking role inheritance on every check, authz **materializes** permissions at *write*
+time (when a role is assigned or revoked) into an `effective_permissions` table. A check (`can`) is
+then at most four indexed point-reads (the candidate keys `res:act`, `res:*`, `*:act`, `*:*`), never
+a graph walk.
 
 The internals are tucked away below; you don't need them to use the component.
 
@@ -182,33 +187,31 @@ candidateKeys("documents:read"); // => ["documents:read", "documents:*", "*:read
 ```
 
 `revokeRole` reconciles rather than blindly deleting: it recomputes the full desired pattern set
-from every *remaining* role the user holds in that scope, deletes only the rows no longer
-justified, and leaves alone any pattern still granted by another role. So if a user holds both
-`editor` (which grants `documents:update`) and `viewer` (`documents:read`) in the same scope,
-revoking `editor` removes `documents:update`, but `documents:read` survives, because `viewer`
-still grants it.
+from every *remaining* role the user holds in that scope, deletes only the rows no longer justified,
+and leaves alone any pattern still granted by another role. So if a user holds both `editor` (which
+grants `documents:update`) and `viewer` (`documents:read`) in the same scope, revoking `editor`
+removes `documents:update`, but `documents:read` survives, because `viewer` still grants it.
 
-A single role is capped at expanding to **1000 permission patterns**. A role whose inheritance
-chain would exceed that throws at assignment time rather than silently truncating.
+A single role is capped at expanding to **1000 permission patterns**. A role whose inheritance chain
+would exceed that throws at assignment time rather than silently truncating.
 
 </Accordion>
 
 <Accordion title="Boot reconcile: role edits take effect without a migration">
 
-A `meta` table stores a stable, order-independent hash of the current `roles`/`permissions`
-config. At boot, `defineAuthz`'s `boot` hook compares the stored hash to the current one:
+A `meta` table stores a stable, order-independent hash of the current `roles`/`permissions` config.
+At boot, `defineAuthz`'s `boot` hook compares the stored hash to the current one:
 
 - **Unchanged**: the hook returns immediately. No table scan, no writes. This is the steady-state
   cost on every ordinary restart.
 - **Changed** (you redeployed with different role definitions): it rebuilds the *entire*
   `effective_permissions` index from the current `role_assignments`, drops any
   `effective_permissions` rows for a `(user, scope)` that no longer has an assignment, and stamps
-  the new hash. This is how a role definition change (say, `editor` newly grants
-  `documents:delete`) takes effect for every already-assigned user without you writing a
-  migration.
+  the new hash. This is how a role definition change (say, `editor` newly grants `documents:delete`)
+  takes effect for every already-assigned user without you writing a migration.
 
-There is also a manually-callable `rebuild` mutation (gated by `authz:manage`) that forces the
-same full reconciliation on demand.
+There is also a manually-callable `rebuild` mutation (gated by `authz:manage`) that forces the same
+full reconciliation on demand.
 
 </Accordion>
 
@@ -253,11 +256,9 @@ export const listDocs = query({
       description: 'Object ids of objectType the caller relates to via relation, direct or via a group they belong to.',
       type: '(relation, objectType) => Promise<string[]>',
     },
-  }}
-/>
+  }} />
 
-`hasRelation` and `objectsWith` are covered in detail in
-[ReBAC](#rebac-relationship-tuples) below.
+`hasRelation` and `objectsWith` are covered in detail in [ReBAC](#rebac-relationship-tuples) below.
 
 ### Global-grant fallback
 
@@ -271,13 +272,13 @@ await ctx.authz.can("documents:read", { type: "org", id: orgId });
 // 3. only then: false
 ```
 
-A caller with a global `admin` role therefore passes every scoped check without needing a
-per-scope assignment. The fallback is one-directional: a check with **no** scope only ever looks
-at the global scope. It does not enumerate or aggregate a caller's scoped grants.
+A caller with a global `admin` role therefore passes every scoped check without needing a per-scope
+assignment. The fallback is one-directional: a check with **no** scope only ever looks at the global
+scope. It does not enumerate or aggregate a caller's scoped grants.
 
 This same asymmetry matters for `scopesWith`. It returns the scope ids where a **scoped** grant
-exists, filtered to the given `type`. Omit `type`, and the global scope's own empty-string scope
-id shows up in the result set too. So a read policy that means "every org I can read documents in"
+exists, filtered to the given `type`. Omit `type`, and the global scope's own empty-string scope id
+shows up in the result set too. So a read policy that means "every org I can read documents in"
 should always pass a `type`, and short-circuit separately on a global grant:
 
 ```ts
@@ -289,9 +290,9 @@ read: async ({ auth }) =>
 
 ### `roles(scope?)`
 
-Returns the caller's role *names*: `role_assignments` rows for that user, filtered to rows that
-are either global (`scopeType === "" && scopeId === ""`) or match the requested scope exactly.
-Like `can`, an omitted `scope` means "global only." It does not also include scoped roles.
+Returns the caller's role *names*: `role_assignments` rows for that user, filtered to rows that are
+either global (`scopeType === "" && scopeId === ""`) or match the requested scope exactly. Like
+`can`, an omitted `scope` means "global only." It does not also include scoped roles.
 
 ## ReBAC: relationship tuples
 
@@ -307,19 +308,18 @@ await client.mutation(anyApi.authz.addRelation, {
 });
 ```
 
-`addRelation`/`removeRelation` require the caller hold `<objectType>:share` (here
-`document:share`) scoped to that exact `{ type, id }` object, with the same [global-grant
+`addRelation`/`removeRelation` require the caller hold `<objectType>:share` (here `document:share`)
+scoped to that exact `{ type, id }` object, with the same [global-grant
 fallback](#global-grant-fallback), so a global role that grants `document:share` covers every
 object. A typical pattern is to grant that permission scoped to the object itself at creation time
-(`assignRole(ownerId, "owner", { type: "document", id: docId })` where `owner` includes
-`document: ["share"]`), so the creator (and only the creator, unless granted more broadly) can
-share it on. Both calls are idempotent: adding an existing tuple, or removing a missing one, is a
-no-op.
+(`assignRole(ownerId, "owner", { type: "document", id: docId })` where `owner` includes `document:
+["share"]`), so the creator (and only the creator, unless granted more broadly) can share it on.
+Both calls are idempotent: adding an existing tuple, or removing a missing one, is a no-op.
 
 A **subject** is either a direct user (`{ type: "user", id }`) or a **userset**, another object's
 own relation, e.g. `{ type: "team", id: "eng", relation: "member" }` (read as `team:eng#member`).
-There is nothing special about "team" as a type. A userset is just any tuple whose object happens
-to be the subject of another tuple. Membership itself is expressed the same way relations are:
+There is nothing special about "team" as a type. A userset is just any tuple whose object happens to
+be the subject of another tuple. Membership itself is expressed the same way relations are:
 
 ```ts
 // Alice is a member of the eng team:
@@ -332,8 +332,8 @@ await client.mutation(anyApi.authz.addRelation, {
 });
 ```
 
-Now every direct member of `eng` inherits `viewer` on the document, with zero additional writes
-per member.
+Now every direct member of `eng` inherits `viewer` on the document, with zero additional writes per
+member.
 
 ```ts
 await ctx.authz.hasRelation({ type: "user", id: aliceId }, "viewer", { type: "document", id: docId }); // true
@@ -342,11 +342,11 @@ await ctx.authz.objectsWith("viewer", "document"); // every document id the CALL
 
 `hasRelation(subject, relation, object)` checks an **arbitrary** subject/object pair. It isn't
 anchored to the current caller, so it works the same from a mutation checking whether the target
-user already has this relation as from a query checking the caller's own access. It resolves in
-two steps: a direct tuple match, then (only for a direct subject, one with no `relation` of its
-own) one level of userset expansion through the groups that subject directly belongs to. A userset
-subject (one that already carries a `relation`) is checked directly only. Nested groups (a group
-that is itself a member of another group) are **not** expanded.
+user already has this relation as from a query checking the caller's own access. It resolves in two
+steps: a direct tuple match, then (only for a direct subject, one with no `relation` of its own) one
+level of userset expansion through the groups that subject directly belongs to. A userset subject
+(one that already carries a `relation`) is checked directly only. Nested groups (a group that is
+itself a member of another group) are **not** expanded.
 
 `objectsWith(relation, objectType)` is anchored to the caller: it returns every object id of
 `objectType` the signed-in caller relates to via `relation`, direct or via one level of group
@@ -355,11 +355,11 @@ membership, the shape you want inside a read policy or an admin listing.
 ## Row policies
 
 A component (or your own app, via `defineAuthz({ policies })`) declares `read`/`write` rules per
-table. A `read` policy compiles to a filter merged into **every** read of that table
-(`ctx.db.get`, `.query(...).collect()`, paginated scans), and a `write` policy gates whether an
-insert, replace, or delete is allowed. (One deliberate exception: a relation lookup a policy
-resolves *through* does not re-apply the related table's own read policy; see
-[Relation clauses](#relation-clauses-inside-a-policy) below.)
+table. A `read` policy compiles to a filter merged into **every** read of that table (`ctx.db.get`,
+`.query(...).collect()`, paginated scans), and a `write` policy gates whether an insert, replace, or
+delete is allowed. (One deliberate exception: a relation lookup a policy resolves *through* does not
+re-apply the related table's own read policy; see [Relation
+clauses](#relation-clauses-inside-a-policy) below.)
 
 ```ts
 const authz = defineAuthz({
@@ -382,12 +382,12 @@ const authz = defineAuthz({
   blocks reassigning a document out of your own visibility even though you currently own it, and
   blocks writing into someone else's row even if the write itself would otherwise be well-formed.
 
-Both `read` and `write` receive a `RuleContext`: `{ auth, db }`. `auth` exposes `userId` (`null`
-if anonymous), `identity` (the raw claims), and the same
+Both `read` and `write` receive a `RuleContext`: `{ auth, db }`. `auth` exposes `userId` (`null` if
+anonymous), `identity` (the raw claims), and the same
 `can`/`roles`/`scopesWith`/`hasRelation`/`objectsWith` methods `ctx.authz` does, so a policy can
-express "only rows this user owns" exactly as easily as "only if this permission is held." `db`
-is a read-only reader over the same transaction, for resolving arbitrary related-row lookups
-inside a policy body.
+express "only rows this user owns" exactly as easily as "only if this permission is held." `db` is a
+read-only reader over the same transaction, for resolving arbitrary related-row lookups inside a
+policy body.
 
 Two practical notes. Policies can't cover `.global()` tables yet: a read of a global table that a
 read policy would gate throws (`read policies are not yet supported on .global() tables`) rather
@@ -436,13 +436,13 @@ document_shares: defineTable({ documentId: v.id("documents"), userId: v.string()
 ```
 
 `some`/`none` collect the parent ids whose related rows *do*/*don't* match the leaf. `every`
-collects parents where **all** related rows match. Watch the vacuous truth: `every` is satisfied
-by a parent with *zero* related rows, so "at least one, and all match" needs
-`{ AND: [{ sharedWith: { some: {} } }, { sharedWith: { every: leaf } }] }`.
+collects parents where **all** related rows match. Watch the vacuous truth: `every` is satisfied by
+a parent with *zero* related rows, so "at least one, and all match" needs `{ AND: [{ sharedWith: {
+some: {} } }, { sharedWith: { every: leaf } }] }`.
 
-`is`/`isNot` work the same way over a `v.id` field, with no extra schema declaration needed.
-Leaves can themselves contain relation clauses, chaining through multiple tables, for example a
-document shared with a *team* the caller belongs to:
+`is`/`isNot` work the same way over a `v.id` field, with no extra schema declaration needed. Leaves
+can themselves contain relation clauses, chaining through multiple tables, for example a document
+shared with a *team* the caller belongs to:
 
 ```ts
 read: ({ auth }) => ({
@@ -450,10 +450,10 @@ read: ({ auth }) => ({
 }),
 ```
 
-Nesting is capped at **4 relational levels**; a deeper policy throws at query time. The lookup
-scans the related table's true data. It does **not** apply that table's own read policy while
-resolving the clause, so a caller can't be denied a resource they were actually granted just
-because they can't otherwise read the underlying share rows.
+Nesting is capped at **4 relational levels**; a deeper policy throws at query time. The lookup scans
+the related table's true data. It does **not** apply that table's own read policy while resolving
+the clause, so a caller can't be denied a resource they were actually granted just because they
+can't otherwise read the underlying share rows.
 
 ### Enforcement is per-row, not per-query
 
@@ -464,8 +464,8 @@ component table namespacing), every table access is checked, whichever function 
   rejects it.
 - `.query(...).collect()`/`.paginate()` get the compiled predicate AND-merged into their filters,
   narrowing what's scanned rather than post-processing an already-returned array.
-- `insert` checks the write policy against the new row; `delete` against the existing row;
-  `replace` against **both** the old and the new row (see above).
+- `insert` checks the write policy against the new row; `delete` against the existing row; `replace`
+  against **both** the old and the new row (see above).
 
 ## Reactive enforcement
 
@@ -485,14 +485,14 @@ flowchart LR
   the subscription re-runs: a revoked `documents:update` flips a subscribed
   `can("documents:update")` query from `true` back to `false`, live, without the client refetching
   anything.
-- Because the index is keyed `(scopeType, scopeId, userId, permission)`, invalidation is
-  **surgical**: revoking one permission re-runs only the subscriptions that actually checked
-  *that* permission for *that* user in *that* scope. An unrelated subscription checking a
-  different permission for the same user does not re-run.
-- A row policy's compiled filter is merged into the query the same way any other filter is, so
-  its read-set is the query's read-set. Revoking a role that a `read` policy's `auth.can(...)`
-  depends on re-runs and re-filters every live subscription over that table: rows the caller can
-  no longer see disappear from the result on the next push.
+- Because the index is keyed `(scopeType, scopeId, userId, permission)`, invalidation is **surgical**:
+  revoking one permission re-runs only the subscriptions that actually checked *that* permission for *that*
+  user in *that* scope. An unrelated subscription checking a different permission for the same user
+  does not re-run.
+- A row policy's compiled filter is merged into the query the same way any other filter is, so its
+  read-set is the query's read-set. Revoking a role that a `read` policy's `auth.can(...)` depends
+  on re-runs and re-filters every live subscription over that table: rows the caller can no longer
+  see disappear from the result on the next push.
 - A relation clause's semi-join reads the related table, so a write to that table (a new share, a
   team membership change) is itself a write the engine can intersect against the subscription.
   Adding someone to a team reveals, live, every document shared with `team:<id>#member`, with zero
@@ -539,6 +539,6 @@ documents: defineTable({ title: v.string(), orgId: v.string() })
 document_shares: defineTable({ documentId: v.id("documents"), userId: v.string() }),
 ```
 
-A user with `org_admin` scoped to `{ type: "org", id: orgId }` sees and edits every document in
-that org. Anyone else sees only documents individually shared with them via `document_shares`.
-Both paths update live as roles are granted, revoked, or shares added and removed.
+A user with `org_admin` scoped to `{ type: "org", id: orgId }` sees and edits every document in that
+org. Anyone else sees only documents individually shared with them via `document_shares`. Both paths
+update live as roles are granted, revoked, or shares added and removed.

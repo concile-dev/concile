@@ -5,11 +5,20 @@ description: Email, SMS, in-app, and push.
 
 {/* diataxis: explanation */}
 
-Think of a notification as just another row in a table. `@concile/notifications` is a handy opt-in component that fires off messages across four different channels: **email**, **SMS/WhatsApp**, an in-app **inbox**, and mobile or web **push**. Each channel works with a swappable provider adapter, so you are never locked into relying on just one vendor.
+Think of a notification as just another row in a table. `@concile/notifications` is a handy opt-in
+component that fires off messages across four different channels: **email**, **SMS/WhatsApp**, an
+in-app **inbox**, and mobile or web **push**. Each channel works with a swappable provider adapter,
+so you are never locked into relying on just one vendor.
 
-Its real standout feature is the **reactive in-app inbox**. Because a notification is just a row in a live-queried table, a user's inbox and unread count update instantly. That means you don't need a dedicated realtime service, you don't have to deal with polling, and there's no separate push infrastructure to maintain.
+Its real standout feature is the **reactive in-app inbox**. Because a notification is just a row in
+a live-queried table, a user's inbox and unread count update instantly. That means you don't need a
+dedicated realtime service, you don't have to deal with polling, and there's no separate push
+infrastructure to maintain.
 
-Once you get how `email` works, you pretty much understand the rest. Every channel shares the exact same send path, preference gate, retry and backoff systems, dead-letter machine, and topic fan-out mechanism. There is no separate push or SMS system to figure out since the differences between channels just come down to a few small branches inside the shared code.
+Once you get how `email` works, you pretty much understand the rest. Every channel shares the exact
+same send path, preference gate, retry and backoff systems, dead-letter machine, and topic fan-out
+mechanism. There is no separate push or SMS system to figure out since the differences between
+channels just come down to a few small branches inside the shared code.
 
 This is a long page. Jump to what you need:
 
@@ -20,8 +29,8 @@ This is a long page. Jump to what you need:
 - [The reactive in-app inbox](#the-reactive-in-app-inbox): `useNotifications` and `<Inbox>`
 - [Preferences and critical categories](#preferences-and-critical-categories) and [Topics](#topics)
 - [Delivery reliability](#delivery-reliability): retries, crash reclaim, delivery webhooks
-- [Email digest](#email-digest), [Auth unification](#auth-unification),
-  [the driver](#how-delivery-actually-runs-the-driver), [schema reference](#schema-reference)
+- [Email digest](#email-digest), [Auth unification](#auth-unification), [the
+  driver](#how-delivery-actually-runs-the-driver), [schema reference](#schema-reference)
 
 ## The model: Channel × Provider
 
@@ -31,8 +40,8 @@ Expo/FCM/APNs for push. `in_app` has no provider at all. The engine just writes 
 
 This seam (`NotificationProvider`, specialized as `EmailProvider` / `SmsProvider` / `PushProvider`)
 follows the same philosophy as `DatabaseAdapter` or `BlobStore` elsewhere in the system. The
-component never hard-codes a vendor, so you can write your own adapter against a documented
-contract instead of waiting on a built-in one.
+component never hard-codes a vendor, so you can write your own adapter against a documented contract
+instead of waiting on a built-in one.
 
 ## Enabling it
 
@@ -83,15 +92,14 @@ export default defineConfig({
 
 Once composed, every mutation/query context gets a `ctx.notifications` facade (typed via the
 component's `contextType`). Every action context gets a parallel `ctx.notifications` with a
-different, send-focused surface (`send`, `sendNow`, `sendToTopic`, and nothing else). See
-[Mutation vs. action surface](#mutation-vs-action-surface) below.
+different, send-focused surface (`send`, `sendNow`, `sendToTopic`, and nothing else). See [Mutation
+vs. action surface](#mutation-vs-action-surface) below.
 
 ## Sending
 
 `ctx.notifications.send(args)` is available on every mutation context. It writes directly through
-the **calling mutation's own transaction**: an enqueue rolls back if the mutation does, and it
-fans out reactively to any live subscription (like the in-app inbox) the instant the mutation
-commits:
+the **calling mutation's own transaction**: an enqueue rolls back if the mutation does, and it fans
+out reactively to any live subscription (like the in-app inbox) the instant the mutation commits:
 
 ```ts title="concile/users.ts"
 import { mutation } from "./_generated/server";
@@ -115,8 +123,10 @@ export const welcome = mutation({
 ```
 
 - **`messageIds`**: one id per channel that was actually enqueued or written.
-- **`suppressed`**: channels skipped by the recipient's own preferences (see [Preferences](#preferences-and-critical-categories)).
-- **`deferred`**: channels buffered into an email digest instead of sent immediately (see [Email digest](#email-digest)).
+- **`suppressed`**: channels skipped by the recipient's own preferences (see
+  [Preferences](#preferences-and-critical-categories)).
+- **`deferred`**: channels buffered into an email digest instead of sent immediately (see [Email
+  digest](#email-digest)).
 
 ### `SendArgs`
 
@@ -134,17 +144,18 @@ interface SendArgs {
 
 - **`to`** is addressed per channel and resolved per channel at send time: `email` requires
   `to.email`, `sms` requires `to.phone`, and `in_app`/`push` both require `to.userId` (they address
-  a *recipient identity*, not a contact method). Sending `["email","push"]` to a `to` missing
-  either field throws before anything is written. The recipient is always chosen by your server
-  code, never forwarded straight from client input.
+  a *recipient identity*, not a contact method). Sending `["email","push"]` to a `to` missing either
+  field throws before anything is written. The recipient is always chosen by your server code, never
+  forwarded straight from client input.
 - **`template`** is either a **registered key** looked up in the channel's `templates` map (as in
   the example above), or an **inline content object** for one-off content with no config-time
-  registration: `{ email: { subject, text, html? }, sms: "…", in_app: { title, body }, push: { title, body, data? } }`.
-  Only the fields you actually use need to be present. Omit an optional field rather than setting
-  it to `undefined`: a value that's explicitly `undefined` is rejected when the row is written.
-- **`data`** is the payload handed to a registered template function (`(data) => Content`).
-  Template rendering is pure and runs *inside* the transaction. There's no I/O, so it's safe to run
-  before the transaction commits.
+  registration: `{ email: { subject, text, html? }, sms: "…", in_app: { title, body }, push: {
+  title, body, data? } }`. Only the fields you actually use need to be present. Omit an optional
+  field rather than setting it to `undefined`: a value that's explicitly `undefined` is rejected
+  when the row is written.
+- **`data`** is the payload handed to a registered template function (`(data) => Content`). Template
+  rendering is pure and runs *inside* the transaction. There's no I/O, so it's safe to run before
+  the transaction commits.
 - **`idempotencyKey`**: see [At-most-once delivery](#at-most-once-delivery) below.
 - **`category`**: see [Preferences](#preferences-and-critical-categories).
 - **`critical`**: a server-authority bypass of the recipient's preferences for this one send. Never
@@ -163,12 +174,12 @@ page, so it's worth keeping in mind as you read on.
 ### Per-channel delivery shape
 
 - **`in_app` is instant.** The send writes the inbox row synchronously inside your transaction, so
-  it's live to any subscription the moment the mutation commits. There's no queue, no send step,
-  and nothing to retry.
+  it's live to any subscription the moment the mutation commits. There's no queue, no send step, and
+  nothing to retry.
 - **`email`/`sms`/`push` are queued.** The send writes a `status: "queued"` row (with the rendered
   content already attached) in the same transaction, and a background driver delivers it via the
-  configured provider *outside* the transaction. Network I/O never runs inside a mutation. The
-  row's lifecycle is `queued → sending → sent` / `failed`.
+  configured provider *outside* the transaction. Network I/O never runs inside a mutation. The row's
+  lifecycle is `queued → sending → sent` / `failed`.
 
 ```mermaid
 flowchart LR
@@ -184,8 +195,8 @@ flowchart LR
 ### At-most-once delivery
 
 Pass `idempotencyKey` to guarantee a message is never sent twice, even if the calling code is
-replayed (an OCC conflict retry, a client retrying a timed-out call). This is the pattern that
-makes an OTP or a receipt email safe:
+replayed (an OCC conflict retry, a client retrying a timed-out call). This is the pattern that makes
+an OTP or a receipt email safe:
 
 ```ts
 await ctx.notifications.send({
@@ -195,9 +206,9 @@ await ctx.notifications.send({
 ```
 
 A replay with the same key short-circuits to the already-recorded result (`sendReceipts`, keyed by
-`idempotencyKey`, written atomically with the message rows). No second send, no second row. When
-the underlying provider supports a native idempotency header (Resend, and any custom adapter that
-honors `EmailMessage.idempotencyKey`), the key passes through to it too, as defense in depth.
+`idempotencyKey`, written atomically with the message rows). No second send, no second row. When the
+underlying provider supports a native idempotency header (Resend, and any custom adapter that honors
+`EmailMessage.idempotencyKey`), the key passes through to it too, as defense in depth.
 
 ### Mutation vs. action surface
 
@@ -207,11 +218,11 @@ The mutation-context facade (`NotificationsContext`) has: `send`, `setPreference
 sends that need (or are allowed) to do work outside a transaction.
 
 Everything else (`setPreference`, `subscribe`, `unsubscribe`, `registerPushToken`,
-`unregisterPushToken`, `identity()`) exists only on the mutation facade. Calling one of them from
-an action is a runtime TypeError, not a silent no-op. Do that work in a mutation the action invokes
-via `ctx.runMutation` instead. `ctx.notifications.identity()` (mutation facade) returns the raw
-ambient caller token (the fallback identity `callerId` uses when `@concile/auth` isn't composed).
-Most app code never needs it directly.
+`unregisterPushToken`, `identity()`) exists only on the mutation facade. Calling one of them from an
+action is a runtime TypeError, not a silent no-op. Do that work in a mutation the action invokes via
+`ctx.runMutation` instead. `ctx.notifications.identity()` (mutation facade) returns the raw ambient
+caller token (the fallback identity `callerId` uses when `@concile/auth` isn't composed). Most app
+code never needs it directly.
 
 #### `sendNow`: synchronous delivery from an action
 
@@ -232,11 +243,11 @@ export const blast = action({
 email/SMS/push rows synchronously (network I/O is allowed from an action) through the **same**
 claim-before-send guard (`_claimForSend`/`_markResult`) the background driver uses. That guard is
 what makes this crash-safe and non-double-sending: because every row is durable `queued` state
-before any delivery is attempted, a process crash mid-drain leaves the un-drained rows `queued`,
-and the driver picks them up later. No channel is ever silently dropped, and whichever of
-`sendNow`/the driver claims a row first is the one that delivers it (the other skips). Returns the
-same `{messageIds, suppressed, deferred}` as `send`, plus `results: SendResult[]`, the provider's
-return value for each channel actually delivered inline.
+before any delivery is attempted, a process crash mid-drain leaves the un-drained rows `queued`, and
+the driver picks them up later. No channel is ever silently dropped, and whichever of `sendNow`/the
+driver claims a row first is the one that delivers it (the other skips). Returns the same
+`{messageIds, suppressed, deferred}` as `send`, plus `results: SendResult[]`, the provider's return
+value for each channel actually delivered inline.
 
 #### `sendToTopic`: action-only broadcast
 
@@ -327,16 +338,16 @@ export function myEmail(opts: { apiKey: string }): EmailProvider {
 }
 ```
 
-Credentials live in the provider's own closure, never in a message row. Throw a plain `Error` for
-a failure you want retried; throw `NotificationSendError(msg, { retryable: false })` for a
-permanent one (see [Retries](#retries)). `SmsProvider` is the same shape over `SmsMessage`
-(`to`/`from`/`body`/`kind?`); `PushProvider` is covered in
-[Writing your own push provider](#writing-your-own-push-provider).
+Credentials live in the provider's own closure, never in a message row. Throw a plain `Error` for a
+failure you want retried; throw `NotificationSendError(msg, { retryable: false })` for a permanent
+one (see [Retries](#retries)). `SmsProvider` is the same shape over `SmsMessage`
+(`to`/`from`/`body`/`kind?`); `PushProvider` is covered in [Writing your own push
+provider](#writing-your-own-push-provider).
 
 ## Multi-provider fallback
 
-An email or SMS channel can list additional providers tried, in order, after the primary fails.
-All of this happens within the **same** delivery attempt, with no extra retry/backoff round-trip:
+An email or SMS channel can list additional providers tried, in order, after the primary fails. All
+of this happens within the **same** delivery attempt, with no extra retry/backoff round-trip:
 
 ```ts
 defineNotifications({
@@ -365,18 +376,18 @@ The effective ordered list is `[provider, ...fallbacks]`. On a delivery attempt,
   single-provider list re-throws the provider's own error verbatim, with no wrapping.
 
 **Observability.** The `messages` row records which provider ultimately delivered it in
-`providerName`, visible in the dashboard's data browser. A provider's label is its own `.name` if
-it sets one, else a positional default (`"primary"`, `"fallback-1"`, `"fallback-2"`, …).
+`providerName`, visible in the dashboard's data browser. A provider's label is its own `.name` if it
+sets one, else a positional default (`"primary"`, `"fallback-1"`, `"fallback-2"`, …).
 
-**Webhooks with multiple providers.** The delivery-webhook route is unchanged and still keyed by
-*channel*, not provider (`POST /api/notifications/webhooks/email`). No vendor-dashboard callback
-URL needs to change when you add a fallback.
+**Webhooks with multiple providers.** The delivery-webhook route is unchanged and still keyed by *channel*,
+not provider (`POST /api/notifications/webhooks/email`). No vendor-dashboard callback URL needs to
+change when you add a fallback.
 
 When a channel has fallbacks, an inbound webhook call tries every configured provider's `verify()`
 in order and applies the event using whichever one matches first. Only the *primary* (index 0)
-receives the channel-level `webhookSecret` from config. A fallback provider is expected to carry
-its own signing material inside its own factory args (the same way
-`twilioSms({ accountSid, authToken })` already does), not share the primary's secret.
+receives the channel-level `webhookSecret` from config. A fallback provider is expected to carry its
+own signing material inside its own factory args (the same way `twilioSms({ accountSid, authToken
+})` already does), not share the primary's secret.
 
 Because the route accepts an event as soon as *any* configured provider's `verify()` passes, its
 trust surface is the union of every configured provider's verification. Configure only providers
@@ -426,8 +437,8 @@ export default defineConfig({
 });
 ```
 
-At least one of `expo`/`fcm`/`apns` must be set. `defineNotifications` **throws at construction**
-if `channels.push` is present with an empty `providers` map.
+At least one of `expo`/`fcm`/`apns` must be set. `defineNotifications` **throws at construction** if
+`channels.push` is present with an empty `providers` map.
 
 <Accordions type="single">
 
@@ -446,9 +457,9 @@ if `channels.push` is present with an empty `providers` map.
 ### Registering device tokens
 
 Routing a token happens by the token's **own recorded provider**, never by OS platform. An iOS
-device using a native APNs SDK registers `provider: "apns"`. An iOS device using Expo's managed
-push service registers `provider: "expo"`. There is no platform-sniffing: `platform` is optional
-metadata only.
+device using a native APNs SDK registers `provider: "apns"`. An iOS device using Expo's managed push
+service registers `provider: "expo"`. There is no platform-sniffing: `platform` is optional metadata
+only.
 
 ```ts
 import { registerForPush, unregisterForPush } from "@concile/client/react";
@@ -476,8 +487,8 @@ when a user signs out and a different one signs in on the same phone.
 
 <Callout type="warn">
 
-Possession of a device token is authority over its routing. Treat a device token as a
-device-local secret, not something safe to log or expose.
+Possession of a device token is authority over its routing. Treat a device token as a device-local
+secret, not something safe to log or expose.
 
 </Callout>
 
@@ -498,8 +509,8 @@ await ctx.notifications.send({
 At send time, `recordSend` snapshots the recipient's *currently registered* device tokens onto the
 `messages` row. A token registered or revoked after this commit doesn't retroactively change what
 this logical send fans out to. At delivery time, the driver groups the snapshotted tokens by their
-recorded provider and fans out to each configured adapter in turn. One logical send can deliver to
-a user's iPhone (APNs), Android phone (FCM), and an Expo-managed dev client all at once,
+recorded provider and fans out to each configured adapter in turn. One logical send can deliver to a
+user's iPhone (APNs), Android phone (FCM), and an Expo-managed dev client all at once,
 transparently.
 
 - **Zero registered devices is not an error.** If a recipient has no tokens, the row is still
@@ -516,15 +527,15 @@ transparently.
   unregistered/invalid (Expo `DeviceNotRegistered`, FCM `UNREGISTERED`/`NOT_FOUND`, APNs
   `410`/`Unregistered`), the driver (and `sendNow`'s inline drain) removes that row from the token
   registry. No manual cleanup: a stale token is never retried again.
-- **Preferences and topics apply for free.** A `channel: "push"` row in the preference table
-  behaves identically to email/sms/in_app (the gate is channel-generic); a critical category still
-  bypasses it. `sendToTopic({ channels: ["push"] })` fans out to every subscriber's registered
-  devices, preference-aware, same as `["in_app"]`.
+- **Preferences and topics apply for free.** A `channel: "push"` row in the preference table behaves
+  identically to email/sms/in_app (the gate is channel-generic); a critical category still bypasses
+  it. `sendToTopic({ channels: ["push"] })` fans out to every subscriber's registered devices,
+  preference-aware, same as `["in_app"]`.
 
 ### Writing your own push provider
 
-Same small `send`-only shape, fanned out per **provider group** (not per token). The component
-calls `send` once per configured provider with every token routed to it in that call's `to` array:
+Same small `send`-only shape, fanned out per **provider group** (not per token). The component calls
+`send` once per configured provider with every token routed to it in that call's `to` array:
 
 ```ts
 import type { PushProvider, PushMessage, PushSendResult } from "@concile/notifications";
@@ -592,9 +603,9 @@ interface UseNotificationsResult {
 }
 ```
 
-Both `notifications` and `unreadCount` are reactive. A new send or a `markRead` from any tab
-updates every subscribed component with no manual refetch. `undefined` first-frame results
-coalesce to `[]`/`0`, so you never need to branch on a loading sentinel.
+Both `notifications` and `unreadCount` are reactive. A new send or a `markRead` from any tab updates
+every subscribed component with no manual refetch. `undefined` first-frame results coalesce to
+`[]`/`0`, so you never need to branch on a loading sentinel.
 
 For custom markup, `<Inbox>` is a headless render-prop wrapper over the same hook:
 
@@ -615,11 +626,11 @@ whether it exists.
 
 <Callout type="warn" title="Per-user isolation requires a verified identity">
 
-With `@concile/auth` composed (or an upstream token-verifying proxy), the resolved id is
-trustworthy and isolation is enforced. Without either, the identity falls back to the raw
-`setAuth(...)` bearer token, which an unauthenticated client can set to any value it likes.
-Compose [Auth](/docs/components/auth) (or verify the token upstream) before relying on inbox
-isolation in production.
+With `@concile/auth` composed (or an upstream token-verifying proxy), the resolved id is trustworthy
+and isolation is enforced. Without either, the identity falls back to the raw `setAuth(...)` bearer
+token, which an unauthenticated client can set to any value it likes. Compose
+[Auth](/docs/components/auth) (or verify the token upstream) before relying on inbox isolation in
+production.
 
 </Callout>
 
@@ -627,14 +638,14 @@ isolation in production.
 
 Every `send` carries a **category**: a free-form string you choose (`"marketing"`, `"security"`,
 `"comments"`, and so on). A send that names none uses `defaultCategory` (`"default"` unless
-configured otherwise). A user can opt a `(category, channel)` pair out. A suppressed send is
-skipped **before** it ever writes a queued row or reaches a provider.
+configured otherwise). A user can opt a `(category, channel)` pair out. A suppressed send is skipped **before**
+it ever writes a queued row or reaches a provider.
 
-**Default-allow.** With no preference row at all, every category/channel is enabled. Preferences
-are opt-*out*, not opt-*in*. Resolution is most-specific-wins: a channel-specific row for a
-category overrides a category-wide row (channel omitted) for the same category, which overrides
-the allow-by-default fallback. This all happens at a single chokepoint (`recordSend`), so there's
-no second gate anywhere else to keep in sync.
+**Default-allow.** With no preference row at all, every category/channel is enabled. Preferences are
+opt-*out*, not opt-*in*. Resolution is most-specific-wins: a channel-specific row for a category
+overrides a category-wide row (channel omitted) for the same category, which overrides the
+allow-by-default fallback. This all happens at a single chokepoint (`recordSend`), so there's no
+second gate anywhere else to keep in sync.
 
 ```ts
 const { messageIds, suppressed } = await ctx.notifications.send({
@@ -646,8 +657,8 @@ const { messageIds, suppressed } = await ctx.notifications.send({
 
 ### Critical categories
 
-Mark a category `critical` in config to make it bypass preferences entirely. The archetypal case
-is account-security mail that must always reach the user:
+Mark a category `critical` in config to make it bypass preferences entirely. The archetypal case is
+account-security mail that must always reach the user:
 
 ```ts
 defineNotifications({
@@ -658,8 +669,7 @@ defineNotifications({
 });
 ```
 
-`setPreference` **throws** if you try to disable a critical category rather than silently
-no-opping.
+`setPreference` **throws** if you try to disable a critical category rather than silently no-opping.
 
 A single send can also bypass preferences without a config-level category, via the per-send
 `critical: true` flag:
@@ -672,9 +682,8 @@ await ctx.notifications.send({
 ```
 
 `critical` is a **server-authority** flag. Set it only from your own server code (a mutation/action
-you write, or a composed component like `@concile/auth`, see
-[Auth unification](#auth-unification)). Never forward it straight from client input: it's exactly
-the same trust boundary as `to`.
+you write, or a composed component like `@concile/auth`, see [Auth unification](#auth-unification)).
+Never forward it straight from client input: it's exactly the same trust boundary as `to`.
 
 ### Reading and setting preferences
 
@@ -725,9 +734,9 @@ await ctx.notifications.unsubscribe({ topic: "news" });
 ```
 
 `notifications:subscribe`/`notifications:unsubscribe` are registered, client-callable modules and
-are **strictly self-only**: there's no way for a client to pass a `userId` and subscribe a
-different user (that would be an IDOR). Both are idempotent. Subscribing twice, or unsubscribing
-when not subscribed, is a no-op.
+are **strictly self-only**: there's no way for a client to pass a `userId` and subscribe a different
+user (that would be an IDOR). Both are idempotent. Subscribing twice, or unsubscribing when not
+subscribed, is a no-op.
 
 To subscribe a **different** user, for example auto-subscribing every member of a team to that
 team's topic, call the facade with an explicit `userId` from your own server-side mutation. This
@@ -744,9 +753,9 @@ export const joinTeam = mutation({
 
 ### Sending to a topic (action-only)
 
-`ctx.notifications.sendToTopic(args)` fans a send out to every current subscriber of a topic. It's
-**action-only** (paging through an arbitrarily large subscriber list is bulk work, same reasoning
-as any other bulk read from an action):
+`ctx.notifications.sendToTopic(args)` fans a send out to every current subscriber of a topic. It's **action-only**
+(paging through an arbitrarily large subscriber list is bulk work, same reasoning as any other bulk
+read from an action):
 
 ```ts
 export const announce = action({
@@ -769,26 +778,25 @@ It returns a count summary, not per-recipient message ids (a broadcast can be ar
   email or phone, so `sendToTopic` supports only `"in_app"` and `"push"`. An email/SMS channel is
   rejected immediately (before any partial send), since there's no address to resolve. Send
   email/SMS to a group by addressing each recipient directly with `send`/`sendNow`.
-- **Preference-aware for free.** Each subscriber's send routes through the same `recordSend` gate
-  a direct `send` uses. An opted-out subscriber is silently skipped and counted in
-  `suppressedCount`, with no second preference check to keep in sync.
+- **Preference-aware for free.** Each subscriber's send routes through the same `recordSend` gate a
+  direct `send` uses. An opted-out subscriber is silently skipped and counted in `suppressedCount`,
+  with no second preference check to keep in sync.
 - **Per-subscriber idempotency.** Pass `idempotencyKey` to make a re-run of the same broadcast a
   no-op. Internally it's namespaced per subscriber (length-prefixed to avoid collisions across
   broadcasts), so retrying a `sendToTopic` call never double-sends to anyone. A keyed retry's
   returned counts reflect the recorded no-op, not fresh work.
-- **Paginated internally.** An arbitrarily large subscriber list is processed in bounded pages
-  under the hood (100 subscribers per transaction). You never page it yourself. Because pages are
-  separate transactions, a subscribe/unsubscribe landing mid-broadcast may include or skip that one
+- **Paginated internally.** An arbitrarily large subscriber list is processed in bounded pages under
+  the hood (100 subscribers per transaction). You never page it yourself. Because pages are separate
+  transactions, a subscribe/unsubscribe landing mid-broadcast may include or skip that one
   subscriber. A keyed broadcast stays safe against a double either way.
 
 ## Delivery reliability
 
-Email/SMS/push sends are automatically retried on a transient failure, and a crashed in-flight
-send is recovered. Once you wire a provider's delivery webhook, the message row also picks up a
-second, independent status axis as the provider reports what happened after the send. **This
-section applies only to `email`/`sms`/`push`.** `in_app` has no queue or send step (it's written
-`sent` synchronously in your transaction), so there's nothing to retry, reclaim, or hear back
-about.
+Email/SMS/push sends are automatically retried on a transient failure, and a crashed in-flight send
+is recovered. Once you wire a provider's delivery webhook, the message row also picks up a second,
+independent status axis as the provider reports what happened after the send. **This section applies
+only to `email`/`sms`/`push`.** `in_app` has no queue or send step (it's written `sent`
+synchronously in your transaction), so there's nothing to retry, reclaim, or hear back about.
 
 ### Retries
 
@@ -811,9 +819,9 @@ defaults, the first retry waits 500ms to 1,000ms (not ~250ms), the second 1s to 
 
 Whether a failure is retried depends on how the provider's `send` throws:
 
-- A **plain `Error`** (or any throw that isn't a `NotificationSendError`) is treated as
-  **retryable**: a transient 5xx/network blip. The row goes back to `queued` with a backed-off
-  `nextAttemptAt` and its `attempts` count incremented.
+- A **plain `Error`** (or any throw that isn't a `NotificationSendError`) is treated as **retryable**:
+  a transient 5xx/network blip. The row goes back to `queued` with a backed-off `nextAttemptAt` and
+  its `attempts` count incremented.
 - `new NotificationSendError(message, { retryable: false })` (for example, a 4xx bad-recipient
   response) is a **permanent** failure: the driver dead-letters the message to `status: "failed"`
   immediately, no retry. The shipped `resendEmail`/`twilioSms` adapters already classify their own
@@ -825,10 +833,9 @@ retryability.
 ### Reclaim (crash recovery)
 
 If the server crashes between claiming a message (`queued → sending`) and recording the send's
-outcome, the row would otherwise be stuck `sending` forever. A background reclaim sweep recovers
-any `sending` row older than `reclaimLeaseMs` (default `60000`) back to `queued`, counting an
-attempt as it does, so a row that keeps crashing still eventually dead-letters instead of looping
-forever:
+outcome, the row would otherwise be stuck `sending` forever. A background reclaim sweep recovers any
+`sending` row older than `reclaimLeaseMs` (default `60000`) back to `queued`, counting an attempt as
+it does, so a row that keeps crashing still eventually dead-letters instead of looping forever:
 
 ```ts
 defineNotifications({
@@ -842,8 +849,8 @@ reclaim is out of scope.
 
 ### Delivery webhooks and normalized status
 
-Point your provider's delivery webhook (Resend, Twilio) at your deployment and Concile verifies
-its signature, then reactively updates the message row with a normalized `deliveryStatus` as the
+Point your provider's delivery webhook (Resend, Twilio) at your deployment and Concile verifies its
+signature, then reactively updates the message row with a normalized `deliveryStatus` as the
 provider reports what happened after the send: bounces, opens, clicks, complaints.
 
 **Endpoint.** `POST /api/notifications/webhooks/:channel` (`:channel` is `email` or `sms`, matching
@@ -878,18 +885,17 @@ defineNotifications({
 with `401` before reading or writing anything** if none verify. A provider whose `verify()` throws
 (rather than returning `false`) is treated as "did not verify," and the loop moves to the next
 candidate. A misbehaving custom provider can't 500 the endpoint, and a throwing primary can't
-swallow a legitimately-signed fallback's callback. A verified-but-malformed payload answers `400`.
-A verified, well-formed batch is applied event-by-event via an internal mutation, and the route
+swallow a legitimately-signed fallback's callback. A verified-but-malformed payload answers `400`. A
+verified, well-formed batch is applied event-by-event via an internal mutation, and the route
 answers `200` so the provider stops retrying.
 
 **Reverse-proxy URL reconstruction (Twilio).** Twilio's signature is computed over the exact public
-`https://…` URL configured in its console, but Concile serves plain HTTP behind your
-TLS-terminating reverse proxy. The route reconstructs the public URL from `X-Forwarded-Proto`/
-`X-Forwarded-Host` (the common proxy default) before verifying, falling back to the raw request URL
-if neither header is set (direct exposure or local dev). Forging these headers can never make
-verification *pass* (the HMAC still needs the real secret). It can only make an attacker's own
-forged callback fail. Resend/Svix signs the request body, not the URL, so it's unaffected either
-way.
+`https://…` URL configured in its console, but Concile serves plain HTTP behind your TLS-terminating
+reverse proxy. The route reconstructs the public URL from `X-Forwarded-Proto`/ `X-Forwarded-Host`
+(the common proxy default) before verifying, falling back to the raw request URL if neither header
+is set (direct exposure or local dev). Forging these headers can never make verification *pass* (the
+HMAC still needs the real secret). It can only make an attacker's own forged callback fail.
+Resend/Svix signs the request body, not the URL, so it's unaffected either way.
 
 **The status itself:**
 
@@ -899,22 +905,22 @@ way.
 
 `deliveryStatus` is a **second, independent axis** from the send-lifecycle `status`
 (`queued`/`sending`/`sent`/`failed`). A message can be `status: "sent"` and later pick up
-`deliveryStatus: "delivered"`, then `"opened"`, then `"clicked"` as webhooks arrive. It's written
-**monotonically** by lifecycle rank (`dropped` < `bounced`/`complained`/`failed_permanent` <
-`delivered` < `opened` < `clicked`), so a redelivered or out-of-order webhook event is a no-op
-rather than regressing a later status back to an earlier one. Because it's an ordinary field on
-the `messages` row, subscribing to a query over it sees the update reactively, with no polling.
+`deliveryStatus: "delivered"`, then `"opened"`, then `"clicked"` as webhooks arrive. It's written **monotonically**
+by lifecycle rank (`dropped` < `bounced`/`complained`/`failed_permanent` < `delivered` < `opened` <
+`clicked`), so a redelivered or out-of-order webhook event is a no-op rather than regressing a later
+status back to an earlier one. Because it's an ordinary field on the `messages` row, subscribing to
+a query over it sees the update reactively, with no polling.
 
-**Spam complaints** are recorded on a separate, orthogonal `complainedAt` timestamp, not folded
-into `deliveryStatus`. A complaint always arrives *after* `delivered`, so applying the monotonic
-rank would drop it as lower-rank. Instead it's captured unconditionally (idempotent: a redelivered
+**Spam complaints** are recorded on a separate, orthogonal `complainedAt` timestamp, not folded into
+`deliveryStatus`. A complaint always arrives *after* `delivered`, so applying the monotonic rank
+would drop it as lower-rank. Instead it's captured unconditionally (idempotent: a redelivered
 complaint is a no-op).
 
 ## Email digest
 
 A category can be configured to **digest**: instead of sending each `email` immediately, matching
-sends are buffered and combined into one periodic email per recipient: a "daily updates" or
-"weekly summary" email that doesn't spam a user once per event.
+sends are buffered and combined into one periodic email per recipient: a "daily updates" or "weekly
+summary" email that doesn't spam a user once per event.
 
 ```ts
 defineNotifications({
@@ -939,11 +945,11 @@ defineNotifications({
   once its *oldest* buffered item has waited out the window (`"hourly"` = 1h, `"daily"` = 24h,
   `"weekly"` = 7d). The same recurring driver that delivers queued sends and reclaims stuck ones
   also flushes due digests on every pass.
-- **Per-group transaction isolation.** Each `(recipient, category)` group's flush runs in its
-  **own** transaction. If your `digestTemplate` throws for one recipient's item shape, only that
-  recipient's flush fails (caught and logged). It can never abort the whole driver pass and wedge
-  delivery of every *other* queued notification (including critical auth OTPs) on the node. A
-  failed flush's items stay un-flushed and retry on the next pass, never claimed-but-dropped.
+- **Per-group transaction isolation.** Each `(recipient, category)` group's flush runs in its **own**
+  transaction. If your `digestTemplate` throws for one recipient's item shape, only that recipient's
+  flush fails (caught and logged). It can never abort the whole driver pass and wedge delivery of
+  every *other* queued notification (including critical auth OTPs) on the node. A failed flush's
+  items stay un-flushed and retry on the next pass, never claimed-but-dropped.
 - **Preferences are re-checked at flush**, not at buffer time. An opt-out recorded anytime before
   the flush suppresses the whole combined digest for that recipient/category, through the same
   `recordSend` gate every other send uses.
@@ -962,10 +968,10 @@ defineNotifications({
 
 ## Auth unification
 
-Compose **both** `@concile/auth` and `@concile/notifications` in the same
-`concile.config.ts`, and auth's own transactional emails (verification, password reset, magic
-link, OTP) automatically route through the notifications delivery path instead of auth's
-standalone email provider. There's no extra wiring:
+Compose **both** `@concile/auth` and `@concile/notifications` in the same `concile.config.ts`, and
+auth's own transactional emails (verification, password reset, magic link, OTP) automatically route
+through the notifications delivery path instead of auth's standalone email provider. There's no
+extra wiring:
 
 ```ts
 export default defineConfig({
@@ -976,36 +982,34 @@ export default defineConfig({
 });
 ```
 
-- **What you get.** Auth's emails inherit the retry-with-backoff and stuck-send reclaim above,
-  share whichever provider you've wired notifications to (one adapter serves both auth and your
-  own app sends), and use a single unified `from` address across every outbound email your app
-  sends.
+- **What you get.** Auth's emails inherit the retry-with-backoff and stuck-send reclaim above, share
+  whichever provider you've wired notifications to (one adapter serves both auth and your own app
+  sends), and use a single unified `from` address across every outbound email your app sends.
 - **Always delivered.** Every auth email is sent with `critical: true`, the same server-authority
   preference-bypass covered in [Critical categories](#critical-categories), so a password-reset or
-  OTP email can never be silently dropped by a recipient's preferences. Only auth's own
-  server-side code sets this. A client can never trigger it.
+  OTP email can never be silently dropped by a recipient's preferences. Only auth's own server-side
+  code sets this. A client can never trigger it.
 - **Category.** Auth's emails use the `"auth"` category by default, configurable per email channel
   via `defineAuth({ email: { notificationCategory: "security" } })`.
-- **Graceful fallback.** `@concile/auth` does not depend on `@concile/notifications` as a
-  package. It duck-types a minimal `ctx.notifications` shape at runtime. If notifications isn't
-  composed in your project, auth silently falls back to its own standalone `EmailProvider`,
-  byte-identical to how it behaved before this feature existed. Composing (or later removing)
-  notifications is purely additive.
+- **Graceful fallback.** `@concile/auth` does not depend on `@concile/notifications` as a package.
+  It duck-types a minimal `ctx.notifications` shape at runtime. If notifications isn't composed in
+  your project, auth silently falls back to its own standalone `EmailProvider`, byte-identical to
+  how it behaved before this feature existed. Composing (or later removing) notifications is purely
+  additive.
 
 ## How delivery actually runs (the driver)
 
 `notificationsDriver` is the recurring background process, built on the same driver seam as
-[Scheduling](/docs/components/scheduling), that turns a `queued` row into `sent`/`failed`. It
-wakes on two triggers: the commit fan-out (any write under the component's own namespace) and a
-wall-clock timer (`driverIntervalMs`, or sooner if a backed-off row's `nextAttemptAt` is closer).
-Each pass:
+[Scheduling](/docs/components/scheduling), that turns a `queued` row into `sent`/`failed`. It wakes
+on two triggers: the commit fan-out (any write under the component's own namespace) and a wall-clock
+timer (`driverIntervalMs`, or sooner if a backed-off row's `nextAttemptAt` is closer). Each pass:
 
 1. **Reclaims** any row stuck `sending` past its lease.
 2. **Flushes due digest groups**, if any category configures `digest`, each group isolated in its
    own transaction (see [Email digest](#email-digest)).
 3. **Drains queued rows** (bounded to 64 per pass): claim (`queued → sending`), deliver via the
-   configured provider (walking fallbacks if configured), then finalize (`sent`,
-   retry-with-backoff, or dead-letter).
+   configured provider (walking fallbacks if configured), then finalize (`sent`, retry-with-backoff,
+   or dead-letter).
 
 Delivery is **at-most-once per attempt**: the exact `status === "queued"` claim check under
 single-writer OCC is the authoritative once-only guard, and the provider-facing `Idempotency-Key`
@@ -1040,11 +1044,11 @@ project without `defineNotifications` has none of them.
 - **Cross-channel fallback** (an email send failing over to SMS) and **time-of-day/quiet-hours-aware
   routing**: different from the same-channel provider fallback that has shipped.
 - **Digest scope**: SMS/in_app digest (email-only today), per-user digest frequency (a fixed
-  per-category config, not user-selectable), threshold-based batching ("digest after N items"
-  rather than purely time-windowed), and a crash-orphan digest reaper (a
+  per-category config, not user-selectable), threshold-based batching ("digest after N items" rather
+  than purely time-windowed), and a crash-orphan digest reaper (a
   `flushedAt`-claimed-but-never-delivered row isn't yet automatically recovered, unlike the
   queued-message reclaim above).
-- **A markup/visual template registry** (Liquid/MJML-style). Inline typed template functions are
-  the v1 authoring model.
-- **Push rich payloads, engagement receipts, web push, and per-device results**: see
-  [Push non-goals](#push-non-goals).
+- **A markup/visual template registry** (Liquid/MJML-style). Inline typed template functions are the
+  v1 authoring model.
+- **Push rich payloads, engagement receipts, web push, and per-device results**: see [Push
+  non-goals](#push-non-goals).

@@ -5,15 +5,22 @@ description: An open-source reactive backend you host yourself.
 
 {/* diataxis: explanation */}
 
-Concile is an open source, reactive backend that you host yourself. You write your backend as normal TypeScript functions, and Concile automatically keeps every user's screen up to date.
+Concile is an open source, reactive backend that you host yourself. You write your backend as normal
+TypeScript functions, and Concile automatically keeps every user's screen up to date.
 
-Think of how a Google Doc works. When one person types, everyone else sees the change right away, and nobody has to click a refresh button. Concile gives your entire app that same magic for any kind of data, and you barely have to think about it.
+Think of how a Google Doc works. When one person types, everyone else sees the change right away,
+and nobody has to click a refresh button. Concile gives your entire app that same magic for any kind
+of data, and you barely have to think about it.
 
 ## The idea in one minute
 
-You really only write two kinds of functions. A **query** reads data, and a **mutation** writes data. Your app subscribes to a query, like "give me all the messages in this chat."
+You really only write two kinds of functions. A **query** reads data, and a **mutation** writes
+data. Your app subscribes to a query, like "give me all the messages in this chat."
 
-When someone sends a message, they call a mutation. Concile immediately notices that this mutation changed data your query was looking at. It re-runs the query and pushes the new result to everyone watching that chat. You never have to write polling loops, manage WebSockets, or deal with cache invalidation. That is the whole point of the product.
+When someone sends a message, they call a mutation. Concile immediately notices that this mutation
+changed data your query was looking at. It re-runs the query and pushes the new result to everyone
+watching that chat. You never have to write polling loops, manage WebSockets, or deal with cache
+invalidation. That is the whole point of the product.
 
 ```mermaid
 flowchart LR
@@ -67,8 +74,8 @@ There are three function types in total:
 
 - **Query** reads data. Your app subscribes to queries and they update on their own.
 - **Mutation** writes data. Each one runs as a single transaction: it all saves, or none of it does.
-- **Action** is for everything else, like calling another API or sending an email. Actions can't read
-  or write the database directly; they call your queries and mutations to do that.
+- **Action** is for everything else, like calling another API or sending an email. Actions can't
+  read or write the database directly; they call your queries and mutations to do that.
 
 You'll meet each one properly in [Queries](/docs/core-concepts/queries),
 [Mutations](/docs/core-concepts/mutations), and [Actions](/docs/core-concepts/actions). If you want
@@ -83,14 +90,15 @@ concile is a full backend, not just a database. Everything here is built and rea
   more), two-factor, and passkeys.
 - [Authorization](/docs/components/authorization) for roles and permissions.
 - [Notifications](/docs/components/notifications) by email, SMS, in-app inbox, and push.
-- [Scheduled functions and crons](/docs/components/scheduling) for work that runs later or on a timer.
+- [Scheduled functions and crons](/docs/components/scheduling) for work that runs later or on a
+  timer.
 - [Workflows](/docs/components/workflows) for durable, multi-step processes.
-- [Optimistic updates](/docs/client/optimistic-updates) and
-  [offline support](/docs/client/offline-sync) on the client.
+- [Optimistic updates](/docs/client/optimistic-updates) and [offline
+  support](/docs/client/offline-sync) on the client.
 - A [dashboard](/docs/deploy/local-dev) to browse your data, read logs, and run functions.
 
-Auth, notifications, and the rest are *components*: you turn on only the ones you need, in one config
-file. See [Components](/docs/components/overview).
+Auth, notifications, and the rest are *components*: you turn on only the ones you need, in one
+config file. See [Components](/docs/components/overview).
 
 ## Run it anywhere
 
@@ -112,15 +120,15 @@ If you know these tools, here's the short version:
 
 <Tab value="Firebase/Supabase">
 
-Both give you realtime, but through security rules or a stack of separate
-services around a database. concile gets its live updates from your own functions, in one process.
+Both give you realtime, but through security rules or a stack of separate services around a
+database. concile gets its live updates from your own functions, in one process.
 
 </Tab>
 
 <Tab value="SpacetimeDB">
 
-Its functions are written in Rust or C#. concile's are plain TypeScript, and it
-runs on ordinary infrastructure.
+Its functions are written in Rust or C#. concile's are plain TypeScript, and it runs on ordinary
+infrastructure.
 
 </Tab>
 

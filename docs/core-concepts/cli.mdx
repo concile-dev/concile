@@ -5,7 +5,11 @@ description: Every concile command and its flags.
 
 {/* diataxis: reference */}
 
-Every single Concile project relies on a handy binary called `concile` (which comes bundled in the `@concile/cli` package). On this page, we'll take a tour of all the commands it brings to the table. This guide is based directly on how things are wired up under the hood in `packages/cli/src/cli.ts` and its companion modules. You'll get to know all the flags, the environment variables you can use instead, and the quick safety checks each command runs before kicking into gear.
+Every single Concile project relies on a handy binary called `concile` (which comes bundled in the
+`@concile/cli` package). On this page, we'll take a tour of all the commands it brings to the table.
+This guide is based directly on how things are wired up under the hood in `packages/cli/src/cli.ts`
+and its companion modules. You'll get to know all the flags, the environment variables you can use
+instead, and the quick safety checks each command runs before kicking into gear.
 
 ```bash
 concile <command> [options]
@@ -57,18 +61,17 @@ concile dev
 | `--web <dir>` | unset | Serve a static web UI directory at the site root, alongside the API |
 
 The database and storage settings fall back to the same environment variables under `dev` as under
-`serve`: `CONCILE_DATABASE_URL`, `CONCILE_STORAGE_BUCKET`, and `CONCILE_STORAGE_ENDPOINT`
-(plus the rest of the `CONCILE_STORAGE_*` family) all work, with the flag winning when both are
-set. Both commands resolve storage through the same boot path.
+`serve`: `CONCILE_DATABASE_URL`, `CONCILE_STORAGE_BUCKET`, and `CONCILE_STORAGE_ENDPOINT` (plus the
+rest of the `CONCILE_STORAGE_*` family) all work, with the flag winning when both are set. Both
+commands resolve storage through the same boot path.
 
 ### Admin key handling
 
-`dev` reads `CONCILE_ADMIN_KEY` if set (blank/whitespace-only counts as unset, with a warning).
-If it's unset, `dev` **generates an ephemeral key for this run only**. That generated key gets
-embedded directly into the (otherwise unauthenticated) dashboard HTML, but **only** when the key is
-ephemeral *and* the bind address is loopback (`127.0.0.1`, `::1`, or `localhost`). A persistent
-operator-supplied key, or any non-loopback bind, never gets embedded: the dashboard SPA prompts for
-it instead.
+`dev` reads `CONCILE_ADMIN_KEY` if set (blank/whitespace-only counts as unset, with a warning). If
+it's unset, `dev` **generates an ephemeral key for this run only**. That generated key gets embedded
+directly into the (otherwise unauthenticated) dashboard HTML, but **only** when the key is ephemeral *and*
+the bind address is loopback (`127.0.0.1`, `::1`, or `localhost`). A persistent operator-supplied
+key, or any non-loopback bind, never gets embedded: the dashboard SPA prompts for it instead.
 
 ### Startup output
 
@@ -78,8 +81,8 @@ admin key → u3K9xQ1vZ8pL5mW2rT7cY4bN6dF0hJsG
 web UI → http://127.0.0.1:3000/        (only if --web was passed)
 ```
 
-If the dashboard package isn't built, `dev` still starts and prints a note to run
-`bun run --filter @concile/dashboard build`.
+If the dashboard package isn't built, `dev` still starts and prints a note to run `bun run --filter
+@concile/dashboard build`.
 
 ### Hot reload
 
@@ -92,16 +95,16 @@ load/type error (the previous, still-working version keeps serving in that case)
 
 The function loader is **top-level only**: it does not recurse into subdirectories of `concile/`.
 Keep query/mutation/action modules directly under `concile/*.ts` (e.g. `concile/items.ts`), not
-nested under a subfolder (e.g. `concile/lib/items.ts`); nested modules are silently not loaded. This applies
-to `dev`, `serve`, and `deploy` alike.
+nested under a subfolder (e.g. `concile/lib/items.ts`); nested modules are silently not loaded. This
+applies to `dev`, `serve`, and `deploy` alike.
 
 `dev` runs until killed (`Ctrl-C`); there's no `--once`/exit mode.
 
 ## `concile serve`
 
 The production entrypoint. Unlike `dev`: requires a persistent admin key, binds `0.0.0.0` by
-default, never generates codegen (an app's `_generated/` must already exist and be committed
-before you `serve` it), and shuts down gracefully on `SIGTERM`/`SIGINT`. See
+default, never generates codegen (an app's `_generated/` must already exist and be committed before
+you `serve` it), and shuts down gracefully on `SIGTERM`/`SIGINT`. See
 [Self-hosting](/docs/deploy/self-hosting) for the Docker walkthrough and
 [Postgres](/docs/deploy/postgres) for the Postgres backend.
 
@@ -142,11 +145,11 @@ CONCILE_ADMIN_KEY=<secret> concile serve
 
 <Callout type="info" title="Why there's no --admin-key flag">
 
-`CONCILE_ADMIN_KEY` (required, no default, no flag) is read directly from the environment. There
-is deliberately no `--admin-key` flag, so the secret never shows up in `ps`/shell history. S3
-storage settings present (`--storage-endpoint`/`CONCILE_STORAGE_ENDPOINT`/`_REGION`/`_PUBLIC_URL`)
-without a bucket fail boot fast: this is treated as a durability misconfiguration (uploads would
-otherwise silently land on ephemeral local disk), not a fallback.
+`CONCILE_ADMIN_KEY` (required, no default, no flag) is read directly from the environment. There is
+deliberately no `--admin-key` flag, so the secret never shows up in `ps`/shell history. S3 storage
+settings present (`--storage-endpoint`/`CONCILE_STORAGE_ENDPOINT`/`_REGION`/`_PUBLIC_URL`) without a
+bucket fail boot fast: this is treated as a durability misconfiguration (uploads would otherwise
+silently land on ephemeral local disk), not a fallback.
 
 </Callout>
 
@@ -157,9 +160,8 @@ applies to you.
 
 <Accordion title="Multi-node fleet flags (Tier 2: Postgres write scale-out)">
 
-Requires the separately-installed `@concile/fleet` package. See
-[Scaling](/docs/deploy/scaling) for the model (writer/sync roles, sharding, failover); this table
-is the exhaustive flag reference.
+Requires the separately-installed `@concile/fleet` package. See [Scaling](/docs/deploy/scaling) for
+the model (writer/sync roles, sharding, failover); this table is the exhaustive flag reference.
 
 | Flag | Env equivalent | Default | Meaning |
 |---|---|---|---|
@@ -173,8 +175,8 @@ is the exhaustive flag reference.
 with node count) is a `@concile/fleet`-side setting, not a `packages/cli` flag. See
 [Scaling](/docs/deploy/scaling).
 
-Changing the shard count of an already-running fleet requires stopping it and running
-[`fleet reshard`](#concile-fleet-reshard) first.
+Changing the shard count of an already-running fleet requires stopping it and running [`fleet
+reshard`](#concile-fleet-reshard) first.
 
 </Accordion>
 
@@ -235,8 +237,8 @@ Both unset (every non-Cloudflare deployment) is byte-for-byte today's `setTimeou
 
 ### Startup and shutdown
 
-On success, `serve` prints one JSON line to stdout (fields beyond `level`/`msg`/`url` appear only
-in the relevant mode):
+On success, `serve` prints one JSON line to stdout (fields beyond `level`/`msg`/`url` appear only in
+the relevant mode):
 
 ```json
 {"level":"info","msg":"concile serve","url":"http://0.0.0.0:3000","dir":"concile","data":"./data/db.sqlite","dashboard":true,"allowDeploy":false}
@@ -244,24 +246,23 @@ in the relevant mode):
 
 A fleet node adds `"fleet":true,"role":"writer"|"sync"`; an object-storage node adds
 `"objectStore":true`; a replica adds `"replica":true` (and `"writerUrl":"…"` if forwarding is
-configured). `serve` never embeds an admin key in the dashboard HTML (it's served key-less; the
-SPA prompts for it) since it binds `0.0.0.0` by default.
+configured). `serve` never embeds an admin key in the dashboard HTML (it's served key-less; the SPA
+prompts for it) since it binds `0.0.0.0` by default.
 
 `SIGTERM`/`SIGINT` trigger graceful shutdown: stop any fleet node, close the server (which stops
-every registered driver, including any object-store lease-heartbeat), release the object-store
-lease if held (best-effort, bounded to 2s so an unreachable bucket can't hang shutdown past a
-container's grace period), close the store, then `process.exit(0)`, printing
-`{"level":"info","msg":"shutting down"}` first.
+every registered driver, including any object-store lease-heartbeat), release the object-store lease
+if held (best-effort, bounded to 2s so an unreachable bucket can't hang shutdown past a container's
+grace period), close the store, then `process.exit(0)`, printing `{"level":"info","msg":"shutting
+down"}` first.
 
 ## `concile deploy`
 
 Deploys the app through a pluggable target adapter. The default target, `serve`, pushes the local
 `concile/` tree to an already-running `serve --allow-deploy` and hot-swaps it live, no restart. The
 other targets (`cloudflare`, `docker`, `railway`, `fly`, `aws`) provision or shell out to their
-platform's own CLI. See [Deploy & build](/docs/deploy/deploy-and-build) for the full mechanism
-(what `applyDeploy` validates, exactly which schema changes are additive, the atomic-swap order)
-and [Cloudflare](/docs/deploy/cloudflare) for that target's setup; this is the flag/behavior
-reference.
+platform's own CLI. See [Deploy & build](/docs/deploy/deploy-and-build) for the full mechanism (what
+`applyDeploy` validates, exactly which schema changes are additive, the atomic-swap order) and
+[Cloudflare](/docs/deploy/cloudflare) for that target's setup; this is the flag/behavior reference.
 
 ```bash
 CONCILE_ADMIN_KEY=<secret> concile deploy --url https://my-deployment.example.com
@@ -276,10 +277,10 @@ CONCILE_ADMIN_KEY=<secret> concile deploy --url https://my-deployment.example.co
 | `--dry-run` | none | off | Run `preflight` and `package`, skip the actual push |
 | `--check` | none | off | Fail (exit 1) if committed `concile/_generated/` has drifted from a fresh codegen run. Never pushes; combine with `--dry-run` to also run preflight and packaging |
 
-An unknown `--target` value fails with `no deploy adapter for provider "<name>" (v1 supports:
-serve, cloudflare, docker, railway, fly, aws)`. Target credentials and settings can live in the
-`deploy` block of `concile.config.ts` (see
-[Configuration](/docs/reference/configuration#the-deploy-block)) instead of flags.
+An unknown `--target` value fails with `no deploy adapter for provider "<name>" (v1 supports: serve,
+cloudflare, docker, railway, fly, aws)`. Target credentials and settings can live in the `deploy`
+block of `concile.config.ts` (see [Configuration](/docs/reference/configuration#the-deploy-block))
+instead of flags.
 
 ### The `serve` target
 
@@ -289,18 +290,18 @@ import`, `deploy` has **no** `--admin-key` flag. The target must have been start
 `--allow-deploy` (or `CONCILE_ALLOW_DEPLOY=1`).
 
 What it does, in order: (1) transpiles every `.ts` file under `--dir` with esbuild's `transform`
-(types stripped, import specifiers untouched: bare `@concile/*` imports resolve against the
-*target's* `node_modules`, relative imports resolve within the pushed tree); (2) probes
-`GET /_admin/deploy/modules` for the server's current per-module hashes; (3) if the probe answers,
+(types stripped, import specifiers untouched: bare `@concile/*` imports resolve against the *target's*
+`node_modules`, relative imports resolve within the pushed tree); (2) probes `GET
+/_admin/deploy/modules` for the server's current per-module hashes; (3) if the probe answers,
 `POST`s a delta payload (`{changed, unchanged}`) to `/_admin/deploy` with `Authorization: Bearer
 <adminKey>`, falling back to a full `{files}` push when the probe fails or the server reports a
 stale base.
 
 <Callout type="warn" title="The serve target does not run codegen">
 
-Unlike every other target, which regenerates `_generated/` as part of the deploy, the `serve`
-target pushes your tree as-is. Run `concile codegen` yourself (and commit the result) before
-deploying if your schema or functions changed. `--check` verifies exactly this.
+Unlike every other target, which regenerates `_generated/` as part of the deploy, the `serve` target
+pushes your tree as-is. Run `concile codegen` yourself (and commit the result) before deploying if
+your schema or functions changed. `--check` verifies exactly this.
 
 </Callout>
 
@@ -335,16 +336,16 @@ component from `concile.config.ts` requires a restart.
 ### The other targets
 
 `cloudflare` reconciles `wrangler.jsonc` bindings and shells out to `wrangler deploy`
-([Cloudflare](/docs/deploy/cloudflare)); `docker`, `railway`, `fly`, and `aws` likewise shell out
-to their platform CLIs, which must be installed. Every non-`serve` target runs codegen
+([Cloudflare](/docs/deploy/cloudflare)); `docker`, `railway`, `fly`, and `aws` likewise shell out to
+their platform CLIs, which must be installed. Every non-`serve` target runs codegen
 (`ctx.codegen()`) before packaging, so a fresh `_generated/` is part of what ships. Provider CLIs
 are never bundled; a missing one fails `preflight` with a clear message.
 
 ## `concile build`
 
-Compiles the app (engine, composed components, schema, functions, and by default the dashboard)
-into one self-contained executable via `bun build --compile`. See
-[Deploy & build](/docs/deploy/deploy-and-build) for the full entrypoint-codegen mechanism.
+Compiles the app (engine, composed components, schema, functions, and by default the dashboard) into
+one self-contained executable via `bun build --compile`. See [Deploy &
+build](/docs/deploy/deploy-and-build) for the full entrypoint-codegen mechanism.
 
 ```bash
 concile build --target linux-x64
@@ -384,8 +385,8 @@ reads its own, separate flag set (not `serve`'s flag names):
 | `--data-dir <dir>` | `./data` | Directory for `db.sqlite` |
 | `--database-url <url>` | `CONCILE_DATABASE_URL` env | Postgres connection string; unset → SQLite |
 
-`CONCILE_ADMIN_KEY` is still required (fails fast if unset, same message as `serve`). On success
-the binary prints one machine-readable line and then runs until `SIGTERM`/`SIGINT`:
+`CONCILE_ADMIN_KEY` is still required (fails fast if unset, same message as `serve`). On success the
+binary prints one machine-readable line and then runs until `SIGTERM`/`SIGINT`:
 
 ```json
 {"ready":true,"port":3000,"url":"http://0.0.0.0:3000"}
@@ -393,16 +394,16 @@ the binary prints one machine-readable line and then runs until `SIGTERM`/`SIGIN
 
 That line is meant for a parent process (Electron/Tauri sidecars, an orchestrator) to detect
 readiness. There is no live hot-swap path for a compiled binary: functions, schema, and the
-component set are fixed at compile time. Use `concile deploy` against a `serve` process instead
-if you need that.
+component set are fixed at compile time. Use `concile deploy` against a `serve` process instead if
+you need that.
 
 ## `concile migrate`
 
-Turns an existing Convex project into a concile project: rewrites Convex import specifiers to
-their `@concile/*` equivalents, scans for API divergences it can't auto-fix, writes
-`MIGRATION-REPORT.md` at the project root, and regenerates `_generated/`. See
-[Migrate from Convex](/docs/reference/migrate-from-convex) for the complete behavior (every
-rewritten import, every detected pattern, the report format); this is the flag reference.
+Turns an existing Convex project into a concile project: rewrites Convex import specifiers to their
+`@concile/*` equivalents, scans for API divergences it can't auto-fix, writes `MIGRATION-REPORT.md`
+at the project root, and regenerates `_generated/`. See [Migrate from
+Convex](/docs/reference/migrate-from-convex) for the complete behavior (every rewritten import,
+every detected pattern, the report format); this is the flag reference.
 
 ```bash
 concile migrate --from convex
@@ -418,12 +419,12 @@ concile migrate --from convex
 Refuses to run against a dirty git working tree (`git status --porcelain` non-empty) unless
 `--force` is passed, with `refusing to migrate: <dir> has uncommitted changes (commit/stash first,
 or pass --force)`. If the directory isn't a git repo at all, it warns and proceeds regardless (there
-is no revert safety net in that case). If no Convex project is detected at the target directory
-(no `convex/schema.ts`, no Convex dependency), it errors with `no <source> project detected at
+is no revert safety net in that case). If no Convex project is detected at the target directory (no
+`convex/schema.ts`, no Convex dependency), it errors with `no <source> project detected at
 <dir>`.
 
-On success: `migrated <n> files. <m> item(s) need manual attention: see MIGRATION-REPORT.md` (or,
-on `--dry-run`, `[dry-run] <n> files would change, <m> scaffolded. See MIGRATION-REPORT.md`). If the
+On success: `migrated <n> files. <m> item(s) need manual attention: see MIGRATION-REPORT.md` (or, on
+`--dry-run`, `[dry-run] <n> files would change, <m> scaffolded. See MIGRATION-REPORT.md`). If the
 import rewrite succeeds but the subsequent codegen fails, exit code 1 with `imports migrated, but
 codegen failed: <error>`. The report is still written, since it's written before codegen runs.
 
@@ -446,11 +447,11 @@ concile migrate import --url <target-url> --in dump.json
 | `--in <file>` | `import` | none (required) | The dump file to read |
 | `--admin-key <key>` | both | `CONCILE_ADMIN_KEY` | Overrides the environment variable, unlike `deploy`, these two subcommands **do** have a flag for the admin key |
 
-On success, `export` prints `✓ exported <n> documents, <m> index rows → <file>`; `import` prints
-`✓ imported <n> documents, <m> index rows`. A `401` from the target prints
-`✗ unauthorized: check CONCILE_ADMIN_KEY / --admin-key`; a table-number collision or malformed
-dump on import surfaces as `✗ import failed: <reason>`. Missing `--url`/file flag/admin key each
-produce their own `✗ missing …` message and exit 1 before any network call is made.
+On success, `export` prints `✓ exported <n> documents, <m> index rows → <file>`; `import` prints `✓
+imported <n> documents, <m> index rows`. A `401` from the target prints `✗ unauthorized: check
+CONCILE_ADMIN_KEY / --admin-key`; a table-number collision or malformed dump on import surfaces as
+`✗ import failed: <reason>`. Missing `--url`/file flag/admin key each produce their own `✗ missing
+…` message and exit 1 before any network call is made.
 
 ## `concile codegen`
 
@@ -473,8 +474,8 @@ Prints `generated <dir>/_generated` on success.
 Changes a **stopped** Postgres fleet's shard count. This is an offline maintenance tool, not a
 live-resharding feature. Every fleet node must be stopped first (an in-flight fleet leaves the
 lease/shard bookkeeping inconsistent with a reshard in progress). Requires the `@concile/fleet`
-package (dynamic-imported; core `packages/cli` has zero static dependency on it, mirroring
-`serve --fleet`'s own gate).
+package (dynamic-imported; core `packages/cli` has zero static dependency on it, mirroring `serve --fleet`'s
+own gate).
 
 ```bash
 concile fleet reshard --shards 4 --database-url postgres://...
@@ -492,8 +493,8 @@ On success:
 ```
 
 Failure modes surface as `✗ <message>`, exit 1: a missing/non-integer `--shards`, a missing/
-non-Postgres `--database-url`, the `@concile/fleet` package not installed, or an error thrown by
-the reshard itself (e.g. the fleet is still live, or a post-reshard verification pass fails).
+non-Postgres `--database-url`, the `@concile/fleet` package not installed, or an error thrown by the
+reshard itself (e.g. the fleet is still live, or a post-reshard verification pass fails).
 
 ## `concile objectstore reshard`
 
@@ -520,8 +521,8 @@ On success:
 If the bucket is already at the requested count: `✓ bucket is already at <n> shard(s): nothing to
 do.` Any other failure (unsupported `--object-store` scheme, missing flags, a CAS-unsupported
 backend) surfaces as `✗ <message>`, exit 1. A missing `--shards`/`--object-store` value where a flag
-was given (e.g. a trailing `--dir` with nothing after it) is rejected explicitly
-(`✗ --dir requires a value.`) rather than silently falling back to a default.
+was given (e.g. a trailing `--dir` with nothing after it) is rejected explicitly (`✗ --dir requires
+a value.`) rather than silently falling back to a default.
 
 ## `concile help` / `--help` / `-h`
 
@@ -580,11 +581,11 @@ Flags always win over their environment-variable equivalent when a command accep
 
 Any of the last three set without `CONCILE_STORAGE_BUCKET` fails `serve` boot fast (S3 settings
 imply S3 intent; without a bucket that's an unambiguous misconfiguration, not a case for silently
-falling back to local disk). Unset bucket → files live under `<data dir>/storage`. See
-[File storage](/docs/core-concepts/file-storage).
+falling back to local disk). Unset bucket → files live under `<data dir>/storage`. See [File
+storage](/docs/core-concepts/file-storage).
 
-The two tables above cover the common case. The rest apply only to multi-node and specialized
-hosts, expand whichever applies to you.
+The two tables above cover the common case. The rest apply only to multi-node and specialized hosts,
+expand whichever applies to you.
 
 <Accordions type="single">
 
@@ -637,11 +638,11 @@ vars/bindings), not by `packages/cli`. They don't apply to `dev`/`serve`/`build`
 
 ## See also
 
-- [Configuration](/docs/reference/configuration): `concile.config.ts`, the `v.*` validator
-  catalog, and this same environment-variable list presented alongside schema configuration.
+- [Configuration](/docs/reference/configuration): `concile.config.ts`, the `v.*` validator catalog,
+  and this same environment-variable list presented alongside schema configuration.
 - [Local dev & dashboard](/docs/deploy/local-dev), [Self-hosting](/docs/deploy/self-hosting),
-  [Postgres](/docs/deploy/postgres), [Scaling](/docs/deploy/scaling),
-  [Deploy & build](/docs/deploy/deploy-and-build), [Cloudflare](/docs/deploy/cloudflare): task-oriented
+  [Postgres](/docs/deploy/postgres), [Scaling](/docs/deploy/scaling), [Deploy &
+  build](/docs/deploy/deploy-and-build), [Cloudflare](/docs/deploy/cloudflare): task-oriented
   walkthroughs for each of these deployment shapes.
-- [Migrate from Convex](/docs/reference/migrate-from-convex): the full `concile migrate` codemod
-  and divergence report.
+- [Migrate from Convex](/docs/reference/migrate-from-convex): the full `concile migrate` codemod and
+  divergence report.

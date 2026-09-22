@@ -5,28 +5,37 @@ description: Sessions, email, OAuth, MFA, and passkeys.
 
 {/* diataxis: explanation */}
 
-`@concile/auth` is our very own first-party authentication component, ready to go right out of the box. It sets you up with email and password accounts, anonymous sign-in options that you can easily upgrade later, and a seriously tough session model. From there, you can mix and match whatever else you need, like email verification, password resets, magic links, one-time codes, social OAuth logins, third-party JWT or OIDC, two-factor TOTP, and even passkeys.
+`@concile/auth` is our very own first-party authentication component, ready to go right out of the
+box. It sets you up with email and password accounts, anonymous sign-in options that you can easily
+upgrade later, and a seriously tough session model. From there, you can mix and match whatever else
+you need, like email verification, password resets, magic links, one-time codes, social OAuth
+logins, third-party JWT or OIDC, two-factor TOTP, and even passkeys.
 
-No matter how a user logs in, the journey always wraps up the same way by creating a real session row right in your database. That exact row is what `ctx.auth.getUserId()` checks inside the transaction, just like any normal read. Because of this, it joins the calling function's [read set](/docs/get-started/how-it-works#read-sets-what-a-query-actually-records). If you ever need to revoke a session, it's as simple as making a write to that row. Any subscribed query relying on that identity will rerun and update instantly, meaning no polling or messing with separate invalidation channels.
+No matter how a user logs in, the journey always wraps up the same way by creating a real session
+row right in your database. That exact row is what `ctx.auth.getUserId()` checks inside the
+transaction, just like any normal read. Because of this, it joins the calling function's [read
+set](/docs/get-started/how-it-works#read-sets-what-a-query-actually-records). If you ever need to
+revoke a session, it's as simple as making a write to that row. Any subscribed query relying on that
+identity will rerun and update instantly, meaning no polling or messing with separate invalidation
+channels.
 
-Everything beyond basic password sign-in is totally optional, tucked away in its own config block. `defineAuth()` with
-no arguments gives you password and anonymous sign-in and nothing else. A deployment that never
-configures `email`, `oauth`, `jwt`, `mfa`, or `passkeys` behaves exactly like an older version of
-the component that never had them.
+Everything beyond basic password sign-in is totally optional, tucked away in its own config block.
+`defineAuth()` with no arguments gives you password and anonymous sign-in and nothing else. A
+deployment that never configures `email`, `oauth`, `jwt`, `mfa`, or `passkeys` behaves exactly like
+an older version of the component that never had them.
 
 This is a long page. Jump to what you need:
 
 - [Enabling it](#enabling-it), [`ctx.auth`](#ctxauth-identity-inside-a-function), and
   [`createAuthClient`](#the-client-createauthclient): the basics every app needs
-- [Sessions](#sessions-sign-up-sign-in-sign-out): the token pair, rotation, expiry,
-  [device management](#device-management), [anonymous auth](#anonymous-auth-and-in-place-upgrade)
+- [Sessions](#sessions-sign-up-sign-in-sign-out): the token pair, rotation, expiry, [device
+  management](#device-management), [anonymous auth](#anonymous-auth-and-in-place-upgrade)
 - [Email flows](#email-flows): verification, password reset, magic links, OTP
 - [OAuth (social sign-in)](#oauth-social-sign-in): adding Google/GitHub/etc. sign-in
 - [Third-party JWT / OIDC](#third-party-jwt--oidc): Clerk, Auth0, Supabase Auth
 - [MFA (TOTP)](#multi-factor-authentication-totp) and [Passkeys](#passkeys-webauthn)
-- [Security invariants](#security-invariants),
-  [notifications integration](#notifications-integration),
-  [localStorage vs. cookies](#localstorage-vs-cookies)
+- [Security invariants](#security-invariants), [notifications
+  integration](#notifications-integration), [localStorage vs. cookies](#localstorage-vs-cookies)
 
 ## Enabling it
 
@@ -55,14 +64,14 @@ export const auth = defineAuth({
 ```
 
 `defineAuth` registers a `sessions`/`accounts`/`users` schema, plus additively whatever tables the
-blocks you configure need. It also registers a set of functions under the `auth:` module prefix,
-and attaches `ctx.auth` as a context provider to every query, mutation, and action in your app.
+blocks you configure need. It also registers a set of functions under the `auth:` module prefix, and
+attaches `ctx.auth` as a context provider to every query, mutation, and action in your app.
 
 ## `ctx.auth`: identity inside a function
 
 `ctx.auth.getUserId()` resolves the ambient session, the token carried by the connection's
-`SetAuth`, or an HTTP request's bearer token, to a user id. It returns `null` if there's no
-session, or if it expired:
+`SetAuth`, or an HTTP request's bearer token, to a user id. It returns `null` if there's no session,
+or if it expired:
 
 ```ts title="concile/documents.ts"
 import { query } from "./_generated/server";
@@ -76,13 +85,12 @@ export const myDocuments = query({
 });
 ```
 
-This resolution reads the `sessions` row through `ctx.db`, not some out-of-band lookup, so the
-read lands in the calling function's read set exactly like any other `ctx.db` call. Deleting that
-row (a revoke, a sign-out, a reuse-detected theft response) is an ordinary write that intersects
-that read set. Every subscribed query gated on `getUserId()` re-runs and reflects the new,
-signed-out identity immediately. It's the same mechanism [How it
-works](/docs/get-started/how-it-works) describes for every other kind of reactivity, applied to
-identity itself.
+This resolution reads the `sessions` row through `ctx.db`, not some out-of-band lookup, so the read
+lands in the calling function's read set exactly like any other `ctx.db` call. Deleting that row (a
+revoke, a sign-out, a reuse-detected theft response) is an ordinary write that intersects that read
+set. Every subscribed query gated on `getUserId()` re-runs and reflects the new, signed-out identity
+immediately. It's the same mechanism [How it works](/docs/get-started/how-it-works) describes for
+every other kind of reactivity, applied to identity itself.
 
 ```mermaid
 flowchart LR
@@ -94,9 +102,9 @@ flowchart LR
 
 ## The client: `createAuthClient`
 
-Sign-in flows are ordinary mutations and actions you call yourself. `createAuthClient` is what
-turns the raw token pair they return into a managed session: persistence, applying the access
-token to the connection, scheduling refresh, and coordinating across tabs.
+Sign-in flows are ordinary mutations and actions you call yourself. `createAuthClient` is what turns
+the raw token pair they return into a managed session: persistence, applying the access token to the
+connection, scheduling refresh, and coordinating across tabs.
 
 ```ts title="app.ts"
 import { ConcileClient, webSocketTransport, createAuthClient, anyApi } from "@concile/client";
@@ -119,37 +127,36 @@ What `createAuthClient(client, opts)` does under the hood:
 
 - **Persistence.** `localStorageSession()` is the default `SessionStorage`. It reads and writes a
   `concile.session` JSON blob (the exported constant `SESSION_STORAGE_KEY`), and falls back
-  transparently to an in-memory store (`memorySession()`) if `localStorage` throws or doesn't
-  exist (private-mode Safari, SSR, a non-browser host). Pass your own `storage` (any
-  `{ load(): SessionInfo | null; save(info): void; clear(): void }`) for Node/Electron/Tauri hosts.
+  transparently to an in-memory store (`memorySession()`) if `localStorage` throws or doesn't exist
+  (private-mode Safari, SSR, a non-browser host). Pass your own `storage` (any `{ load():
+  SessionInfo | null; save(info): void; clear(): void }`) for Node/Electron/Tauri hosts.
 - **Applying the token.** Every `setSession` call, and every successful refresh, calls
   `client.setAuth(token)` (wires the access token into `SetAuth`) and
   `client.setSessionFingerprint(sessionId)`. While a session is managed this way, the durable
   [offline outbox](/docs/client/offline-sync) fingerprints mutations by the stable `sessionId`
   rather than the rotating access token, so a routine rotation never orphans a queued offline
   mutation.
-- **Refresh scheduling.** A timer fires at `refreshAtFraction` (default `0.8`) of the access
-  token's remaining lifetime, computed from `expiresAt - now()`. That makes it exact right after a
-  mint and conservative after a reload. `now` is injectable for tests.
+- **Refresh scheduling.** A timer fires at `refreshAtFraction` (default `0.8`) of the access token's
+  remaining lifetime, computed from `expiresAt - now()`. That makes it exact right after a mint and
+  conservative after a reload. `now` is injectable for tests.
 - **Single-refresher across tabs.** The actual refresh call runs inside a `RefreshLock`: Web Locks
   (`navigator.locks`) in a browser, an in-process promise-chain serializer otherwise. That way two
-  tabs racing to refresh the same session never both present the same refresh token at once.
-  Before calling `auth:refresh`, the lock body re-reads storage. If a sibling tab already rotated,
-  and its pair is strictly newer (a later `expiresAt` and a different `refreshToken`), this tab
-  simply adopts that pair instead of refreshing again.
-- **Cross-tab broadcast.** After a winning refresh, the new pair is posted over a
-  `BroadcastChannel` (`concile:auth:pair`) so every other tab adopts it immediately rather than
-  each independently hitting `auth:refresh`.
-- **`REFRESH_STALE` handling.** If this tab's refresh loses an honest race (see [rotation and
-  reuse detection](#rotation-and-reuse-detection) below), it waits ~250ms for the winner's
-  broadcast, adopts the newer pair if it arrived, and otherwise just reschedules, with no forced
-  sign-out.
+  tabs racing to refresh the same session never both present the same refresh token at once. Before
+  calling `auth:refresh`, the lock body re-reads storage. If a sibling tab already rotated, and its
+  pair is strictly newer (a later `expiresAt` and a different `refreshToken`), this tab simply
+  adopts that pair instead of refreshing again.
+- **Cross-tab broadcast.** After a winning refresh, the new pair is posted over a `BroadcastChannel`
+  (`concile:auth:pair`) so every other tab adopts it immediately rather than each independently
+  hitting `auth:refresh`.
+- **`REFRESH_STALE` handling.** If this tab's refresh loses an honest race (see [rotation and reuse
+  detection](#rotation-and-reuse-detection) below), it waits ~250ms for the winner's broadcast,
+  adopts the newer pair if it arrived, and otherwise just reschedules, with no forced sign-out.
 - **Terminal failure.** `REFRESH_EXPIRED` or `REFRESH_REUSED` clears the session and calls
   `opts.onSignedOut?.()`. Any other refresh failure (a network blip, a server outage) backs off
   exponentially (1s, 2s, 4s, … capped at 60s) rather than spinning.
 - **Injectable seams.** Three more options exist for unusual hosts: `refreshPath` (the refresh
-  mutation's function path, default `"auth:refresh"`), `lock` (a custom `RefreshLock` replacing
-  Web Locks), and `broadcast` (a custom `PairBroadcast` replacing `BroadcastChannel`).
+  mutation's function path, default `"auth:refresh"`), `lock` (a custom `RefreshLock` replacing Web
+  Locks), and `broadcast` (a custom `PairBroadcast` replacing `BroadcastChannel`).
 
 <Callout type="warn" title="Two-process sharing isn't supported">
 
@@ -179,11 +186,11 @@ Every sign-in path, `signUp`, `signIn`, and every flow layered on top below, ret
 
 Password sign-in has its own defense against guessing: five wrong attempts against one `accounts`
 row lock it for 15 minutes (`lockedUntil`), checked before the password comparison so a locked
-account's response time never depends on whether the guessed password was right. One honest
-limit: account *existence* is still timing-distinguishable, since an unknown email is rejected
-before any password-hashing work runs. The lockout gate hides password validity, not whether the
-account exists. A successful sign-in resets the counter and, if the stored hash predates a
-hashing-cost upgrade, transparently rehashes it in the same write.
+account's response time never depends on whether the guessed password was right. One honest limit:
+account *existence* is still timing-distinguishable, since an unknown email is rejected before any
+password-hashing work runs. The lockout gate hides password validity, not whether the account
+exists. A successful sign-in resets the counter and, if the stored hash predates a hashing-cost
+upgrade, transparently rehashes it in the same write.
 
 ### The token pair, hashed at rest
 
@@ -201,20 +208,20 @@ outgoing refresh token's hash as `prevRefreshTokenHash`:
 - Presenting the **current** refresh token → normal rotation: a fresh access + refresh pair, the
   refresh window slides forward (`refreshExpiresAt = now + refreshTtlMs`).
 - Presenting the **immediately-previous** refresh token *within* `refreshGraceMs` (default 30s) of
-  the last rotation → a soft `REFRESH_STALE`. This is the honest case of two sibling tabs racing
-  to refresh at once: one wins and rotates, the other's now-stale token isn't a theft signal, just
-  a losing race. No revocation: the losing tab waits for the winner's broadcast (see above).
-- Presenting the previous refresh token **outside** the grace window → `REFRESH_REUSED`. This *is*
-  a theft signal (someone captured an old refresh token and is replaying it after the legitimate
+  the last rotation → a soft `REFRESH_STALE`. This is the honest case of two sibling tabs racing to
+  refresh at once: one wins and rotates, the other's now-stale token isn't a theft signal, just a
+  losing race. No revocation: the losing tab waits for the winner's broadcast (see above).
+- Presenting the previous refresh token **outside** the grace window → `REFRESH_REUSED`. This *is* a
+  theft signal (someone captured an old refresh token and is replaying it after the legitimate
   client already rotated past it): the entire session row is deleted, and the error still commits
-  that deletion even though the call itself throws (`commitThenThrow`, the same "the write
-  survives the throw" mechanism the password lockout counter and the OTP attempt counter use).
-- Presenting a token that matches neither the current nor the previous hash → a plain
-  invalid-token error, nothing written.
+  that deletion even though the call itself throws (`commitThenThrow`, the same "the write survives
+  the throw" mechanism the password lockout counter and the OTP attempt counter use).
+- Presenting a token that matches neither the current nor the previous hash → a plain invalid-token
+  error, nothing written.
 
-The previous-hash lookup is a single indexed equality read (`byPrevRefreshTokenHash`), never a
-table scan, so a garbage refresh presentation costs O(1) and can't be used to widen a mutation's
-OCC conflict range as a denial-of-service lever.
+The previous-hash lookup is a single indexed equality read (`byPrevRefreshTokenHash`), never a table
+scan, so a garbage refresh presentation costs O(1) and can't be used to widen a mutation's OCC
+conflict range as a denial-of-service lever.
 
 ### Expiry: sliding refresh window vs. absolute ceiling
 
@@ -224,8 +231,8 @@ Two independent limits bound how long a session can live:
   session's refresh window keeps moving forward.
 - **`sessionTotalTtlMs`** (default 90 days) is fixed at mint time and **never slides**. It's a hard
   ceiling on the session's total lifetime regardless of how often it refreshes. Both are checked on
-  every `auth:refresh`. Either one being exceeded throws `REFRESH_EXPIRED`, and the client must
-  sign in again.
+  every `auth:refresh`. Either one being exceeded throws `REFRESH_EXPIRED`, and the client must sign
+  in again.
 
 <Accordions type="single">
 
@@ -258,8 +265,7 @@ Two independent limits bound how long a session can live:
       type: 'number',
       default: '60',
     },
-  }}
-/>
+  }} />
 
 </Accordion>
 
@@ -279,13 +285,13 @@ await client.mutation(anyApi.auth.revokeSession, { sessionId }); // kill one dev
 await client.mutation(anyApi.auth.revokeOtherSessions, {});      // keep this device, kill every other one
 ```
 
-`listSessions` resolves the caller's own `userId` and reads only that user's `sessions` rows over
-an index range, never a table scan. So a subscribed device list re-runs only when this user's own
+`listSessions` resolves the caller's own `userId` and reads only that user's `sessions` rows over an
+index range, never a table scan. So a subscribed device list re-runs only when this user's own
 sessions change, not on every sign-in across the whole deployment. `revokeSession` rejects a
-`sessionId` that doesn't belong to the caller with the same generic "session not found" a
-cross-user probe of any other resource gets: no leak of whether a foreign session id exists.
-Revoking a session deletes its row. Any tab still authenticated with it flips to signed-out on the
-very next reactive push, because `ctx.auth.getUserId()`'s read set is exactly that row.
+`sessionId` that doesn't belong to the caller with the same generic "session not found" a cross-user
+probe of any other resource gets: no leak of whether a foreign session id exists. Revoking a session
+deletes its row. Any tab still authenticated with it flips to signed-out on the very next reactive
+push, because `ctx.auth.getUserId()`'s read set is exactly that row.
 
 ## Anonymous auth and in-place upgrade
 
@@ -299,8 +305,8 @@ auth.setSession(upgraded);
 
 An anonymous user is a real user row (`users.anonymous: true`, no email), not a placeholder.
 `signInAnonymously` is rejected outright if the caller already resolves to any user, signed-in or
-already anonymous. That prevents anon-session churn from an already-authenticated caller. It's
-also capped by the deployment-global `anonymousSignInsPerMinute` throttle: a single rolling-window
+already anonymous. That prevents anon-session churn from an already-authenticated caller. It's also
+capped by the deployment-global `anonymousSignInsPerMinute` throttle: a single rolling-window
 counter row, and `AnonymousThrottledError` (code `ANONYMOUS_THROTTLED`) over the cap.
 
 Calling `signUp` while holding an anonymous session is the upgrade. It attaches the new email and
@@ -317,8 +323,8 @@ flows](#email-flows) below.
 
 Passing an `email` block turns on four sign-in and recovery flows: email verification, password
 reset, magic-link sign-in, and one-time-code (OTP) sign-in. All four are built on one internal
-mutation (`auth:_issueCode`, not client-callable) that generates a code, hashes it, and stores
-only the hash.
+mutation (`auth:_issueCode`, not client-callable) that generates a code, hashes it, and stores only
+the hash.
 
 ```ts title="concile.config.ts"
 import { defineAuth, consoleEmail } from "@concile/auth";
@@ -411,8 +417,7 @@ export const auth = defineAuth({
       type: 'string',
       default: '"auth"',
     },
-  }}
-/>
+  }} />
 
 ### The `EmailProvider` seam
 
@@ -431,8 +436,8 @@ Two providers ship built-in:
 
 <Callout type="warn" title="Don't use consoleEmail() in production">
 
-It prints every code and link to the server's console in plain text. Reach for `resendEmail(...)`
-or a custom provider for anything real.
+It prints every code and link to the server's console in plain text. Reach for `resendEmail(...)` or
+a custom provider for anything real.
 
 </Callout>
 
@@ -463,9 +468,9 @@ export function smtpEmail(opts: { host: string; port: number; user: string; pass
 
 <Accordion title="Customizing templates">
 
-`templates` accepts a partial override of `defaultTemplates`, one function per flow, receiving
-`{ appName, email, code?, url?, ttlMs }` (`code` for OTP, `url` for the three token-based flows)
-and returning `{ subject, text, html? }`:
+`templates` accepts a partial override of `defaultTemplates`, one function per flow, receiving `{
+appName, email, code?, url?, ttlMs }` (`code` for OTP, `url` for the three token-based flows) and
+returning `{ subject, text, html? }`:
 
 ```ts
 import { defineAuth, consoleEmail, defaultTemplates } from "@concile/auth";
@@ -495,8 +500,8 @@ Every `request*` function is an action, call it with `client.action`. Every rede
 mutation (`client.mutation`) that returns `MintResult`. Hand that straight to
 `auth.setSession(...)`.
 
-**Email verification** is gated by `requireEmailVerification`. A gated `signUp`/`signIn` returns
-`{ needsVerification: true }` in place of a session:
+**Email verification** is gated by `requireEmailVerification`. A gated `signUp`/`signIn` returns `{
+needsVerification: true }` in place of a session:
 
 ```ts
 const outcome = await client.mutation(anyApi.auth.signUp, { email, password });
@@ -543,8 +548,8 @@ Magic-link and OTP both adopt an existing user by email, or, if `createUsersOnEm
   account return `{ needsVerification: true }` instead of minting; the client must complete
   `requestEmailVerification` → `verifyEmail` first.
 - **`createUsersOnEmailSignIn`** (default `true`) whether an unknown email hitting
-  `signInWithMagicLink`/`signInWithOtp` provisions a user automatically. Set `false` for
-  invite-only signup, where an account must already exist before passwordless sign-in works.
+  `signInWithMagicLink`/`signInWithOtp` provisions a user automatically. Set `false` for invite-only
+  signup, where an account must already exist before passwordless sign-in works.
 
 ### Abuse defense
 
@@ -568,17 +573,17 @@ Magic-link and OTP both adopt an existing user by email, or, if `createUsersOnEm
 | Password reset | 32-char base64url token | 1 hour | `resetTtlMs` |
 | Email verify | 32-char base64url token | 24 hours | `verifyTtlMs` |
 
-Every code and token is generated with a CSPRNG and stored hashed at rest (SHA-256/base64url).
-Only the raw value that goes out in the email ever exists outside the database. Only one active
-code exists per `(email, flow)` at a time: a new `request*` overwrites the previous row instead of
+Every code and token is generated with a CSPRNG and stored hashed at rest (SHA-256/base64url). Only
+the raw value that goes out in the email ever exists outside the database. Only one active code
+exists per `(email, flow)` at a time: a new `request*` overwrites the previous row instead of
 accumulating them.
 
 ## OAuth (social sign-in)
 
-An `oauth` block turns on social sign-in through six built-in providers, plus any custom
-OIDC/OAuth2 provider. All of them resolve through the same account-linking core that email and
-password sign-in uses. Concile's own sessions always stay DB rows: an external identity is
-resolved to, or linked with, a local `userId`, and then a normal session is minted for it.
+An `oauth` block turns on social sign-in through six built-in providers, plus any custom OIDC/OAuth2
+provider. All of them resolve through the same account-linking core that email and password sign-in
+uses. Concile's own sessions always stay DB rows: an external identity is resolved to, or linked
+with, a local `userId`, and then a normal session is minted for it.
 
 ```ts title="concile.config.ts"
 import {
@@ -612,14 +617,14 @@ export const auth = defineAuth({
 
 <Callout type="warn" title="redirectAllowlist is required">
 
-`defineAuth` throws at config time if `oauth` is configured without a non-empty
-`redirectAllowlist`. It's an open-redirect guard: every `redirectTo` at `/start` must match one of
-these origin + path-prefix entries.
+`defineAuth` throws at config time if `oauth` is configured without a non-empty `redirectAllowlist`.
+It's an open-redirect guard: every `redirectTo` at `/start` must match one of these origin +
+path-prefix entries.
 
 </Callout>
 
-Any custom provider, including one you build yourself, goes through the public
-`oauthProvider({ kind, ... })` seam the six built-ins are thin wrappers over:
+Any custom provider, including one you build yourself, goes through the public `oauthProvider({
+kind, ... })` seam the six built-ins are thin wrappers over:
 
 ```ts
 import { oauthProvider } from "@concile/auth";
@@ -635,40 +640,38 @@ const acmeProvider = oauthProvider({
 ### Built-in providers
 
 All six share one flow. Register the engine's own callback URL
-(`https://<deployment>/api/auth/oauth/<name>/callback`) with the provider, then send users to
-`GET /api/auth/oauth/<name>/start?redirectTo=…`. The engine mounts both routes for you the moment
-`oauth` is configured: no app code to write for them.
+(`https://<deployment>/api/auth/oauth/<name>/callback`) with the provider, then send users to `GET
+/api/auth/oauth/<name>/start?redirectTo=…`. The engine mounts both routes for you the moment `oauth`
+is configured: no app code to write for them.
 
 <Tabs items={['Google', 'GitHub', 'Microsoft', 'Discord', 'Facebook', 'Apple']}>
 
 <Tab value="Google">
 
-**`googleProvider({ clientId, clientSecret, scopes? })`** is OIDC. Identity comes from the
-verified `id_token`.
+**`googleProvider({ clientId, clientSecret, scopes? })`** is OIDC. Identity comes from the verified
+`id_token`.
 
 </Tab>
 
 <Tab value="GitHub">
 
-**`githubProvider({ clientId, clientSecret, scopes? })`**. GitHub has no OIDC discovery or
-id_token, so identity comes from `GET /user` plus `GET /user/emails`, fetched with the access
-token.
+**`githubProvider({ clientId, clientSecret, scopes? })`**. GitHub has no OIDC discovery or id_token,
+so identity comes from `GET /user` plus `GET /user/emails`, fetched with the access token.
 
 </Tab>
 
 <Tab value="Microsoft">
 
-**`microsoftProvider({ clientId, clientSecret, tenant?, scopes? })`** is Microsoft Entra ID
-(OIDC). `tenant` defaults to `"common"` (also `"organizations"`, `"consumers"`, or a tenant GUID /
+**`microsoftProvider({ clientId, clientSecret, tenant?, scopes? })`** is Microsoft Entra ID (OIDC).
+`tenant` defaults to `"common"` (also `"organizations"`, `"consumers"`, or a tenant GUID /
 `*.onmicrosoft.com`). For the three multi-tenant authorities, the id_token's issuer is
 tenant-specific, so the provider relaxes the issuer string check while still verifying the token's
 signature against Microsoft's own keys.
 
 <Callout type="warn" title="Autolinking needs the xms_edov claim">
 
-Entra emits no `email_verified`. Without `xms_edov` enabled in your app's Entra token
-configuration, a Microsoft sign-in is treated as unverified and never auto-links to an existing
-account.
+Entra emits no `email_verified`. Without `xms_edov` enabled in your app's Entra token configuration,
+a Microsoft sign-in is treated as unverified and never auto-links to an existing account.
 
 </Callout>
 
@@ -676,8 +679,8 @@ account.
 
 <Tab value="Discord">
 
-**`discordProvider({ clientId, clientSecret, scopes? })`** is OAuth2, reading `/users/@me`.
-Default scopes are `identify email`. An email links only when Discord itself reports it verified.
+**`discordProvider({ clientId, clientSecret, scopes? })`** is OAuth2, reading `/users/@me`. Default
+scopes are `identify email`. An email links only when Discord itself reports it verified.
 
 </Tab>
 
@@ -701,9 +704,9 @@ your `.p8` per exchange (cached about five months, auto-refreshed 60 seconds ear
 Apple's six-month ceiling). The private key never leaves the server and is never stored.
 
 Apple delivers the callback as an HTTP POST (`form_post`) and sends the user's name only on the
-first authorization, in a `user` field of that POST body. That name is a cosmetic display name
-only: identity (account id, email, email-verified) always comes from the signature-verified
-`id_token`, never the POST body.
+first authorization, in a `user` field of that POST body. That name is a cosmetic display name only:
+identity (account id, email, email-verified) always comes from the signature-verified `id_token`,
+never the POST body.
 
 </Tab>
 
@@ -753,21 +756,21 @@ if (code) {
 }
 ```
 
-The handoff code is single-use (consume-before-validate: a second exchange rejects) and
-short-lived (`handoffTtlMs`). It never carries a real session token. Only `completeOAuthSignIn`
-trades it for one.
+The handoff code is single-use (consume-before-validate: a second exchange rejects) and short-lived
+(`handoffTtlMs`). It never carries a real session token. Only `completeOAuthSignIn` trades it for
+one.
 
-**Link-while-signed-in** ("connect your Google account" from a settings page): if the request
-that hits `/start` carries the current session's access token as `Authorization: Bearer <token>`,
-a successful callback links the external identity to *that* signed-in user instead of resolving by
+**Link-while-signed-in** ("connect your Google account" from a settings page): if the request that
+hits `/start` carries the current session's access token as `Authorization: Bearer <token>`, a
+successful callback links the external identity to *that* signed-in user instead of resolving by
 email. A plain navigation can't attach a custom header, so this specific call needs
 ``fetch("/start?...", { headers: { authorization: `Bearer ${token}` } })`` rather than a bare
 redirect.
 
 ### Account linking: the resolution order
 
-Both OAuth and third-party JWT (below) funnel through one shared resolution core, so linking
-behaves identically regardless of which one produced the identity:
+Both OAuth and third-party JWT (below) funnel through one shared resolution core, so linking behaves
+identically regardless of which one produced the identity:
 
 ```mermaid
 flowchart TD
@@ -782,13 +785,13 @@ flowchart TD
 
 1. **Returning identity.** If this exact `(provider, accountId)` pair is already bound to a user,
    sign in as that user.
-2. **Link-while-signed-in.** If the caller proved an existing session at `/start`, the new
-   external account attaches to that user. No email comparison at all.
+2. **Link-while-signed-in.** If the caller proved an existing session at `/start`, the new external
+   account attaches to that user. No email comparison at all.
 3. **Verified-email autolink.** Only if the identity's email comes back verified (a hard boolean
-   from the provider, for example Google/OIDC `email_verified`, or GitHub's per-address
-   `verified`) and matches an existing user's email, the external account links to that user. This
-   also revokes every existing session on the account if it wasn't already verified, the same
-   first-mailbox-proof rule email flows use, closing the pre-registration-takeover hole.
+   from the provider, for example Google/OIDC `email_verified`, or GitHub's per-address `verified`)
+   and matches an existing user's email, the external account links to that user. This also revokes
+   every existing session on the account if it wasn't already verified, the same first-mailbox-proof
+   rule email flows use, closing the pre-registration-takeover hole.
 4. **Unverified email never autolinks.** A missing or unverified email skips step 3 entirely,
    regardless of any match. A brand-new user is provisioned instead.
 5. **No match at all.** Same outcome as step 4: a fresh user, bound to the external account.
@@ -831,19 +834,19 @@ auth.setSession(session);
 ```
 
 `signInWithIdToken` verifies the token once: signature via a live JWKS fetch (`jose`), plus `iss`,
-`aud`, `exp`/`nbf`, against the first matching configured issuer. Then it resolves, links, or
-mints a Concile session through the exact same core the OAuth callback uses.
+`aud`, `exp`/`nbf`, against the first matching configured issuer. Then it resolves, links, or mints
+a Concile session through the exact same core the OAuth callback uses.
 
-This is an exchange model, not per-request verification. Concile verifies the token once and
-trades it for a real DB-backed session, rather than treating the third-party JWT itself as the
-ambient identity re-verified on every request, because:
+This is an exchange model, not per-request verification. Concile verifies the token once and trades
+it for a real DB-backed session, rather than treating the third-party JWT itself as the ambient
+identity re-verified on every request, because:
 
 - **Revocation stays reactive.** A DB-backed session can be listed (`listSessions`) and revoked
-  (`revokeSession`) like any other. A bare third-party JWT can't be killed early: you'd have to
-  wait out its `exp`.
+  (`revokeSession`) like any other. A bare third-party JWT can't be killed early: you'd have to wait
+  out its `exp`.
 - **`ctx.auth.getUserId()` resolves to a real local `userId`**, usable directly in your schema's
-  foreign keys and ownership checks, rather than a foreign `sub` string your app would otherwise
-  map on every request.
+  foreign keys and ownership checks, rather than a foreign `sub` string your app would otherwise map
+  on every request.
 - **No per-request JWKS cost.** Verification happens once, at exchange time; every request after
   that is an ordinary session lookup, the same cost profile as password sign-in.
 
@@ -882,9 +885,9 @@ posture as `CONCILE_ADMIN_KEY` for the admin and storage surfaces.
 
 </Callout>
 
-The TOTP secret is AES-256-GCM-encrypted at rest, with the additional-authenticated-data (AAD)
-bound to the user id. It's encrypted, not hashed, because verification has to recompute the
-expected code, unlike session tokens and email codes, which are only ever compared.
+The TOTP secret is AES-256-GCM-encrypted at rest, with the additional-authenticated-data (AAD) bound
+to the user id. It's encrypted, not hashed, because verification has to recompute the expected code,
+unlike session tokens and email codes, which are only ever compared.
 
 ### `MfaConfig`: every field
 
@@ -939,8 +942,7 @@ expected code, unlike session tokens and email codes, which are only ever compar
       type: 'string',
       default: 'SHA1 / 6 / 30',
     },
-  }}
-/>
+  }} />
 
 </Accordion>
 
@@ -956,8 +958,7 @@ Enrollment is two-phase, so a botched setup can't lock a user out:
 
 ### Enroll
 
-While already signed in, request a secret and QR code. It's returned once, so render it right
-away:
+While already signed in, request a secret and QR code. It's returned once, so render it right away:
 
 ```ts
 const enrollment = await client.mutation(anyApi.auth.startMfaEnrollment, {});
@@ -965,10 +966,10 @@ const enrollment = await client.mutation(anyApi.auth.startMfaEnrollment, {});
 showQrCode(enrollment.otpauthUri);
 ```
 
-An [anonymous](#anonymous-auth-and-in-place-upgrade) user can't enroll: `startMfaEnrollment`
-throws `MFA_ANONYMOUS_NOT_ALLOWED`, since there's no durable credential or verified mailbox to
-bind a second factor to. This matters for the anonymous-passkey-bootstrap path below: upgrade the
-account first, then enroll TOTP.
+An [anonymous](#anonymous-auth-and-in-place-upgrade) user can't enroll: `startMfaEnrollment` throws
+`MFA_ANONYMOUS_NOT_ALLOWED`, since there's no durable credential or verified mailbox to bind a
+second factor to. This matters for the anonymous-passkey-bootstrap path below: upgrade the account
+first, then enroll TOTP.
 
 </Step>
 
@@ -990,9 +991,8 @@ showRecoveryCodesOnce(recoveryCodes);
 
 ### Sign in through the gate
 
-From here on, every gated first-factor success returns
-`{ mfaRequired: true, pendingToken, expiresAt }` instead of a session: no token, nothing an app
-could mistake for being signed in.
+From here on, every gated first-factor success returns `{ mfaRequired: true, pendingToken, expiresAt
+}` instead of a session: no token, nothing an app could mistake for being signed in.
 
 ```ts
 const outcome = await client.mutation(anyApi.auth.signIn, { email, password });
@@ -1034,9 +1034,9 @@ if (status.recoveryCodesRemaining < 3) {
 }
 ```
 
-`regenerateRecoveryCodes` requires a live TOTP code specifically. A recovery code can't mint a
-fresh recovery-code batch: that would be self-referential, and it would burn one of the codes
-being replaced.
+`regenerateRecoveryCodes` requires a live TOTP code specifically. A recovery code can't mint a fresh
+recovery-code batch: that would be self-referential, and it would burn one of the codes being
+replaced.
 
 ### Disabling MFA
 
@@ -1046,8 +1046,8 @@ await client.mutation(anyApi.auth.disableMfa, { code: userEnteredCode }); // TOT
 
 `disableMfa` (and `regenerateRecoveryCodes`) require a fresh, currently-valid second factor: proof
 of possession, not just an active session. That means a stolen-but-still-live access token alone
-can't strip a victim's second factor. Disabling deletes the enrollment and every recovery code;
-the next sign-in mints directly, with no `mfaRequired` step.
+can't strip a victim's second factor. Disabling deletes the enrollment and every recovery code; the
+next sign-in mints directly, with no `mfaRequired` step.
 
 ### Losing the authenticator
 
@@ -1074,16 +1074,16 @@ defineAuth({
 ```
 
 `[0]` is always the primary, used for all new encryptions. Decryption dispatches on the `keyId`
-embedded in each stored secret's own envelope, so existing enrollments keep working under a
-retired key until they re-enroll. Only drop a retired key once no confirmed enrollment still
-references its id: there is no server-side recovery of a secret whose only decrypting key is gone.
+embedded in each stored secret's own envelope, so existing enrollments keep working under a retired
+key until they re-enroll. Only drop a retired key once no confirmed enrollment still references its
+id: there is no server-side recovery of a secret whose only decrypting key is gone.
 
 ## Passkeys (WebAuthn)
 
 A `passkeys` block adds WebAuthn (Face ID, Touch ID, Windows Hello, a hardware security key, or a
-synced platform passkey) as a phishing-resistant, passwordless first factor. A passkey flows
-through the same session-minting chokepoint as a password, so it honors any enrolled MFA and
-participates in the same device-management surface as sessions.
+synced platform passkey) as a phishing-resistant, passwordless first factor. A passkey flows through
+the same session-minting chokepoint as a password, so it honors any enrolled MFA and participates in
+the same device-management surface as sessions.
 
 ```ts title="concile.config.ts"
 export const auth = defineAuth({
@@ -1128,8 +1128,7 @@ and validates every origin with the same loopback-or-`https://` rule OAuth endpo
       type: 'number',
       default: '5 minutes',
     },
-  }}
-/>
+  }} />
 
 </Accordion>
 
@@ -1145,9 +1144,9 @@ npm install @simplewebauthn/browser
 ```
 
 Register a passkey. The user must already be signed in, including
-[anonymously](#anonymous-auth-and-in-place-upgrade), which is the passwordless-bootstrap path:
-sign in anonymously, register a passkey, and the account is reachable from any device with no
-password ever set.
+[anonymously](#anonymous-auth-and-in-place-upgrade), which is the passwordless-bootstrap path: sign
+in anonymously, register a passkey, and the account is reachable from any device with no password
+ever set.
 
 ```ts
 import { startRegistration } from "@simplewebauthn/browser";
@@ -1159,9 +1158,9 @@ async function registerPasskey() {
 }
 ```
 
-`finishPasskeyRegistration` accepts an optional `deviceName` label, persisted on the credential
-row and shown by `listPasskeys` (renameable later with `renamePasskey`). Registering a credential
-id that already exists throws `PASSKEY_ALREADY_REGISTERED`.
+`finishPasskeyRegistration` accepts an optional `deviceName` label, persisted on the credential row
+and shown by `listPasskeys` (renameable later with `renamePasskey`). Registering a credential id
+that already exists throws `PASSKEY_ALREADY_REGISTERED`.
 
 **Sign in with a passkey.** Two shapes share the same finish call:
 
@@ -1202,19 +1201,19 @@ await client.mutation(anyApi.auth.renamePasskey, { passkeyId, deviceName: "My iP
 await client.mutation(anyApi.auth.revokePasskey, { passkeyId });
 ```
 
-`listPasskeys` is reactive: revoking on one device updates a live list on another. Rename and
-revoke are ownership-checked; a foreign `passkeyId` gets the same generic "passkey not found"
-every other cross-user probe gets. A revoked passkey is un-authenticatable immediately.
+`listPasskeys` is reactive: revoking on one device updates a live list on another. Rename and revoke
+are ownership-checked; a foreign `passkeyId` gets the same generic "passkey not found" every other
+cross-user probe gets. A revoked passkey is un-authenticatable immediately.
 
 ### Security guarantees
 
-- **Challenge, origin, and RP-ID binding.** Every ceremony is bound to a fresh single-use
-  challenge, consumed before validation, so a replay finds nothing, and verified against the
-  configured `origins` and `rpID`. An assertion captured on a phishing origin doesn't verify.
+- **Challenge, origin, and RP-ID binding.** Every ceremony is bound to a fresh single-use challenge,
+  consumed before validation, so a replay finds nothing, and verified against the configured
+  `origins` and `rpID`. An assertion captured on a phishing origin doesn't verify.
 - **Atomic clone detection.** Each credential carries a signature counter. An authentication whose
   presented counter regressed, or repeated a nonzero value, is rejected with no mint and no state
-  change. The compare-and-set runs inside the same single-writer transaction as the mint, so
-  there's no race window between checking the counter and committing it.
+  change. The compare-and-set runs inside the same single-writer transaction as the mint, so there's
+  no race window between checking the counter and committing it.
 - **Anti-enumeration.** Every authentication failure (unknown credential, wrong owner, bad
   signature, stale challenge) collapses to one generic message. `begin` for an unknown email is
   byte-shaped identically to a known one with zero passkeys.
@@ -1241,36 +1240,34 @@ A few guarantees hold across every flow above, by construction:
   it's an interposition point, not an alternate path. A static-source guard test fails CI if any
   gated call site is ever changed to mint directly, bypassing the gate.
 - **A passkey cannot bypass an enrolled second factor.** Passkeys and MFA were designed
-  concurrently. Passkey authentication routes through the identical `finishSignIn` gate as
-  password, OAuth, or email sign-in, so a user enrolled in both never gets to skip TOTP via a
-  passkey.
-- **OAuth, third-party JWT, and passkeys are all first factors**, never a second factor and never
-  a bypass of one. Every one of them can return `{ mfaRequired }` exactly like password sign-in
-  when the resolved user has a confirmed MFA enrollment.
+  concurrently. Passkey authentication routes through the identical `finishSignIn` gate as password,
+  OAuth, or email sign-in, so a user enrolled in both never gets to skip TOTP via a passkey.
+- **OAuth, third-party JWT, and passkeys are all first factors**, never a second factor and never a
+  bypass of one. Every one of them can return `{ mfaRequired }` exactly like password sign-in when
+  the resolved user has a confirmed MFA enrollment.
 
 ## Notifications integration
 
-When `@concile/notifications` is composed alongside `auth`, every A2 email send (OTP,
-magic-link, verification, and password-reset) routes through `ctx.notifications.send(...)`
-instead of auth's own `EmailProvider.send`. It goes with `critical: true` (bypassing the
-recipient's notification preferences, since a security-critical send can't be silently suppressed
-by a user preference) and `category` set to `email.notificationCategory` (default `"auth"`).
+When `@concile/notifications` is composed alongside `auth`, every A2 email send (OTP, magic-link,
+verification, and password-reset) routes through `ctx.notifications.send(...)` instead of auth's own
+`EmailProvider.send`. It goes with `critical: true` (bypassing the recipient's notification
+preferences, since a security-critical send can't be silently suppressed by a user preference) and
+`category` set to `email.notificationCategory` (default `"auth"`).
 
 That gets you [notifications](/docs/components/notifications)' retry, backoff, and dead-letter
 delivery machinery, plus shared provider config, for free. Zero import from auth's side: the
-integration is duck-typed against a small structural interface
-(`{ send(args): Promise<{messageIds}> }>`), so auth has no dependency on the notifications package
-at all.
+integration is duck-typed against a small structural interface (`{ send(args): Promise<{messageIds}>
+}>`), so auth has no dependency on the notifications package at all.
 
 Without notifications composed, the exact same sends fall back to auth's own configured
 `EmailProvider`: byte-identical behavior to a deployment that has never heard of notifications.
 
 ## localStorage vs. cookies
 
-Concile is WebSocket-first: identity flows over the `SetAuth` message, not request headers. So
-the client holds the access token in JS (`localStorage` by default) rather than an httpOnly
-cookie. The theft mitigation is the session model itself (a short access TTL, refresh rotation,
-and reuse detection), not cookie isolation.
+Concile is WebSocket-first: identity flows over the `SetAuth` message, not request headers. So the
+client holds the access token in JS (`localStorage` by default) rather than an httpOnly cookie. The
+theft mitigation is the session model itself (a short access TTL, refresh rotation, and reuse
+detection), not cookie isolation.
 
 httpOnly-cookie mode plus CSRF is intentionally out of scope. If your threat model requires cookie
 isolation, front Concile with your own auth-terminating proxy.
@@ -1279,9 +1276,9 @@ isolation, front Concile with your own auth-terminating proxy.
 
 - [Authorization](/docs/components/authorization): role, relationship, and row-level permissions
   layered on top of `ctx.auth`'s resolved identity.
-- [Notifications](/docs/components/notifications): the shared delivery path auth's own
-  transactional emails route through when composed.
+- [Notifications](/docs/components/notifications): the shared delivery path auth's own transactional
+  emails route through when composed.
 - [How it works](/docs/get-started/how-it-works): the read-set/write-set mechanism that makes
   session revocation reactive.
-- [Offline sync](/docs/client/offline-sync): why a managed session fingerprints the durable
-  outbox by `sessionId` rather than the rotating access token.
+- [Offline sync](/docs/client/offline-sync): why a managed session fingerprints the durable outbox
+  by `sessionId` rather than the rotating access token.

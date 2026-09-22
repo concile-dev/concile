@@ -5,33 +5,41 @@ description: Durable multi-step orchestration.
 
 {/* diataxis: explanation */}
 
-Sometimes jobs just take more than one step. You might need to reserve stock, charge a card, and then mark the order as fulfilled, maybe even taking a pause or waiting for an external signal in the middle. `@concile/workflow` handles that entire sequence for you, dependably and durably.
+Sometimes jobs just take more than one step. You might need to reserve stock, charge a card, and
+then mark the order as fulfilled, maybe even taking a pause or waiting for an external signal in the
+middle. `@concile/workflow` handles that entire sequence for you, dependably and durably.
 
-A workflow easily survives a process restart because it is not just floating in memory. The result of every step gets logged into a durable table, and concile actually **replays the whole handler from the very beginning** every time the run moves forward. If a step already succeeded, it resolves instantly by checking the journal, meaning only a genuinely new step ends up doing any real work.
+A workflow easily survives a process restart because it is not just floating in memory. The result
+of every step gets logged into a durable table, and concile actually **replays the whole handler
+from the very beginning** every time the run moves forward. If a step already succeeded, it resolves
+instantly by checking the journal, meaning only a genuinely new step ends up doing any real work.
 
-It relies on [`@concile/scheduler`](/docs/components/scheduling) (`requires: ["scheduler"]`) rather than replacing it. Because every step goes through the scheduler's own job queue, it gets to inherit all of the scheduler's great features like retries, backoffs, dead lettering, and cascading cancels.
+It relies on [`@concile/scheduler`](/docs/components/scheduling) (`requires: ["scheduler"]`) rather
+than replacing it. Because every step goes through the scheduler's own job queue, it gets to inherit
+all of the scheduler's great features like retries, backoffs, dead lettering, and cascading cancels.
 
 ## The model: deterministic replay, not checkpointing
 
-There's no continuation capture, no serialized stack, no special workflow interpreter. The
-mechanism is simple:
+There's no continuation capture, no serialized stack, no special workflow interpreter. The mechanism
+is simple:
 
-1. A workflow's handler is an ordinary async function that calls `step.runMutation`/`step.runAction`/etc.
+1. A workflow's handler is an ordinary async function that calls
+   `step.runMutation`/`step.runAction`/etc.
 2. Every step call is recorded in a durable `steps` journal, keyed by `(workflowId, stepNumber)`.
-3. Advancing a run means re-running the handler from the very first line, in order. Each step
-   call first checks the journal at its position:
+3. Advancing a run means re-running the handler from the very first line, in order. Each step call
+   first checks the journal at its position:
    - **Already succeeded** → resolves synchronously with the recorded result. No re-dispatch, no
      side effect runs twice.
    - **Already failed** → rejects synchronously with the recorded error.
    - **Still pending** (dispatched, not yet done) → the handler suspends here. This poll ends.
-   - **Not in the journal yet** → a genuinely new step. It gets journaled and dispatched through
-     the scheduler; the handler suspends here too.
-4. The handler races forward through every already-resolved step in one microtask burst, then
-   blocks on the first pending-or-new step. That's "suspend": there's no explicit yield keyword,
-   just a promise that never resolves this poll.
-5. When a dispatched step's job completes, the scheduler's `onComplete` callback journals the
-   result and re-enqueues the advance, which reruns the handler from the top again, one step
-   further this time.
+   - **Not in the journal yet** → a genuinely new step. It gets journaled and dispatched through the
+     scheduler; the handler suspends here too.
+4. The handler races forward through every already-resolved step in one microtask burst, then blocks
+   on the first pending-or-new step. That's "suspend": there's no explicit yield keyword, just a
+   promise that never resolves this poll.
+5. When a dispatched step's job completes, the scheduler's `onComplete` callback journals the result
+   and re-enqueues the advance, which reruns the handler from the top again, one step further this
+   time.
 
 ```mermaid
 sequenceDiagram
@@ -67,8 +75,8 @@ The workflow handler must be deterministic (no random/network/clock calls, no re
 
 ## Enabling it
 
-`@concile/workflow` requires `@concile/scheduler` to be composed first (or at least alongside
-it: compose order across `requires` is resolved automatically):
+`@concile/workflow` requires `@concile/scheduler` to be composed first (or at least alongside it:
+compose order across `requires` is resolved automatically):
 
 ```ts title="concile.config.ts"
 import { defineConfig } from "@concile/component";
@@ -117,9 +125,9 @@ export const placeOrder = mutation({
 });
 ```
 
-- **`ctx.workflow.start(ref, args)`** → `Promise<runId>`. Inserts a new `workflows` row
-  (`state: "running"`, `generationNumber: 0`, plus a `recoveryAttempts` counter initialized to `0`,
-  a crash-recovery accounting field on the row) in the **calling mutation's own transaction**, and
+- **`ctx.workflow.start(ref, args)`** → `Promise<runId>`. Inserts a new `workflows` row (`state:
+  "running"`, `generationNumber: 0`, plus a `recoveryAttempts` counter initialized to `0`, a
+  crash-recovery accounting field on the row) in the **calling mutation's own transaction**, and
   enqueues the first `workflow:_advance` poll through the scheduler. The same `contextWrite`-backed
   pattern `ctx.scheduler.runAfter` uses: if the calling mutation rolls back, the workflow never
   started at all.
@@ -137,8 +145,8 @@ that `start` returned.
 
 `ctx.workflow` also works from an **action**. An action has no `ctx.db`, so `start`/`cancel`/
 `sendEvent` there each delegate to an internal `workflow:_start`/`_cancel`/`_sendEvent` mutation via
-`ctx.runMutation`, mirroring exactly how `@concile/scheduler`'s own action-mode facade delegates
-to `scheduler:_enqueue`/`_cancel`. The calling code looks identical either way:
+`ctx.runMutation`, mirroring exactly how `@concile/scheduler`'s own action-mode facade delegates to
+`scheduler:_enqueue`/`_cancel`. The calling code looks identical either way:
 
 ```ts
 export const kickOffFulfillment = action({
@@ -191,8 +199,7 @@ The six methods at a glance (each covered in detail below):
       type: 'Promise<T>',
       description: "Parks durably, with no scheduler job at all, until ctx.workflow.sendEvent(runId, name, payload) resolves it. opts.timeoutMs is not implemented yet.",
     },
-  }}
-/>
+  }} />
 
 ### `step.runMutation` / `step.runQuery` / `step.runAction`
 
@@ -210,9 +217,9 @@ const receipt = await step.runAction("payments:_emailReceipt", { orderId });
 const order = await step.runQuery("orders:_get", { orderId });
 ```
 
-- **`opts.maxAttempts`** caps that step's own retries. It becomes the scheduler's
-  `retry: { maxFailures }` for that step's dispatch, reusing the scheduler's existing
-  jittered-backoff retry rather than inventing a second one.
+- **`opts.maxAttempts`** caps that step's own retries. It becomes the scheduler's `retry: {
+  maxFailures }` for that step's dispatch, reusing the scheduler's existing jittered-backoff retry
+  rather than inventing a second one.
 - **`opts.compensate`** (mutation and action steps only) declares an "undo" handler for the saga
   unwind. See [Saga: per-step compensation](#saga-per-step-compensation) below.
 - **`runAction` is at-most-once by default**: it dispatches a `kind: "action"` scheduler job, and
@@ -243,10 +250,10 @@ await step.runAction("notifications:_sendFollowUp", { orderId });
 ```
 
 The due time is computed from the **current poll's fixed clock** (the mutation's own deterministic
-`ctx.now()`), never `Date.now()`. A replay must compute the same due time every time it reaches
-this step. Under the hood, `sleep`/`sleepUntil` dispatch the same way a step does, targeting a
-trivial internal no-op mutation (`workflow:_sleep`). The durability comes entirely from the
-scheduler's own `runAt` semantics, not a new timer mechanism.
+`ctx.now()`), never `Date.now()`. A replay must compute the same due time every time it reaches this
+step. Under the hood, `sleep`/`sleepUntil` dispatch the same way a step does, targeting a trivial
+internal no-op mutation (`workflow:_sleep`). The durability comes entirely from the scheduler's own
+`runAt` semantics, not a new timer mechanism.
 
 ### `waitForEvent`: the durable signal
 
@@ -254,9 +261,9 @@ scheduler's own `runAt` semantics, not a new timer mechanism.
 step.waitForEvent<T>(name: string, opts?: { timeoutMs?: number }): Promise<T>
 ```
 
-This is the differentiator: **no scheduler job is dispatched at all.** The workflow parks by
-writing an `events` row (`state: "waiting"`) and leaving the step's journal row without a
-`scheduledJobId`. Nothing is polling, nothing is armed on a timer. It sits durably idle until
+This is the differentiator: **no scheduler job is dispatched at all.** The workflow parks by writing
+an `events` row (`state: "waiting"`) and leaving the step's journal row without a `scheduledJobId`.
+Nothing is polling, nothing is armed on a timer. It sits durably idle until
 `ctx.workflow.sendEvent(runId, name, payload)` is called from anywhere: another mutation, a webhook
 handler, an admin action.
 
@@ -277,8 +284,8 @@ export const approve = mutation({
 journals the `waitForEvent` step `"success"` with that payload as its result, and re-enqueues the
 advance. The commit fan-out wakes the driver, which replays the handler and now resolves
 `waitForEvent` from the cached journal row, same as any other step. It's a no-op, not an error, if
-there's no matching waiting event: an event already delivered, sent before the workflow reached
-that `waitForEvent`, or sent to an unknown run, all silently do nothing.
+there's no matching waiting event: an event already delivered, sent before the workflow reached that
+`waitForEvent`, or sent to an unknown run, all silently do nothing.
 
 <Callout type="info" title="opts.timeoutMs isn't implemented yet">
 
@@ -289,15 +296,14 @@ step.waitForEvent's timeoutMs is not implemented yet (Task 6 scope: unbounded wa
 ```
 
 A `waitForEvent` that's never sent parks forever, or until the run is canceled. Build your own
-timeout today with a preceding `step.sleep` and a `Promise.race`-style pattern in your own app
-code if you need one, or cancel the run externally.
+timeout today with a preceding `step.sleep` and a `Promise.race`-style pattern in your own app code
+if you need one, or cancel the run externally.
 
 </Callout>
 
 ## Fan-out and fan-in (`Promise.all`)
 
-Multiple steps issued before the handler's first `await` yields are dispatched **in the same
-poll**:
+Multiple steps issued before the handler's first `await` yields are dispatched **in the same poll**:
 
 ```ts
 workflow.define({
@@ -311,16 +317,16 @@ workflow.define({
 });
 ```
 
-Both `runMutation` calls run synchronously up to the point they return their (unresolved)
-promises, so both land in the same batch of new steps for that poll: journaled and dispatched
-together, not one-at-a-time across separate polls. The handler joins once both have completed (in
-either order), exactly like a normal `Promise.all`.
+Both `runMutation` calls run synchronously up to the point they return their (unresolved) promises,
+so both land in the same batch of new steps for that poll: journaled and dispatched together, not
+one-at-a-time across separate polls. The handler joins once both have completed (in either order),
+exactly like a normal `Promise.all`.
 
 **`maxParallelism`** caps how many new steps get dispatched in a single poll. A fan-out wider than
 the cap (say, 5 steps with `maxParallelism: 2`) dispatches in capped waves (2, then 2, then 1)
-rather than all 5 at once or an error. Nothing is dropped: the steps that don't fit this wave
-simply aren't journaled yet, so `runReplay` re-emits them as "new" on the next poll (triggered once
-the current wave's steps complete), spreading the fan-out across `ceil(N / maxParallelism)` polls
+rather than all 5 at once or an error. Nothing is dropped: the steps that don't fit this wave simply
+aren't journaled yet, so `runReplay` re-emits them as "new" on the next poll (triggered once the
+current wave's steps complete), spreading the fan-out across `ceil(N / maxParallelism)` polls
 instead of one. A console warning is logged when the cap is exceeded, but the run proceeds and
 eventually completes correctly.
 
@@ -345,10 +351,10 @@ function OrderStatus({ runId }: { runId: string }) {
 }
 ```
 
-Subscribe to it for a reactive "is my order done yet?" view with no polling. Every state
-transition (`running` → `compensating` → `failed`, or `running` → `completed`) fans out over the
-same commit fan-out mechanism every other reactive query rides. `result`/`error` are only present
-once the run has actually produced them. `status` returns `null` for an unknown `runId`.
+Subscribe to it for a reactive "is my order done yet?" view with no polling. Every state transition
+(`running` → `compensating` → `failed`, or `running` → `completed`) fans out over the same commit
+fan-out mechanism every other reactive query rides. `result`/`error` are only present once the run
+has actually produced them. `status` returns `null` for an unknown `runId`.
 
 ## Canceling
 
@@ -389,11 +395,11 @@ await step.runMutation("orders:_markFulfilled", { orderId }); // no compensate: 
 The compensation is recorded on the step's journal row (`compensateFnPath`) the moment the step
 completes successfully. A step that never succeeds has nothing to compensate.
 
-**Reverse-order unwind.** If a later step in the same run fails (after exhausting its own
-retries), or the workflow is canceled while steps have already succeeded, the workflow enters
-`"compensating"` and walks its completed steps **backwards** by `stepNumber`, dispatching each
-owed `{ compensate }` handler through the scheduler, one at a time, highest `stepNumber` first.
-The undo handler receives the original step's own inputs and output:
+**Reverse-order unwind.** If a later step in the same run fails (after exhausting its own retries),
+or the workflow is canceled while steps have already succeeded, the workflow enters `"compensating"`
+and walks its completed steps **backwards** by `stepNumber`, dispatching each owed `{ compensate }`
+handler through the scheduler, one at a time, highest `stepNumber` first. The undo handler receives
+the original step's own inputs and output:
 
 ```ts
 export const refund = mutation({
@@ -404,10 +410,10 @@ export const refund = mutation({
 });
 ```
 
-This is **compensate-by-default**: a step that declares `{ compensate }` gets its undo run
-whenever the run doesn't reach a clean success, with no extra opt-in beyond declaring it. Opt out
-per-cancel with `{ compensate: false }` on `ctx.workflow.cancel`, shown above. There's no per-step
-"skip this one" escape once an unwind has started. Every owed compensation runs, in order.
+This is **compensate-by-default**: a step that declares `{ compensate }` gets its undo run whenever
+the run doesn't reach a clean success, with no extra opt-in beyond declaring it. Opt out per-cancel
+with `{ compensate: false }` on `ctx.workflow.cancel`, shown above. There's no per-step "skip this
+one" escape once an unwind has started. Every owed compensation runs, in order.
 
 **Halt-on-failed-compensation.** If a compensation handler itself exhausts its own retries, the
 unwind halts. It does not continue undoing earlier steps, and it does not hang. The run
@@ -470,24 +476,24 @@ export default defineConfig({
 ```
 
 If `orders:_markFulfilled` (or anything after the charge) fails, the run enters `"compensating"`,
-runs `payments:_refund` then `orders:_releaseStock`, in that reverse order, and lands on
-`"failed"` with both the original error and (if the refund itself failed) the halt reason. If
-nothing fails, neither compensation ever runs and the run reaches `"completed"` normally.
+runs `payments:_refund` then `orders:_releaseStock`, in that reverse order, and lands on `"failed"`
+with both the original error and (if the refund itself failed) the halt reason. If nothing fails,
+neither compensation ever runs and the run reaches `"completed"` normally.
 
 ## The `generationNumber` OCC guard
 
-Every `workflows` row carries a `generationNumber`, bumped whenever a cancel is issued. It exists
-to prevent two race classes:
+Every `workflows` row carries a `generationNumber`, bumped whenever a cancel is issued. It exists to
+prevent two race classes:
 
 - **Double-advance**: replaying a handler drains through a real microtask/timer barrier that can
-  take actual wall-clock time, during which another transaction (a concurrent cancel) could
-  commit. Before writing its outcome, an advance re-reads the row and checks `generationNumber`
-  still matches what it started with. A stale replay outcome can never clobber a since-canceled or
+  take actual wall-clock time, during which another transaction (a concurrent cancel) could commit.
+  Before writing its outcome, an advance re-reads the row and checks `generationNumber` still
+  matches what it started with. A stale replay outcome can never clobber a since-canceled or
   since-restarted run.
-- **Stale-cancel resurrection**: a step dispatched before a cancel carries that cancel's
-  *pre-bump* generation in its `onComplete` context. If it completes after the cancel already
-  landed, its completion callback's generation check fails and it self-discards instead of
-  resurrecting a canceled run.
+- **Stale-cancel resurrection**: a step dispatched before a cancel carries that cancel's *pre-bump*
+  generation in its `onComplete` context. If it completes after the cancel already landed, its
+  completion callback's generation check fails and it self-discards instead of resurrecting a
+  canceled run.
 
 This is invisible in normal use. You never read or set `generationNumber` yourself, but it's why
 canceling a workflow is safe even while steps are actively in flight.
@@ -495,22 +501,22 @@ canceling a workflow is safe even while steps are actively in flight.
 ## What workflows are not
 
 - **Not a general task queue.** For "run this once, later," reach for
-  [`ctx.scheduler`](/docs/components/scheduling) directly. A workflow is for coordinating
-  *multiple* durable steps, with replay and (optionally) compensation. A one-shot job with no
-  sequencing needs is unnecessary overhead as a workflow.
+  [`ctx.scheduler`](/docs/components/scheduling) directly. A workflow is for coordinating *multiple*
+  durable steps, with replay and (optionally) compensation. A one-shot job with no sequencing needs
+  is unnecessary overhead as a workflow.
 - **No sub-workflows.** A workflow can't currently start and await another workflow as one of its
   own steps. (The `workflows` row does carry `onComplete`/`context` fields, a completion-callback
   round-trip primitive the engine already uses internally for step dispatch, but they are not yet
-  exposed as options on `ctx.workflow.start`, so there's no public way to be notified when a run
-  you started finishes. Poll [`workflow:status`](#checking-status-the-live-workflowstatus-query)
+  exposed as options on `ctx.workflow.start`, so there's no public way to be notified when a run you
+  started finishes. Poll [`workflow:status`](#checking-status-the-live-workflowstatus-query)
   instead.)
-- **No replay-debugging UI.** There's no built-in tool to step through or visualize a run's
-  journal beyond querying `workflow:status` and browsing the `workflows`/`steps`/`events` tables
-  directly (e.g. via the dashboard's data browser).
+- **No replay-debugging UI.** There's no built-in tool to step through or visualize a run's journal
+  beyond querying `workflow:status` and browsing the `workflows`/`steps`/`events` tables directly
+  (e.g. via the dashboard's data browser).
 - **No handler versioning.** A workflow's registered handlers are fixed for the deployment's
   lifetime, the same constraint crons and triggers have. Changing a workflow's step sequence after
-  runs are already in flight against the old sequence is unsupported. A mismatched replay throws
-  the journal-mismatch error shown earlier rather than silently reinterpreting history.
+  runs are already in flight against the old sequence is unsupported. A mismatched replay throws the
+  journal-mismatch error shown earlier rather than silently reinterpreting history.
 
 These are deferred, not ruled out. None of the shipped mechanism (journal shape, `step` API, saga
 unwind) precludes adding them later.

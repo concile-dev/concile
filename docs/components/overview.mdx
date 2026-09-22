@@ -5,9 +5,15 @@ description: Opt-in capabilities composed in concile.config.ts.
 
 {/* diataxis: explanation */}
 
-The core engine (schema, queries, mutations, actions, reactivity) doesn't really know about auth, notifications, or workflows, and honestly, it doesn't need to. Think of these capabilities as components, which are basically self-contained packages that plug right into the engine using a single seam called `ComponentDefinition`. Each one chips in with its own mix of tables, a handy `ctx.<name>` facade, background behavior, and whatever HTTP routes it might need.
+The core engine (schema, queries, mutations, actions, reactivity) doesn't really know about auth,
+notifications, or workflows, and honestly, it doesn't need to. Think of these capabilities as
+components, which are basically self-contained packages that plug right into the engine using a
+single seam called `ComponentDefinition`. Each one chips in with its own mix of tables, a handy
+`ctx.<name>` facade, background behavior, and whatever HTTP routes it might need.
 
-When you're setting up a project, you get to handpick exactly the components you want in your `concile.config.ts` file. We don't install anything for you behind your back, and absolutely nothing runs unless you specifically ask for it.
+When you're setting up a project, you get to handpick exactly the components you want in your
+`concile.config.ts` file. We don't install anything for you behind your back, and absolutely nothing
+runs unless you specifically ask for it.
 
 This page explains the component model itself: how you compose components, what's built in today,
 and how composition works (ordering, namespacing, the driver seam). For each capability's own API,
@@ -72,15 +78,14 @@ export default defineConfig({
 });
 ```
 
-(Adapted from `examples/auth-demo/concile.config.ts`, the reference pattern real projects copy
-from. `examples/chat/concile.config.ts` shows the smallest possible case: a single
-`defineTriggers({ messages: { handler: "audit:_onChange" } })` for a table audit log.)
+(Adapted from `examples/auth-demo/concile.config.ts`, the reference pattern real projects copy from.
+`examples/chat/concile.config.ts` shows the smallest possible case: a single `defineTriggers({
+messages: { handler: "audit:_onChange" } })` for a table audit log.)
 
 That's the entire surface. There is no separate CLI command that "installs" a component into a
-project. `packages/cli/src/load-config.ts` just imports `concile.config.ts` (or
-`concile.config.js`, whichever exists) and reads `.components` off the default export. If neither
-file is present, the project composes zero components (`{ components: [] }`) and behaves as pure
-core engine.
+project. `packages/cli/src/load-config.ts` just imports `concile.config.ts` (or `concile.config.js`,
+whichever exists) and reads `.components` off the default export. If neither file is present, the
+project composes zero components (`{ components: [] }`) and behaves as pure core engine.
 
 Add an entry to the array, and every table, facade, module, boot step, driver, and HTTP route it
 contributes appears with it. Remove the entry, and all of it disappears. There's no partial or
@@ -106,9 +111,9 @@ the config still loads without a `.env` file present.
 - **[Auth](/docs/components/auth)** (`defineAuth`): password and hardened session authentication.
   Rotation and reuse detection, device management, anonymous sessions with in-place upgrade, email
   verification/reset/magic-link/OTP flows, and OAuth/OIDC social plus third-party-JWT sign-in
-  (Google, GitHub, Microsoft, Discord, Facebook, Apple built in). `ctx.auth.getUserId()` resolves the
-  caller's session inside the transaction, participating in the read set like any other read, so a
-  revoked session reactively invalidates whatever it was gating.
+  (Google, GitHub, Microsoft, Discord, Facebook, Apple built in). `ctx.auth.getUserId()` resolves
+  the caller's session inside the transaction, participating in the read set like any other read, so
+  a revoked session reactively invalidates whatever it was gating.
 - **[Authorization](/docs/components/authorization)** (`defineAuthz`, `requires: ["auth"]`): RBAC/
   ReBAC row policies declared once and enforced on every read and write to the tables they cover,
   with `ctx.authz` for explicit checks in handler code. It depends on `auth` because policy
@@ -124,17 +129,18 @@ the config still loads without a `.env` file present.
   `ctx.workflow.sendEvent` for durable external signals, and per-step saga/compensation. It has no
   driver of its own. Its steps dispatch through the scheduler's job queue, which is exactly why it
   `requires: ["scheduler"]`.
-- **[Triggers](/docs/components/triggers)** (`defineTriggers`): react to committed changes on a table
-  via a durable cursor over the MVCC log, not a queue, so a missed change is impossible by
+- **[Triggers](/docs/components/triggers)** (`defineTriggers`): react to committed changes on a
+  table via a durable cursor over the MVCC log, not a queue, so a missed change is impossible by
   construction. Delivery is at-least-once and in-order per document, with stable `changeId`s for
   dedup on redelivery. Its `driver` is the cursor loop. It has no facade of its own for the common
   case, since you register a handler function rather than call something through `ctx`.
-- **[Notifications](/docs/components/notifications)** (`defineNotifications`): a `Channel × Provider`
-  seam (email, SMS, in-app, push) with at-most-once send, a queued-send driver for reliability
-  (retries, backoff, dead-letter, stuck-sending reclaim), delivery-provider webhooks (Resend/Twilio)
-  mounted via `httpRoutes`, and a reactive in-app inbox (`useNotifications`/`<Inbox>`) on the client.
-  `ctx.notifications.send(...)` is the single chokepoint every send routes through, including auth's
-  own verification/reset/magic-link emails when both are composed.
+- **[Notifications](/docs/components/notifications)** (`defineNotifications`): a `Channel ×
+  Provider` seam (email, SMS, in-app, push) with at-most-once send, a queued-send driver for
+  reliability (retries, backoff, dead-letter, stuck-sending reclaim), delivery-provider webhooks
+  (Resend/Twilio) mounted via `httpRoutes`, and a reactive in-app inbox
+  (`useNotifications`/`<Inbox>`) on the client. `ctx.notifications.send(...)` is the single
+  chokepoint every send routes through, including auth's own verification/reset/magic-link emails
+  when both are composed.
 
 ## What a component contributes
 
@@ -148,14 +154,14 @@ name so they can never collide with yours (component schemas may not declare `.g
 that's app-schema-only). `modules` contributes the component's own registered functions, namespaced
 the same way. `context` builds the `ctx.<name>` facade your handlers call, and `buildAction` builds
 its action-mode twin; a facade that writes its own tables during a mutation sets `contextWrite:
-true`, as `@concile/scheduler`, `@concile/workflow`, and `@concile/notifications` do. `boot`
-runs one-time startup work, `driver` runs a recurring background loop, `httpRoutes` mounts
-reserved-path endpoints, and `policies` attaches row-level authorization rules. A component uses
-whichever subset it needs: `@concile/authz` composes tables, a facade, policies, and a boot step;
+true`, as `@concile/scheduler`, `@concile/workflow`, and `@concile/notifications` do. `boot` runs
+one-time startup work, `driver` runs a recurring background loop, `httpRoutes` mounts reserved-path
+endpoints, and `policies` attaches row-level authorization rules. A component uses whichever subset
+it needs: `@concile/authz` composes tables, a facade, policies, and a boot step;
 `@concile/scheduler` adds a driver, an action-mode facade, and a codegen re-export on top.
 
-For the full field-by-field walkthrough of every seam, with a worked example, see
-[Build a custom component](/docs/contributing/extending/custom-component).
+For the full field-by-field walkthrough of every seam, with a worked example, see [Build a custom
+component](/docs/contributing/extending/custom-component).
 
 ## Dependency ordering
 
@@ -175,8 +181,8 @@ handles this with `topoSortByRequires`, a stable Kahn's-algorithm topological so
   requires form a cycle (unresolvable order): ...`.
 
 In practice, this means you can list `defineWorkflow({...})` before or after `defineScheduler()` in
-your `components` array. `workflow`'s declared `requires: ["scheduler"]` is what actually decides the
-order, not array position. The example above happens to list `defineScheduler()` before
+your `components` array. `workflow`'s declared `requires: ["scheduler"]` is what actually decides
+the order, not array position. The example above happens to list `defineScheduler()` before
 `defineWorkflow(...)`, which is the readable convention, but it isn't load-bearing.
 
 ## Names are reserved
@@ -187,13 +193,13 @@ why names are validated strictly. `defineComponent` (called by every `define*` f
 
 - Non-empty, and matching `^[a-zA-Z][a-zA-Z0-9_]*$`. No `/` or `:` in a component name, since those
   characters are the namespace separators themselves.
-- Not `"app"` and not starting with `_`. Both are reserved: `"app"` is the implicit name for your own
-  bare-namespace code, and `_`-prefixed is the convention for internal, non-user-callable paths.
+- Not `"app"` and not starting with `_`. Both are reserved: `"app"` is the implicit name for your
+  own bare-namespace code, and `_`-prefixed is the convention for internal, non-user-callable paths.
 
 At compose time, `composeModules` additionally rejects two composed components sharing the same
-`name` (`duplicate component name: ...`), and rejects a component name that collides with one of your
-app's own top-level module prefixes (`component name "X" collides with an app module`). Both are
-compose-time errors, never a silent override of one component's contribution by another's.
+`name` (`duplicate component name: ...`), and rejects a component name that collides with one of
+your app's own top-level module prefixes (`component name "X" collides with an app module`). Both
+are compose-time errors, never a silent override of one component's contribution by another's.
 
 ## The component set is fixed at boot
 
@@ -202,12 +208,12 @@ compose-time errors, never a silent override of one component's contribution by 
 `concile deploy` (see [Deploy & build](/docs/deploy/deploy-and-build)) can push a new version of
 your app's own functions and an additive schema change onto an already-running `concile serve`,
 atomically, with no restart. But the *set* of composed components is decided once, at process boot,
-from `concile.config.ts`, and baked into the running deployment's table numbers, module map,
-context providers, and drivers.
+from `concile.config.ts`, and baked into the running deployment's table numbers, module map, context
+providers, and drivers.
 
 Adding `defineNotifications(...)` to your config, or removing `defineTriggers(...)`, requires
-restarting the process (`concile serve` again, or a redeploy of a `concile build` binary).
-There's no live "activate this component" admin call.
+restarting the process (`concile serve` again, or a redeploy of a `concile build` binary). There's
+no live "activate this component" admin call.
 
 </Callout>
 
@@ -238,45 +244,45 @@ interface Driver {
 
 - **`runFunction(path, args)`**: runs a registered function privileged and namespaced, outside any
   client request. This is how a driver actually dispatches a scheduled job or a trigger handler.
-- **`onCommit(cb)`**: taps the commit fan-out across the whole runtime (`{ tables, ranges, commitTs }`
-  per commit) and returns an unsubscribe.
+- **`onCommit(cb)`**: taps the commit fan-out across the whole runtime (`{ tables, ranges, commitTs
+  }` per commit) and returns an unsubscribe.
 - **`setTimer(atMs, cb)` / `clearTimer(handle)`**: arms a wake at an *absolute* wall-clock instant,
-  never a relative delay. Absolute-only is deliberate: a delay forces reconciling two clocks that can
-  disagree (a process that just resumed from hibernation), and it would silently restart the
+  never a relative delay. Absolute-only is deliberate: a delay forces reconciling two clocks that
+  can disagree (a process that just resumed from hibernation), and it would silently restart the
   countdown on every cold boot. Every driver's timers are multiplexed down to a single pending wake
   by the runtime, so a host only ever needs to implement one alarm, which is all a Durable Object
   gives you, for example.
 - **`now()`**: the driver's clock.
-- **`backstopMs(defaultMs)`**: the cadence for a *pure backstop* poll, as opposed to a real next-work
-  wake. Calling this is how a driver declares "this particular timer is a fallback, not scheduled
-  work." A long-lived host returns `defaultMs` unchanged, while a host where every wake costs a cold
-  start can stretch it.
+- **`backstopMs(defaultMs)`**: the cadence for a *pure backstop* poll, as opposed to a real
+  next-work wake. Calling this is how a driver declares "this particular timer is a fallback, not
+  scheduled work." A long-lived host returns `defaultMs` unchanged, while a host where every wake
+  costs a cold start can stretch it.
 - **`readLog({ afterTs, tables?, limit? })`**: reads committed changes from the MVCC log after a
   timestamp, in ascending order. This is the durable change-feed seam `@concile/triggers` is built
-  on. `limit` bounds scanned revisions, not matched ones, so a cursor makes progress even over a quiet
-  watched table on a busy log. The returned `maxScannedTs` (not the last change's own `ts`) is what a
-  cursor should advance to, so scanned-but-unmatched ranges are never rescanned. `limit: 0` peeks the
-  current stable bound at O(1) cost with no scan at all: how a brand-new trigger seeds its cursor at
-  "now" without paying for a scan just to discover where that is.
+  on. `limit` bounds scanned revisions, not matched ones, so a cursor makes progress even over a
+  quiet watched table on a busy log. The returned `maxScannedTs` (not the last change's own `ts`) is
+  what a cursor should advance to, so scanned-but-unmatched ranges are never rescanned. `limit: 0`
+  peeks the current stable bound at O(1) cost with no scan at all: how a brand-new trigger seeds its
+  cursor at "now" without paying for a scan just to discover where that is.
 - **`functionKind?(path)`** *(optional)*: resolves a registered path's real kind
-  (`query`/`mutation`/`action`/`httpAction`), so a driver can validate a config-supplied function path
-  at start time (`@concile/triggers`' `handler` option) and fail with an instructive "unknown path"
-  or "wrong kind" error before ever calling it, rather than crashing on the first commit.
+  (`query`/`mutation`/`action`/`httpAction`), so a driver can validate a config-supplied function
+  path at start time (`@concile/triggers`' `handler` option) and fail with an instructive "unknown
+  path" or "wrong kind" error before ever calling it, rather than crashing on the first commit.
 
-`Driver.start` is called once, after boot. `Driver.stop`, if present, is called on graceful shutdown.
-A driver's `name` is informational (surfaced in logs), not a namespace. A component's `name` field is
-what does the namespacing work.
+`Driver.start` is called once, after boot. `Driver.stop`, if present, is called on graceful
+shutdown. A driver's `name` is informational (surfaced in logs), not a namespace. A component's
+`name` field is what does the namespacing work.
 
 ## Reserved HTTP routes
 
 `ComponentHttpRoute` (`{ method, pathPrefix, handler }`) lets a component mount a route at the
 engine's reserved path space instead of your app's `http.ts` router. `handler` names a bare
 `httpAction` in the component's own `modules` (namespaced at compose time to `<component>:<handler>`
-for `runtime.runHttpAction` to resolve). Three rules are enforced, both when `defineComponent` builds
-the definition and again, defense-in-depth, when `composeComponents` composes it:
+for `runtime.runHttpAction` to resolve). Three rules are enforced, both when `defineComponent`
+builds the definition and again, defense-in-depth, when `composeComponents` composes it:
 
-1. Must live under a reserved namespace. `pathPrefix` must start with `/api/` or `/_`. Your app's own
-   `http.ts` mounts everywhere else, so a component route can never collide with an app route.
+1. Must live under a reserved namespace. `pathPrefix` must start with `/api/` or `/_`. Your app's
+   own `http.ts` mounts everywhere else, so a component route can never collide with an app route.
 2. Must have at least two path segments. `/api/auth/` is fine; `/api/` or `/_` alone is rejected.
    That structurally rules out a component route that could shadow an entire reserved namespace,
    even if the explicit block list below were ever incomplete.
@@ -309,15 +315,15 @@ Not everything that adds a `ctx.<name>` facade is a component you compose.
 
 It behaves like a component under the hood (its own reserved `_storage` system table, its own
 serve-side HTTP routes, its own background reaper driver), but it is not a `ComponentDefinition`.
-There's no `defineStorage()` to add or remove. See
-[File storage](/docs/core-concepts/file-storage) for its API.
+There's no `defineStorage()` to add or remove. See [File storage](/docs/core-concepts/file-storage)
+for its API.
 
 </Callout>
 
-Everything else described on this page (auth, authz, scheduler, workflow, triggers, notifications) is
-opt-in. Each is composed by name in `concile.config.ts`, absent from a deployment that doesn't list
-it, with zero tables, zero facades, and zero background drivers running for a capability you never
-composed.
+Everything else described on this page (auth, authz, scheduler, workflow, triggers, notifications)
+is opt-in. Each is composed by name in `concile.config.ts`, absent from a deployment that doesn't
+list it, with zero tables, zero facades, and zero background drivers running for a capability you
+never composed.
 
 ## Where to go next
 

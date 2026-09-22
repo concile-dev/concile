@@ -5,16 +5,24 @@ description: "The durable offline outbox: queue, drain, receipts, and everything
 
 {/* diataxis: explanation */}
 
-While [Optimistic updates](/docs/client/optimistic-updates) and the transport's [automatic reconnect](/docs/client/client-sdk#reconnection-in-detail) do a great job handling connections that drop for a few seconds, they don't help much if you reload the page.
+While [Optimistic updates](/docs/client/optimistic-updates) and the transport's [automatic
+reconnect](/docs/client/client-sdk#reconnection-in-detail) do a great job handling connections that
+drop for a few seconds, they don't help much if you reload the page.
 
-If you close your laptop mid flight or crash your browser tab, any mutations that were still `unsent` (queued while offline) or `inflight` (sent, but waiting on a response) are just gone by default. There is no backup, and you never really find out what happened to them.
+If you close your laptop mid flight or crash your browser tab, any mutations that were still
+`unsent` (queued while offline) or `inflight` (sent, but waiting on a response) are just gone by
+default. There is no backup, and you never really find out what happened to them.
 
-That is where the Receipted Outbox steps in to save the day. It is an **opt-in** layer you can add to the reactive client. With it, any mutations you make offline are saved securely. They can survive a full reload or crash and will automatically drain in the right order once you are back online. Plus, the server keeps a personalized receipt for every single one, so you never have to worry about accidentally applying the same change twice.
+That is where the Receipted Outbox steps in to save the day. It is an **opt-in** layer you can add
+to the reactive client. With it, any mutations you make offline are saved securely. They can survive
+a full reload or crash and will automatically drain in the right order once you are back online.
+Plus, the server keeps a personalized receipt for every single one, so you never have to worry about
+accidentally applying the same change twice.
 
 <Callout type="info">
 
-A client constructed with no `outbox` option behaves **exactly** as if this feature doesn't
-exist. Every code path below is inert until you configure one.
+A client constructed with no `outbox` option behaves **exactly** as if this feature doesn't exist.
+Every code path below is inert until you configure one.
 
 </Callout>
 
@@ -31,20 +39,20 @@ flowchart LR
 Three moving parts explain the whole design: a queue, a drain, and a receipt.
 
 **Queue.** Once you configure an outbox, every `client.mutation(...)` call gets a durable identity:
-a `clientId` (minted once per tab session, at client construction, from `crypto.randomUUID()`
-where available) and a `seq` (a per-tab counter that increments once per mutation and is never
-reused). That pair, plus the function path, arguments, and a deterministic `seed` for
-optimistic-replay purity, gets appended to durable storage.
+a `clientId` (minted once per tab session, at client construction, from `crypto.randomUUID()` where
+available) and a `seq` (a per-tab counter that increments once per mutation and is never reused).
+That pair, plus the function path, arguments, and a deterministic `seed` for optimistic-replay
+purity, gets appended to durable storage.
 
-The append is **write-behind**. Your call still sends over the wire immediately if you're online.
-It never waits for the disk write to finish. If you're offline, the entry just sits durably as
+The append is **write-behind**. Your call still sends over the wire immediately if you're online. It
+never waits for the disk write to finish. If you're offline, the entry just sits durably as
 `unsent`.
 
 **Drain.** On reconnect, the client sends a `Connect` handshake naming every durable entry it still
 holds (`held`, plus an `ackedThrough` watermark per `clientId` for server-side retention pruning).
-The server classifies each one via `ConnectAck`. Then the client sends the still-unresolved
-entries as `MutationBatch` chunks: one unacked chunk in flight at a time, FIFO across the *whole
-shared queue* (every tab, not just the one that's currently draining).
+The server classifies each one via `ConnectAck`. Then the client sends the still-unresolved entries
+as `MutationBatch` chunks: one unacked chunk in flight at a time, FIFO across the *whole shared
+queue* (every tab, not just the one that's currently draining).
 
 **Receipts.** Every mutation that actually commits gets a durable server-side record keyed by
 `(identity, clientId, seq)`, written **atomically with the mutation's own commit**, not as a
@@ -60,8 +68,8 @@ with the server, which is exactly what breaks under a crash or a lost response.
 ## Choosing a backing store
 
 Three implementations share one `OutboxStorage` seam: `append`/`updateStatus`/`dequeue`/`loadAll`/
-`getMeta`/`setMeta`/`persist`, plus the optional `listMetaClientIds`/`deleteMeta`/`close`. The
-model above (queue, drain, receipts) is identical regardless of which one you pick.
+`getMeta`/`setMeta`/`persist`, plus the optional `listMetaClientIds`/`deleteMeta`/`close`. The model
+above (queue, drain, receipts) is identical regardless of which one you pick.
 
 <Tabs items={['indexedDBOutbox()', 'fsOutbox()', 'memoryOutbox()']}>
 
@@ -77,18 +85,17 @@ const client = new ConcileClient(webSocketTransport(url), {
 });
 ```
 
-It keeps everything in one IndexedDB database (`concile-outbox`), on purpose: the shared
-mutation queue and the per-`clientId` identity metadata both live there, so a whole-origin storage
-eviction takes both atomically. There's no separate identity store that can drift out of sync with
-the queue.
+It keeps everything in one IndexedDB database (`concile-outbox`), on purpose: the shared mutation
+queue and the per-`clientId` identity metadata both live there, so a whole-origin storage eviction
+takes both atomically. There's no separate identity store that can drift out of sync with the queue.
 
 Writes are **write-behind-batched**. Every mutating call made in the same microtask turn (several
 `append`s fired back-to-back, for instance) collapses into one physical `readwrite` transaction
 rather than one per call.
 
-If IndexedDB isn't available in this runtime, or `open()` fails for any reason (private-mode
-Safari, a corrupt origin), every method transparently falls back to a fresh in-memory queue: same
-interface, same call sites, only durability is lost. Pass `onFallback` to learn when that happens:
+If IndexedDB isn't available in this runtime, or `open()` fails for any reason (private-mode Safari,
+a corrupt origin), every method transparently falls back to a fresh in-memory queue: same interface,
+same call sites, only durability is lost. Pass `onFallback` to learn when that happens:
 
 ```ts
 const outbox = indexedDBOutbox({
@@ -112,27 +119,26 @@ const client = new ConcileClient(webSocketTransport(url), {
 });
 ```
 
-One durable queue per directory: an append-only `journal.jsonl` plus a `lock` pidfile, both
-created on first use. Every mutating call appends one JSON line through a serialized write-behind
-appender (the filesystem twin of IndexedDB's microtask batcher) and `fsync`s by default before
-resolving. Pass `fsOutbox({ dir, fsync: false })` to trade the durability of the very last writes
-for throughput.
+One durable queue per directory: an append-only `journal.jsonl` plus a `lock` pidfile, both created
+on first use. Every mutating call appends one JSON line through a serialized write-behind appender
+(the filesystem twin of IndexedDB's microtask batcher) and `fsync`s by default before resolving.
+Pass `fsOutbox({ dir, fsync: false })` to trade the durability of the very last writes for
+throughput.
 
 A journal that grows past 4096 ops (or is found oversized at open) gets compacted: live state is
 rewritten to a temp file, `fsync`ed, and renamed over the original.
 
 Recovery from a crash mid-append is automatic. A torn tail (the one thing an interrupted write can
-produce, detected by a missing trailing newline) is physically truncated back to the last
-known-good byte. A corrupt line in the *middle* of the file is quarantined to `journal.quarantine`
-and skipped, rather than either crashing hydration or losing the rest of the journal.
+produce, detected by a missing trailing newline) is physically truncated back to the last known-good
+byte. A corrupt line in the *middle* of the file is quarantined to `journal.quarantine` and skipped,
+rather than either crashing hydration or losing the rest of the journal.
 
 <Callout type="warn" title="One writer per directory">
 
 A second process (or a second `fsOutbox()` call in the same process) opening the same directory
-doesn't throw. It transparently falls back to `memoryOutbox()` instead (no cross-restart
-durability, everything else identical), firing `onFallback` once so you can log it. A lock left
-behind by a killed process is detected (the pid no longer exists) and stolen automatically on the
-next open.
+doesn't throw. It transparently falls back to `memoryOutbox()` instead (no cross-restart durability,
+everything else identical), firing `onFallback` once so you can log it. A lock left behind by a
+killed process is detected (the pid no longer exists) and stolen automatically on the next open.
 
 This is the practical split for Electron: renderer processes are browsers, so keep
 `indexedDBOutbox()` there, and use `fsOutbox()` in the main process or a Node/Tauri sidecar, each
@@ -142,11 +148,11 @@ and atomic-create semantics aren't reliable over NFS or SMB.
 </Callout>
 
 A disk I/O failure (disk full, a yanked mount, a permissions change) fails that `fsOutbox()`
-instance **stop, not silently**. Once a journal write fails, every subsequent append rejects
-rather than quietly degrading to an in-memory-only state that pretends nothing happened. Work
-already on disk is safe, and the app keeps running. New mutations surface the failure through
-`onMutationFailed` (or a dev-mode `console.error` with no handler registered) instead of becoming
-an unhandled promise rejection, which several Node/Electron hosts treat as fatal.
+instance **stop, not silently**. Once a journal write fails, every subsequent append rejects rather
+than quietly degrading to an in-memory-only state that pretends nothing happened. Work already on
+disk is safe, and the app keeps running. New mutations surface the failure through
+`onMutationFailed` (or a dev-mode `console.error` with no handler registered) instead of becoming an
+unhandled promise rejection, which several Node/Electron hosts treat as fatal.
 
 Recovery is a process restart. The fresh instance replays the journal from disk, and server-side
 receipts make any resend of an already-applied mutation safe regardless.
@@ -156,8 +162,8 @@ receipts make any resend of an already-applied mutation safe regardless.
 <Tab value="memoryOutbox()">
 
 Same identity and dedup machinery as the other two, every mutation still gets a `(clientId, seq)`,
-still gets exact-once server receipts, still gets the FIFO drain-on-reconnect behavior, backed by
-a plain `Map` instead of a disk. Nothing survives a reload.
+still gets exact-once server receipts, still gets the FIFO drain-on-reconnect behavior, backed by a
+plain `Map` instead of a disk. Nothing survives a reload.
 
 Don't mistake it for "the same as no outbox," though. A client with no `outbox` option sends no
 `clientId`/`seq` at all and gets no server-side dedup; only the lack of cross-reload durability is
@@ -165,8 +171,8 @@ equivalent. `memoryOutbox()` is the right tool for two deliberate use cases:
 
 - SSR or tests that want the reconnect-safe delivery guarantees without touching disk.
 - Coexisting with an external mutation or retry library. Configure `outbox: memoryOutbox()` and
-  every `client.mutation()` call automatically gets stamped and dedup'd server-side, with nothing
-  to hand-roll.
+  every `client.mutation()` call automatically gets stamped and dedup'd server-side, with nothing to
+  hand-roll.
 
 A library that manages its own queue end-to-end can instead stamp the wire `Mutation` frame's
 `clientId`/`seq` fields directly, since the server's dedup is exact-match per pair, not a FIFO
@@ -180,20 +186,19 @@ watermark. Don't enable both an outbox and an external retrier for the same muta
 
 **One `clientId` per tab session**, minted once at `ConcileClient` construction and never reused
 across a reload. A fresh page load always mints a fresh one. **One `seq` counter per `clientId`**,
-incrementing serially in memory from wherever it last reached (loaded once from the outbox's
-`meta` store at construction, then tracked purely in memory for the rest of the session, never
-re-read).
+incrementing serially in memory from wherever it last reached (loaded once from the outbox's `meta`
+store at construction, then tracked purely in memory for the rest of the session, never re-read).
 
-The pair is written to durable storage exactly once. The governing invariant is `(clientId, seq)
--> payload`, set once, forever. A retried entry (`entry.retry()`) gets a **fresh** `(clientId,
-seq)` rather than reusing the old one, because the old pair's durable record permanently *is* its
-original verdict.
+The pair is written to durable storage exactly once. The governing invariant is `(clientId, seq) ->
+payload`, set once, forever. A retried entry (`entry.retry()`) gets a **fresh** `(clientId, seq)`
+rather than reusing the old one, because the old pair's durable record permanently *is* its original
+verdict.
 
 The append itself never blocks the send. `client.mutation(...)` still puts the `Mutation` frame on
-the wire the instant you call it, as long as the transport is open. Durability is a side effect,
-not a gate. This is also why the four-axis benchmark (see [Performance](#performance) below)
-measures essentially zero added latency for turning the outbox on: the disk write and the wire
-send are two independent things happening off the same call, not two steps in series.
+the wire the instant you call it, as long as the transport is open. Durability is a side effect, not
+a gate. This is also why the four-axis benchmark (see [Performance](#performance) below) measures
+essentially zero added latency for turning the outbox on: the disk write and the wire send are two
+independent things happening off the same call, not two steps in series.
 
 ## Reconnect: the `Connect`/`ConnectAck` handshake and the drain
 
@@ -203,18 +208,18 @@ configured. It's written to disk regardless of connection state.
 The safe **parking** of a mutation that was already *sent* when the connection dropped, the case
 where the outcome is genuinely unknown, works differently. It only activates once the client has
 connected at least once and the server has proven, via `ConnectAck`, that it speaks this protocol
-(that first handshake is what arms the parking behavior). Before that first successful handshake in a tab session, a
-dropped in-flight mutation still rejects with `MutationUndeliveredError`, exactly as it would with
-no outbox at all. Pointed at an older server that predates this feature, the client simply never
-arms: the same fail-fast behavior forever, no special handling required on your end.
+(that first handshake is what arms the parking behavior). Before that first successful handshake in
+a tab session, a dropped in-flight mutation still rejects with `MutationUndeliveredError`, exactly
+as it would with no outbox at all. Pointed at an older server that predates this feature, the client
+simply never arms: the same fail-fast behavior forever, no special handling required on your end.
 
 Once armed, reconnect drives the drain:
 
 1. The client hands the drain every durable entry still `unsent`/`inflight`/`parked`, and sends
    `Connect{held, ackedThrough}`.
-2. The server answers `ConnectAck{known, deploymentId}`. `known: true` means the server can
-   account for this client's whole recorded history, so the drain proceeds. `known: false` means
-   it can't (see [`onClientReset`](#onclientreset-a-server-disowned-timeline) below).
+2. The server answers `ConnectAck{known, deploymentId}`. `known: true` means the server can account
+   for this client's whole recorded history, so the drain proceeds. `known: false` means it can't
+   (see [`onClientReset`](#onclientreset-a-server-disowned-timeline) below).
 3. The drain flushes the durable queue **FIFO by persisted order**, as `MutationBatch` chunks of 50
    entries each: one unacked chunk in flight at a time, never several concurrently.
 4. Each chunk's `MutationResponse`s settle per entry. `applied` dequeues and resolves. A coded
@@ -226,15 +231,15 @@ That last step leans on a distinction worth pulling out of the list, because eve
 (the poison policy, the conflict taxonomy) rests on it. A **coded** failure is terminal and
 server-recorded: your handler deterministically failed (validation, authorization, a typed thrown
 error), and retrying changes nothing. A **codeless** failure is transient infrastructure: nothing
-was recorded, so a retry is always safe. The drain settles coded failures and retries codeless
-ones, and [poisonPolicy](#poison-handling-poisonpolicy) governs how loudly a coded one interrupts
-the queue.
+was recorded, so a retry is always safe. The drain settles coded failures and retries codeless ones,
+and [poisonPolicy](#poison-handling-poisonpolicy) governs how loudly a coded one interrupts the
+queue.
 
 Reconnecting itself is cheap independent of the outbox. Every server-pushed query result carries a
 content fingerprint, and a resubscribe echoes back the fingerprint it last saw. If a fresh re-run
 hashes the same, the server answers with a tiny `QueryUnchanged` marker instead of resending the
-value. That's automatic, needs no configuration, and saves bandwidth, not compute (every
-subscribed query still fully re-executes on reconnect either way, see [Subscription
+value. That's automatic, needs no configuration, and saves bandwidth, not compute (every subscribed
+query still fully re-executes on reconnect either way, see [Subscription
 lifecycle](/docs/client/client-sdk#subscription-lifecycle-and-wire-messages)).
 
 ## Exactly-once: receipts, not a watermark
@@ -242,18 +247,18 @@ lifecycle](/docs/client/client-sdk#subscription-lifecycle-and-wire-messages)).
 The dedup key is **`(identity, clientId, seq)`**, and the record is written **atomically with the
 mutation's own commit**: same transaction, same guarantee. This is deliberately *not* a FIFO
 watermark ("everything up to seq N has been seen"). A watermark gap-rejects an out-of-order resend
-and forces careful renumbering on retry. Exact-match receipts don't: an external retrier, or a
-drain resuming after a crash, is free to resend units out of order, and every resend still
-classifies correctly against its own recorded verdict (or lack of one).
+and forces careful renumbering on retry. Exact-match receipts don't: an external retrier, or a drain
+resuming after a crash, is free to resend units out of order, and every resend still classifies
+correctly against its own recorded verdict (or lack of one).
 
 Server-side, each client also has a **retention floor**: a per-`clientId` boundary below which the
-server no longer keeps individual receipts (pruned after acknowledgment, or because the
-deployment's timeline was reset from a backup). If a resend's `seq` falls below that floor with no
-record on file, the server can't honestly tell whether it applied, so it answers with a loud,
-typed terminal failure, `STALE_CLIENT`, on that one entry (surfaced through
+server no longer keeps individual receipts (pruned after acknowledgment, or because the deployment's
+timeline was reset from a backup). If a resend's `seq` falls below that floor with no record on
+file, the server can't honestly tell whether it applied, so it answers with a loud, typed terminal
+failure, `STALE_CLIENT`, on that one entry (surfaced through
 `onMutationFailed`/`pendingMutations()`), rather than guessing either way. This is the narrower,
-per-entry sibling of a full [`onClientReset`](#onclientreset-a-server-disowned-timeline): expect
-it only after an unusually long offline stretch, never in routine use.
+per-entry sibling of a full [`onClientReset`](#onclientreset-a-server-disowned-timeline): expect it
+only after an unusually long offline stretch, never in routine use.
 
 <Accordions type="single">
 
@@ -264,9 +269,9 @@ adapters (SQLite and Postgres). Several independent guards can register a check 
 with a commit, and a rejection from one guard only fails that guard's own unit. It never
 collaterally aborts every other mutation batched into the same group commit.
 
-The dedup read that decides `applied` vs. a fresh execution always runs on the same node the
-commit itself runs on, never against a lagging replica in a fleet deployment, so the receipt check
-is never stale relative to the commit it's guarding.
+The dedup read that decides `applied` vs. a fresh execution always runs on the same node the commit
+itself runs on, never against a lagging replica in a fleet deployment, so the receipt check is never
+stale relative to the commit it's guarding.
 
 </Accordion>
 
@@ -296,16 +301,16 @@ const client = new ConcileClient(webSocketTransport(url), {
 ```
 
 The registry is consulted at **hydrate time only**. It rebuilds a durable entry's optimistic layer
-over whatever fresh baseline exists once you reconnect, using the exact same
-`OptimisticLocalStore` API (`getQuery`/`setQuery`/`getAllQueries`/`placeholderId`/`now`) described
-in [Optimistic updates](/docs/client/optimistic-updates). Its keys are the codegen-typed function
-paths your app's `_generated/api` already knows about, so a registered updater and the mutation it
-patches for stay in sync the same way `args`/`returns` validators do elsewhere.
+over whatever fresh baseline exists once you reconnect, using the exact same `OptimisticLocalStore`
+API (`getQuery`/`setQuery`/`getAllQueries`/`placeholderId`/`now`) described in [Optimistic
+updates](/docs/client/optimistic-updates). Its keys are the codegen-typed function paths your app's
+`_generated/api` already knows about, so a registered updater and the mutation it patches for stay
+in sync the same way `args`/`returns` validators do elsewhere.
 
 <Callout type="warn">
 
-A registered updater must tolerate `undefined` from `getQuery`. While genuinely offline right
-after a reload, there may be no baseline to compose over at all yet (see [the honest
+A registered updater must tolerate `undefined` from `getQuery`. While genuinely offline right after
+a reload, there may be no baseline to compose over at all yet (see [the honest
 boundaries](#the-honest-boundaries) below). Render nothing rather than crash.
 
 </Callout>
@@ -317,17 +322,17 @@ A mutation can fail two different ways once the drain actually sends it:
 - **Coded (terminal).** The server ran your handler and it deterministically failed, a validation
   error, an authorization check, a thrown app error, and recorded that verdict durably. Retrying
   changes nothing. The server has already decided permanently.
-- **Codeless (transient).** An infrastructure-level failure. Nothing was ever recorded. Always
-  safe to retry.
+- **Codeless (transient).** An infrastructure-level failure. Nothing was ever recorded. Always safe
+  to retry.
 
 The default, `poisonPolicy: "skip"`, settles a coded failure terminally (visible via
-`onMutationFailed`/`pendingMutations()`, with `error.code` set) and **keeps draining the rest of
-the queue**. One bad mutation can never wedge everything queued behind it. A codeless failure
-instead backs off (the same jittered-exponential shape `@concile/scheduler` uses for its own
-retries) and resends starting from the failed unit, never skipping it.
+`onMutationFailed`/`pendingMutations()`, with `error.code` set) and **keeps draining the rest of the
+queue**. One bad mutation can never wedge everything queued behind it. A codeless failure instead
+backs off (the same jittered-exponential shape `@concile/scheduler` uses for its own retries) and
+resends starting from the failed unit, never skipping it.
 
-Set `poisonPolicy: "pause"` for the stricter, opt-in posture: halt the whole drain the moment
-*anything* fails, and let the user intervene:
+Set `poisonPolicy: "pause"` for the stricter, opt-in posture: halt the whole drain the moment *anything*
+fails, and let the user intervene:
 
 ```ts
 const client = new ConcileClient(transport, {
@@ -342,35 +347,34 @@ const client = new ConcileClient(transport, {
 
 ## Managing failed mutations: `retry()` / `dismiss()`
 
-A `"failed"` entry is never silently dropped. It persists in the durable store until you call
-either method.
+A `"failed"` entry is never silently dropped. It persists in the durable store until you call either
+method.
 
 `entry.retry()` re-enqueues under a **fresh** `(clientId, seq)`, using the same function path,
 arguments, and registered updater as the original. The old seq's record permanently *is* its
 original verdict, so a retry is always a brand-new mutation as far as the server's dedup is
 concerned. `entry.dismiss()` permanently forgets it, no retry.
 
-Neither returns a promise the way `client.mutation()` does. The fate of a durable entry, retried
-or not, surfaces through `usePendingMutations()`/`onMutationFailed`, because the record outlives
-any one page load's promises.
+Neither returns a promise the way `client.mutation()` does. The fate of a durable entry, retried or
+not, surfaces through `usePendingMutations()`/`onMutationFailed`, because the record outlives any
+one page load's promises.
 
 ## Observability
 
-Four pieces of surface, all reading the durable store directly (never the live in-memory
-reconciler alone), so they stay accurate no matter which tab actually ends up draining a given
-entry:
+Four pieces of surface, all reading the durable store directly (never the live in-memory reconciler
+alone), so they stay accurate no matter which tab actually ends up draining a given entry:
 
-- **`client.pendingMutations()`** (async) / **`usePendingMutations()`** (React) return every
-  durable entry not yet fully settled: `{clientId, seq, udfPath, status, error?, retry(),
-  dismiss()}` each, `status` one of `unsent`/`inflight`/`parked`/`completed`/`failed`. The React
-  hook re-renders on every local outbox change *and* on a cross-tab nudge (a `BroadcastChannel`
-  message another tab's queue change fires), so a second tab's activity shows up here too.
-- **`client.pendingSummary()`** returns a cheap `{count, oldestEnqueuedAt, oldestAgeMs}`, useful
-  for a "you have offline changes that may be lost soon" banner without paging through the full
-  list (see the [Safari eviction](#browser-storage-is-best-effort-not-guaranteed) note below).
+- **`client.pendingMutations()`** (async) / **`usePendingMutations()`** (React) return every durable
+  entry not yet fully settled: `{clientId, seq, udfPath, status, error?, retry(), dismiss()}` each,
+  `status` one of `unsent`/`inflight`/`parked`/`completed`/`failed`. The React hook re-renders on
+  every local outbox change *and* on a cross-tab nudge (a `BroadcastChannel` message another tab's
+  queue change fires), so a second tab's activity shows up here too.
+- **`client.pendingSummary()`** returns a cheap `{count, oldestEnqueuedAt, oldestAgeMs}`, useful for
+  a "you have offline changes that may be lost soon" banner without paging through the full list
+  (see the [Safari eviction](#browser-storage-is-best-effort-not-guaranteed) note below).
 - **`onMutationFailed`**, passed at client construction, fires for a terminal failure with no live
-  promise awaiting it (a hydrated cross-reload entry, or a retried one). With no handler
-  registered, a dev-mode build logs it loudly to `console.error` instead of failing silently.
+  promise awaiting it (a hydrated cross-reload entry, or a retried one). With no handler registered,
+  a dev-mode build logs it loudly to `console.error` instead of failing silently.
 - **Cross-tab `BroadcastChannel` nudges**: every tab sharing an origin's outbox gets notified when
   any tab's queue changes, which is what keeps `usePendingMutations()` (and, with a registry
   configured, [live rendering](#cross-tab-live-optimistic-rendering) below) accurate across tabs
@@ -404,10 +408,10 @@ function PendingTray() {
 
 ## `onClientReset`: a server-disowned timeline
 
-The server occasionally has to **disown** a client's mutation history rather than answer
-honestly. A queued `seq` falls below what it can still account for (records were pruned past
-retention, or, far more rarely, the whole deployment's timeline was reset from a backup) and it
-genuinely can't tell whether that mutation applied.
+The server occasionally has to **disown** a client's mutation history rather than answer honestly. A
+queued `seq` falls below what it can still account for (records were pruned past retention, or, far
+more rarely, the whole deployment's timeline was reset from a backup) and it genuinely can't tell
+whether that mutation applied.
 
 Rather than guess, it answers `ConnectAck{known: false}`, and the client:
 
@@ -425,15 +429,15 @@ redone.
 ## Multi-tab safety
 
 Each tab mints its **own `clientId`** at construction, never reused across a reload, so two tabs'
-entries can never collide on the same `(clientId, seq)` pair. All tabs against the same origin
-share **one durable queue**, though, and a [Web
-Locks](https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API)-elected leader tab drains
-the **entire shared queue**: every tab's entries under their own recorded identity, not just the
-leader's own writes.
+entries can never collide on the same `(clientId, seq)` pair. All tabs against the same origin share **one
+durable queue**, though, and a [Web
+Locks](https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API)-elected leader tab drains the **entire
+shared queue**: every tab's entries under their own recorded identity, not just the leader's own
+writes.
 
 If the leader tab closes mid-drain, another open tab takes over the lock and finishes the job.
-Nothing is lost or double-applied, because correctness comes from the server-side receipts, not
-from the lock. A browser with no Web Locks support at all still drains correctly, just without the
+Nothing is lost or double-applied, because correctness comes from the server-side receipts, not from
+the lock. A browser with no Web Locks support at all still drains correctly, just without the
 "exactly one active drainer" coordination. Every tab with one runs its own drain locally, and the
 receipts absorb any resulting overlap.
 
@@ -441,31 +445,30 @@ receipts absorb any resulting overlap.
 
 Beyond status entries, another tab's **active** durable mutations render **live in your own
 queries**, not just as a `pendingMutations()` row, as long as you've configured an
-`optimisticUpdates` registry (the same one hydrate-time rendering above uses. A registry
-consenting to render a durable entry's layer does so whether that entry was hydrated at
-construction or arrives live over the shared `BroadcastChannel` while you're already running).
-Only the tab that actually called `mutation()` drives its own entry from its own wire responses.
-Every other tab mirrors it via typed `enqueued`/`settled`/`failed` broadcasts.
+`optimisticUpdates` registry (the same one hydrate-time rendering above uses. A registry consenting
+to render a durable entry's layer does so whether that entry was hydrated at construction or arrives
+live over the shared `BroadcastChannel` while you're already running). Only the tab that actually
+called `mutation()` drives its own entry from its own wire responses. Every other tab mirrors it via
+typed `enqueued`/`settled`/`failed` broadcasts.
 
 <Callout type="info" title="One honest, self-healing residual">
 
-When tab A drains a mutation tab B is also live-subscribed to, B's own subscription can observe
-the committed row via its normal server push *before* A's settle broadcast reaches B. A's settle
-path is a full round trip (A to server to A) plus a `BroadcastChannel` hop, while B's own live
-push is a single server-to-B hop off the very same commit.
+When tab A drains a mutation tab B is also live-subscribed to, B's own subscription can observe the
+committed row via its normal server push *before* A's settle broadcast reaches B. A's settle path is
+a full round trip (A to server to A) plus a `BroadcastChannel` hop, while B's own live push is a
+single server-to-B hop off the very same commit.
 
 In that ordering you'll see one transient frame with both the committed row and the still-active
-mirrored placeholder. It **self-corrects on the very next push**: it never lingers, never grows,
-and the row is never *absent* at any point. This is a structural property of the two paths'
-relative latency, not a bug, proven end-to-end in `packages/cli/test/crosstab-e2e.test.ts`.
+mirrored placeholder. It **self-corrects on the very next push**: it never lingers, never grows, and
+the row is never *absent* at any point. This is a structural property of the two paths' relative
+latency, not a bug, proven end-to-end in `packages/cli/test/crosstab-e2e.test.ts`.
 
 </Callout>
 
-If your UI genuinely cannot tolerate even that one transient frame, write the registry updater as
-**idempotent, keyed on a client-supplied id**
-([`mintId`](#client-supplied-ids-create-then-reference-chains)): mint the id before the mutation
-is sent, use it as the placeholder row's `_id`, and have the updater check whether a row with that
-id is already present before inserting:
+If your UI genuinely cannot tolerate even that one transient frame, write the registry updater as **idempotent,
+keyed on a client-supplied id** ([`mintId`](#client-supplied-ids-create-then-reference-chains)):
+mint the id before the mutation is sent, use it as the placeholder row's `_id`, and have the updater
+check whether a row with that id is already present before inserting:
 
 ```ts
 const messageId = mintId("messages"); // minted once, before the mutation call
@@ -483,11 +486,11 @@ await client.mutation("messages:send", { _id: messageId, body });
 ```
 
 Because the placeholder and the eventual committed row share the same id, this collapses the
-transient double to a single row on every replay, including the frame where the raw mechanism
-would otherwise show both. A missed `BroadcastChannel` message is also handled: the next durable
-append (from any tab) triggers a re-read that reconciles a mirrored entry against reality and
-drops it unconditionally if it's gone missing, landing on either side of the same residual (a
-brief double, or a brief absence), always self-healing on the next push.
+transient double to a single row on every replay, including the frame where the raw mechanism would
+otherwise show both. A missed `BroadcastChannel` message is also handled: the next durable append
+(from any tab) triggers a re-read that reconciles a mirrored entry against reality and drops it
+unconditionally if it's gone missing, landing on either side of the same residual (a brief double,
+or a brief absence), always self-healing on the next push.
 
 ### Draining after every tab closes: `drainOutboxOnce`
 
@@ -561,8 +564,7 @@ self.addEventListener("sync", (event) => {
       description: "The Web Locks manager to use. Undefined probes the ambient navigator.locks.",
       type: "LockManager",
     },
-  }}
-/>
+  }} />
 
 </Accordion>
 
@@ -578,30 +580,30 @@ writes and the fingerprints line up.
 
 </Callout>
 
-It returns `{drained, failed, remaining}`. No queries, no optimistic layers, nothing UI-shaped. If
-a live tab already holds the leader lock, a concurrent `drainOutboxOnce` call is a safe, cheap
-no-op (`{drained: 0, ...}`, checked via a non-blocking `ifAvailable` lock probe before it even opens
-a socket). The tab is already doing the job.
+It returns `{drained, failed, remaining}`. No queries, no optimistic layers, nothing UI-shaped. If a
+live tab already holds the leader lock, a concurrent `drainOutboxOnce` call is a safe, cheap no-op
+(`{drained: 0, ...}`, checked via a non-blocking `ifAvailable` lock probe before it even opens a
+socket). The tab is already doing the job.
 
 <Callout type="warn" title="Chromium-only, and additive">
 
 One-shot Background Sync is a **Chromium-only** browser feature. Firefox and Safari have never
-shipped it. Treat this as strictly additive: it changes *when* a drain can run (potentially
-while no tab is open), never the durability story. The portable baseline, on every browser,
-stays "queue survives, drains on your next visit," true with or without this wired up.
+shipped it. Treat this as strictly additive: it changes *when* a drain can run (potentially while no
+tab is open), never the durability story. The portable baseline, on every browser, stays "queue
+survives, drains on your next visit," true with or without this wired up.
 
 </Callout>
 
 `drainOutboxOnce` itself is covered end-to-end by the automated suite
-(`packages/cli/test/outbox-e2e.test.ts`). The Service Worker `sync`-event wiring shown above has
-no headless-CI-friendly harness and is verified manually in a real Chromium browser.
+(`packages/cli/test/outbox-e2e.test.ts`). The Service Worker `sync`-event wiring shown above has no
+headless-CI-friendly harness and is verified manually in a real Chromium browser.
 
 ## Client-supplied ids: create-then-reference chains
 
 The mechanism above delivers a *single* queued mutation exactly once. The next question is what
-happens when two queued mutations depend on each other. The classic case is "create a
-conversation, then send the first message into it," both issued offline, where the second needs to
-reference a row the first hasn't committed yet.
+happens when two queued mutations depend on each other. The classic case is "create a conversation,
+then send the first message into it," both issued offline, where the second needs to reference a row
+the first hasn't committed yet.
 
 Client-supplied ids close that gap. Mint a **real** `Id<"table">` on the client before either
 mutation is sent, and pass it as `_id` on the insert. The engine accepts it (instead of minting its
@@ -618,19 +620,18 @@ await client.mutation(api.conversations.create, { _id: conversationId, name }); 
 await client.mutation(api.messages.send, { conversationId, body });               // references it, also offline
 ```
 
-Both calls enqueue into the durable outbox like any other mutation. No special-casing is needed
-for the fact that the second one references a row the first hasn't committed yet. On drain,
-`conversations.create` runs first (the outbox is FIFO), inserts under the minted id, and by the
-time `messages.send` runs the reference resolves against a real row. Your mutation's handler
-passes the supplied `_id` straight through: `ctx.db.insert("conversations", args)` accepts a
+Both calls enqueue into the durable outbox like any other mutation. No special-casing is needed for
+the fact that the second one references a row the first hasn't committed yet. On drain,
+`conversations.create` runs first (the outbox is FIFO), inserts under the minted id, and by the time
+`messages.send` runs the reference resolves against a real row. Your mutation's handler passes the
+supplied `_id` straight through: `ctx.db.insert("conversations", args)` accepts a
 `v.optional(v.string())` `_id` field exactly as it accepts an engine-minted one.
 
 <Callout type="warn" title="Mint outside the updater">
 
-Minting consults randomness, so it follows the same purity rule as
-`placeholderId()`/`now()` from [Optimistic updates](/docs/client/optimistic-updates): an updater
-reads the id **from args**, never mints one itself. Mint at args-construction time, before you
-call the mutation.
+Minting consults randomness, so it follows the same purity rule as `placeholderId()`/`now()` from
+[Optimistic updates](/docs/client/optimistic-updates): an updater reads the id **from args**, never
+mints one itself. Mint at args-construction time, before you call the mutation.
 
 </Callout>
 
@@ -649,18 +650,17 @@ await create({ _id: conversationId, name });
 
 **v1 restrictions.** A client-supplied `_id` is accepted only for an **unsharded table on the
 default ring**. A mutation routed elsewhere via `shardBy` gets a typed rejection instead
-(`INVALID_CLIENT_ID`), so keep client-id-minting mutations un-routed and targeting unsharded
-tables. `mintId`'s type parameter is `TableNames`, so it type-checks against any table your schema
-knows about, including system tables like `"_storage"`, but the emitted map only contains your
-app's own tables. Calling `mintId("_storage")` compiles and throws at runtime.
+(`INVALID_CLIENT_ID`), so keep client-id-minting mutations un-routed and targeting unsharded tables.
+`mintId`'s type parameter is `TableNames`, so it type-checks against any table your schema knows
+about, including system tables like `"_storage"`, but the emitted map only contains your app's own
+tables. Calling `mintId("_storage")` compiles and throws at runtime.
 
 The engine never trusts the client's map either way: every minted id is validated server-side at
 insert, so a stale `_generated/ids.ts` (one that predates a schema change) produces a loud, typed
-rejection, never a silent wrong-table write. Two stable error codes surface a rejection:
-**`INVALID_CLIENT_ID`** (malformed, wrong table, sharded table, or off the default ring) and
-**`ID_ALREADY_IN_USE`** (a document with that id already exists, since an outbox resend never
-re-executes a committed mutation, this means either an astronomical collision or an app bug, never
-a silent merge).
+rejection, never a silent wrong-table write. Two stable error codes surface a rejection: **`INVALID_CLIENT_ID`**
+(malformed, wrong table, sharded table, or off the default ring) and **`ID_ALREADY_IN_USE`** (a
+document with that id already exists, since an outbox resend never re-executes a committed mutation,
+this means either an astronomical collision or an app bug, never a silent merge).
 
 <Accordions type="single">
 
@@ -687,21 +687,20 @@ export const createConversationWithFirstMessage = mutation({
 
 ## The conflict taxonomy
 
-Concile has **no merge and no CRDT layer**, offline or online. A queued mutation, when it
-finally drains, runs against whatever the server's actual state is *at that moment*, not whatever
-it was when you went offline, and exactly one of three things happens:
+Concile has **no merge and no CRDT layer**, offline or online. A queued mutation, when it finally
+drains, runs against whatever the server's actual state is *at that moment*, not whatever it was
+when you went offline, and exactly one of three things happens:
 
-- **It succeeds.** Your handler ran, computed against live data, and committed. The common case,
-  and it needs nothing special from you: the same transactional guarantee every mutation gets
-  online.
+- **It succeeds.** Your handler ran, computed against live data, and committed. The common case, and
+  it needs nothing special from you: the same transactional guarantee every mutation gets online.
 - **It's a no-op by your own handler's check-before-write logic** (for example, "only insert this
   comment if one with the same idempotency key doesn't already exist"). This is the idiom for
   anything you'd otherwise reach for a CRDT for. The outbox has no opinion about what counts as a
   duplicate at the data level.
 - **It fails terminally.** Your handler threw, or a validation or authorization check rejected it.
-  If your handler needs a queued entry to terminal-fail (rather than retry as transient), throw a
-  **typed, coded** error. A plain `Error` carries no code on the wire, so the drain can't tell it
-  apart from an infrastructure hiccup and treats it as transient by design.
+  If your handler needs a queued entry to terminal-fail (rather than retry as transient), throw a **typed,
+  coded** error. A plain `Error` carries no code on the wire, so the drain can't tell it apart from
+  an infrastructure hiccup and treats it as transient by design.
 
 There's no fourth branch where the outbox tries to reconcile your write against someone else's.
 That's a deliberate scope line: conflict handling is your mutation handler's job, exactly as it
@@ -728,26 +727,25 @@ product bet.
 Safari can evict an origin's IndexedDB data after roughly 7 days of no interaction. Any browser can
 evict under storage pressure. A user can clear site data at any time.
 
-`indexedDBOutbox()` calls `navigator.storage.persist()` on your behalf to *request* durable
-storage, but this is advisory only. No behavior anywhere branches on whether the browser actually
-grants it.
+`indexedDBOutbox()` calls `navigator.storage.persist()` on your behalf to *request* durable storage,
+but this is advisory only. No behavior anywhere branches on whether the browser actually grants it.
 
-If storage is evicted, the queue, the tab's `clientId`, and its `seq` counter are all gone
-together (they live in one database, deliberately, so they can never drift out of lockstep).
-Anything already drained is unaffected, since its receipts and effects are safely on the server.
-Anything still queued is simply gone, with nothing left to even report that it happened.
+If storage is evicted, the queue, the tab's `clientId`, and its `seq` counter are all gone together
+(they live in one database, deliberately, so they can never drift out of lockstep). Anything already
+drained is unaffected, since its receipts and effects are safely on the server. Anything still
+queued is simply gone, with nothing left to even report that it happened.
 
 This is priced honestly, not hidden: server-side receipts are retained for 30 days past
 acknowledgment (per-client floor rows for at least a year), so the server-side half of this system
-outlives any realistic browser-side queue lifetime by a wide margin. The practical constraint on
-how long a mutation can safely stay queued offline is the *browser's* storage lifetime, not the
-server's retention window.
+outlives any realistic browser-side queue lifetime by a wide margin. The practical constraint on how
+long a mutation can safely stay queued offline is the *browser's* storage lifetime, not the server's
+retention window.
 
 ### It's bounded-offline, not unbounded
 
 This is built for "closed my laptop overnight" or "was on a plane," not "used the app for a month
-with no network." `pendingSummary()`'s `oldestAgeMs` lets an app surface an advisory banner before
-a platform eviction cliff. The queue itself won't warn you.
+with no network." `pendingSummary()`'s `oldestAgeMs` lets an app surface an advisory banner before a
+platform eviction cliff. The queue itself won't warn you.
 
 ## Performance
 
@@ -762,11 +760,11 @@ Headline numbers from the four-axis benchmark (`docs/dev/research/offline-outbox
 generated by the flagship E2E driving a real client against a real server, treat the *shape*, not
 the exact figures, as the takeaway; they're machine- and load-dependent):
 
-- **Online round-trip cost, outbox on vs. off: ≈ 0.** The durable append is write-behind, so
-  turning the outbox on doesn't move online latency: measured **+0.002ms p50, −0.012ms p99** over
-  120 sequential mutations, in other words noise, not a real cost.
-- **Concurrent online throughput with the outbox on: ~13,300 ops/s** (400 concurrent mutations,
-  the outbox never forces concurrent live writers onto a single ordered lane).
+- **Online round-trip cost, outbox on vs. off: ≈ 0.** The durable append is write-behind, so turning
+  the outbox on doesn't move online latency: measured **+0.002ms p50, −0.012ms p99** over 120
+  sequential mutations, in other words noise, not a real cost.
+- **Concurrent online throughput with the outbox on: ~13,300 ops/s** (400 concurrent mutations, the
+  outbox never forces concurrent live writers onto a single ordered lane).
 - **500-entry offline drain: ~675ms time-to-empty**, with the longest single main-thread block
   during the whole drain only **~3.3ms**. The batched `MutationBatch` drain never blocks the UI
   thread for a noticeable stretch, even clearing a large backlog.
@@ -783,8 +781,8 @@ the exact figures, as the takeaway; they're machine- and load-dependent):
 - [Optimistic updates](/docs/client/optimistic-updates): the live-session reconciliation model the
   outbox's `optimisticUpdates` registry builds on, including `placeholderId()`/`now()` purity and
   the no-flicker guarantee.
-- [Client SDK](/docs/client/client-sdk): constructing `ConcileClient`, transports, reconnection,
-  and the full constructor-option surface.
+- [Client SDK](/docs/client/client-sdk): constructing `ConcileClient`, transports, reconnection, and
+  the full constructor-option surface.
 - [Mutations](/docs/core-concepts/mutations): writing the handlers a queued entry eventually runs
   against.
 

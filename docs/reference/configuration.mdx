@@ -5,13 +5,22 @@ description: The full v.* validator catalog, concile.config.ts, crons.ts, http.t
 
 {/* diataxis: reference */}
 
-This page is your complete guide to all the configuration options available in concile. We will cover the `v.*` validator catalog, the schema builder, `concile.config.ts`, `crons.ts`, `http.ts`, and all the `CONCILE_*` environment variables that the CLI looks for. If you want to dive into the reasoning behind any of these features, you can check out [Schema & tables](/docs/core-concepts/schema-and-tables), [Queries](/docs/core-concepts/queries), and the [Components overview](/docs/components/overview).
+This page is your complete guide to all the configuration options available in concile. We will
+cover the `v.*` validator catalog, the schema builder, `concile.config.ts`, `crons.ts`, `http.ts`,
+and all the `CONCILE_*` environment variables that the CLI looks for. If you want to dive into the
+reasoning behind any of these features, you can check out [Schema &
+tables](/docs/core-concepts/schema-and-tables), [Queries](/docs/core-concepts/queries), and the
+[Components overview](/docs/components/overview).
 
 ## Validators (`v`)
 
-You can bring these in from `@concile/values`. All the fields in `defineTable`, every entry in your function's `args` or `returns`, and the configuration for composed components in `concile.config.ts` are built using these validators.
+You can bring these in from `@concile/values`. All the fields in `defineTable`, every entry in your
+function's `args` or `returns`, and the configuration for composed components in `concile.config.ts`
+are built using these validators.
 
-When you use `Infer<typeof validator>`, you get the matching TypeScript type. You can also serialize any validator into JSON by calling `.toJSON()`. The engine uses that JSON to store the live schema for a table, and it is exactly what `concile deploy` looks at when comparing schema differences.
+When you use `Infer<typeof validator>`, you get the matching TypeScript type. You can also serialize
+any validator into JSON by calling `.toJSON()`. The engine uses that JSON to store the live schema
+for a table, and it is exactly what `concile deploy` looks at when comparing schema differences.
 
 <TypeTable
   type={{
@@ -84,8 +93,7 @@ When you use `Infer<typeof validator>`, you get the matching TypeScript type. Yo
       description:
         'You can wrap any other validator with this to make a field optional. Keep in mind that this only makes sense for object fields. If you want to say that the value itself can be null, you should use `v.union(v.string(), v.null())` instead.',
     },
-  }}
-/>
+  }} />
 
 ```ts title="concile/schema.ts"
 import { v } from "@concile/values";
@@ -99,11 +107,21 @@ v.object({
 });
 ```
 
-Every time you write data, whether you are using `ctx.db.insert`, `replace`, or running a patch, the system checks it against the document validator for that table right before committing the transaction. If you try to save a document with the wrong type, a missing required field, or an extra field that shouldn't be there, the system will reject it with a `DocumentValidationError` before anything is saved, and the mutation will throw an error. There are no partial commits here.
+Every time you write data, whether you are using `ctx.db.insert`, `replace`, or running a patch, the
+system checks it against the document validator for that table right before committing the
+transaction. If you try to save a document with the wrong type, a missing required field, or an
+extra field that shouldn't be there, the system will reject it with a `DocumentValidationError`
+before anything is saved, and the mutation will throw an error. There are no partial commits here.
 
-If you want to turn off validation for an entire schema, you can use `defineSchema(tables, { schemaValidation: false })`. This stops checking every table, and you won't be able to turn it back on for individual tables. If you just need a quick workaround for a specific field, it is much better to loosen that one field by using `v.any()`.
+If you want to turn off validation for an entire schema, you can use `defineSchema(tables, {
+schemaValidation: false })`. This stops checking every table, and you won't be able to turn it back
+on for individual tables. If you just need a quick workaround for a specific field, it is much
+better to loosen that one field by using `v.any()`.
 
-You can check out [Schema & tables](/docs/core-concepts/schema-and-tables#document-validation-at-write-time) to see exactly what the error messages look like and to learn more about the underlying guarantee, which is that the same validator is recreated from JSON.
+You can check out [Schema &
+tables](/docs/core-concepts/schema-and-tables#document-validation-at-write-time) to see exactly what
+the error messages look like and to learn more about the underlying guarantee, which is that the
+same validator is recreated from JSON.
 
 ## Schema builder
 
@@ -146,14 +164,16 @@ export default defineSchema({
       description:
         "This function brings your table map together into a single schema. By default, `options.schemaValidation` is set to `true`.",
     },
-  }}
-/>
+  }} />
 
-Even if you do not add any `.index(...)` calls yourself, every table gets a built-in `by_creation` index automatically. It sorts rows based on when they were created, meaning you can always use `ctx.db.query(table, "by_creation").collect()` without writing any schema definitions.
+Even if you do not add any `.index(...)` calls yourself, every table gets a built-in `by_creation`
+index automatically. It sorts rows based on when they were created, meaning you can always use
+`ctx.db.query(table, "by_creation").collect()` without writing any schema definitions.
 
 ### System fields
 
-Every document across all your tables automatically includes two special fields that you never need to set yourself:
+Every document across all your tables automatically includes two special fields that you never need
+to set yourself:
 
 <TypeTable
   type={{
@@ -167,14 +187,17 @@ Every document across all your tables automatically includes two special fields 
       description:
         "This records the exact time the document was inserted. It grabs the time from the transaction snapshot itself (`ctx.now()`) rather than looking at the system clock, keeping it perfectly deterministic like everything else in a mutation.",
     },
-  }}
-/>
+  }} />
 
-You might find it interesting that every index key implicitly ends with `_creationTime` and then `_id`. This clever design is what guarantees that index keys stay unique and pagination cursors remain stable, even if you have duplicate field values.
+You might find it interesting that every index key implicitly ends with `_creationTime` and then
+`_id`. This clever design is what guarantees that index keys stay unique and pagination cursors
+remain stable, even if you have duplicate field values.
 
 ### System tables
 
-The `_storage` table is the one built-in system table that lives in your app namespace. Every project gets this automatically to hold metadata for file storage, regardless of whether your app actually uses `ctx.storage`. Here is what its document shape looks like:
+The `_storage` table is the one built-in system table that lives in your app namespace. Every
+project gets this automatically to hold metadata for file storage, regardless of whether your app
+actually uses `ctx.storage`. Here is what its document shape looks like:
 
 ```ts
 {
@@ -188,15 +211,25 @@ The `_storage` table is the one built-in system table that lives in your app nam
 }
 ```
 
-When you use `Id<"_storage">` or `v.id("_storage")` in your `schema.ts`, they type-check exactly like references to tables you created yourself. The codegen tool seamlessly merges system tables into `DataModel` alongside your own tables. You can learn more about the `ctx.storage` API that relies on this table by reading [File storage](/docs/core-concepts/file-storage).
+When you use `Id<"_storage">` or `v.id("_storage")` in your `schema.ts`, they type-check exactly
+like references to tables you created yourself. The codegen tool seamlessly merges system tables
+into `DataModel` alongside your own tables. You can learn more about the `ctx.storage` API that
+relies on this table by reading [File storage](/docs/core-concepts/file-storage).
 
-On the other hand, tables that belong to composed components, like `jobs` and `crons` from the `scheduler` or `users` and `sessions` from `auth`, are namespaced with the component name instead of sitting at the app root. They do not appear in your `schema.ts` file. For details on these, you can look at each component's reference page in the [Components](/docs/components/overview) section.
+On the other hand, tables that belong to composed components, like `jobs` and `crons` from the
+`scheduler` or `users` and `sessions` from `auth`, are namespaced with the component name instead of
+sitting at the app root. They do not appear in your `schema.ts` file. For details on these, you can
+look at each component's reference page in the [Components](/docs/components/overview) section.
 
 ## `concile.config.ts`
 
-`concile.config.ts` is an optional file you can use to add components to your project. You should place it alongside your `concile/` directory, so it acts as a sibling rather than living inside it.
+`concile.config.ts` is an optional file you can use to add components to your project. You should
+place it alongside your `concile/` directory, so it acts as a sibling rather than living inside it.
 
-If you decide not to include this file at all, your project just won't have any components, which is exactly the same as explicitly setting `{ components: [] }`. When you run commands like `concile dev`, `serve`, `build`, or `deploy`, they all look for this same file, whether you name it `concile.config.ts` or `.js`, right in your project root.
+If you decide not to include this file at all, your project just won't have any components, which is
+exactly the same as explicitly setting `{ components: [] }`. When you run commands like `concile
+dev`, `serve`, `build`, or `deploy`, they all look for this same file, whether you name it
+`concile.config.ts` or `.js`, right in your project root.
 
 ```ts title="concile.config.ts"
 import { defineConfig } from "@concile/component";
@@ -237,13 +270,20 @@ export interface ConcileConfig {
 export function defineConfig(config: ConcileConfig): ConcileConfig; // this just returns the same config to give the file a typed default export
 ```
 
-You can use `functionsDir` to change where your schema and functions are located relative to the project root, which defaults to `"concile"`. If you use an explicit `--dir` flag on any command, that flag will override this setting, which in turn overrides the default. Feel free to check out the [CLI](/docs/core-concepts/cli) page to learn more about how `--dir` precedence works.
+You can use `functionsDir` to change where your schema and functions are located relative to the
+project root, which defaults to `"concile"`. If you use an explicit `--dir` flag on any command,
+that flag will override this setting, which in turn overrides the default. Feel free to check out
+the [CLI](/docs/core-concepts/cli) page to learn more about how `--dir` precedence works.
 
-Each entry in your `components` array is simply a call to a component's own `define*()` function, like `defineScheduler()`, `defineWorkflow()`, `defineAuth()`, `defineAuthz()`, `defineTriggers()`, or `defineNotifications()`. Every one of these functions just returns a standard `ComponentDefinition`.
+Each entry in your `components` array is simply a call to a component's own `define*()` function,
+like `defineScheduler()`, `defineWorkflow()`, `defineAuth()`, `defineAuthz()`, `defineTriggers()`,
+or `defineNotifications()`. Every one of these functions just returns a standard
+`ComponentDefinition`.
 
 ### The `deploy` block
 
-The `deploy` block contains the target configuration for `concile deploy`. Because this is built right in, you don't need to pass any extra flags when you run the deploy command:
+The `deploy` block contains the target configuration for `concile deploy`. Because this is built
+right in, you don't need to pass any extra flags when you run the deploy command:
 
 ```ts
 export interface DeployConfig {
@@ -263,7 +303,12 @@ export interface TargetConfig {
 }
 ```
 
-The `env()` helper, which you also import from `@concile/component`, lets you read an environment variable while the config loads. This is a great way to pass secrets into your target settings without hardcoding them. It is designed to never throw an error. If a variable is unset and has no fallback, it just resolves to `""`. The deployment target's own preflight checks will fail fast if a critical credential is truly missing, meaning your config can still successfully load even if you do not have a `.env` file handy.
+The `env()` helper, which you also import from `@concile/component`, lets you read an environment
+variable while the config loads. This is a great way to pass secrets into your target settings
+without hardcoding them. It is designed to never throw an error. If a variable is unset and has no
+fallback, it just resolves to `""`. The deployment target's own preflight checks will fail fast if a
+critical credential is truly missing, meaning your config can still successfully load even if you do
+not have a `.env` file handy.
 
 ```ts title="concile.config.ts"
 import { defineConfig, env } from "@concile/component";
@@ -284,19 +329,46 @@ export default defineConfig({
 });
 ```
 
-You can look up [`concile deploy`](/docs/core-concepts/cli#concile-deploy) for more details on the command line flags that interact with this block. You should also review [Deploy & build](/docs/deploy/deploy-and-build) to learn about the specific settings available for each target.
+You can look up [`concile deploy`](/docs/core-concepts/cli#concile-deploy) for more details on the
+command line flags that interact with this block. You should also review [Deploy &
+build](/docs/deploy/deploy-and-build) to learn about the specific settings available for each
+target.
 
-For more information on the options available for each component's `define*()` function, like `defineAuth(options?)`, `defineAuthz(config)`, `defineWorkflow(opts)`, `defineTriggers(opts)`, `defineNotifications(opts)`, or `defineScheduler(opts?)`, take a look at their individual pages under [Components](/docs/components/overview).
+For more information on the options available for each component's `define*()` function, like
+`defineAuth(options?)`, `defineAuthz(config)`, `defineWorkflow(opts)`, `defineTriggers(opts)`,
+`defineNotifications(opts)`, or `defineScheduler(opts?)`, take a look at their individual pages
+under [Components](/docs/components/overview).
 
 **Composition rules:**
 
-*   **Declaration order does not have to match dependency order.** When a component has dependencies, it declares them using `requires: string[]`. For example, `defineAuthz` is built with `requires: ["auth"]`. Before booting up, `composeComponents` runs a stable topological sort over your entire list, ensuring every component is initialized after the things it requires, no matter what order you put them in the array. If you forget to include a required component, like trying to use `defineAuthz()` without `defineAuth()`, the system will fail fast during composition and let you know that `component "authz" requires "auth", which is not enabled`. It will also reject any circular dependencies.
-*   **The composed set is locked in at boot time.** The engine decides which components are active and assigns their table numbers just once, right when `concile dev`, `serve`, or `build` starts. If you want to add or remove a component from `concile.config.ts`, you will need to restart the process. This is not something that `concile deploy` can swap out live. The deploy command only hot-swaps your functions and additive schema changes against the set of components that are already running. You can read more about this in [Deploy and build](/docs/deploy/deploy-and-build).
-*   **Each component's configuration is just a plain value.** You pass these values directly to the component's `define*()` function. Concile does not own or manage these fields. This means that provider API keys, OAuth client credentials, and other secrets are read from `process.env` directly by your own `concile.config.ts` file, rather than by the engine itself. We cover this in more detail in the [Component config from environment variables](#component-config-from-environment-variables) section down below.
+*   **Declaration order does not have to match dependency order.** When a component has
+    dependencies, it declares them using `requires: string[]`. For example, `defineAuthz` is built
+    with `requires: ["auth"]`. Before booting up, `composeComponents` runs a stable topological sort
+    over your entire list, ensuring every component is initialized after the things it requires, no
+    matter what order you put them in the array. If you forget to include a required component, like
+    trying to use `defineAuthz()` without `defineAuth()`, the system will fail fast during
+    composition and let you know that `component "authz" requires "auth", which is not enabled`. It
+    will also reject any circular dependencies.
+*   **The composed set is locked in at boot time.** The engine decides which components are active
+    and assigns their table numbers just once, right when `concile dev`, `serve`, or `build` starts.
+    If you want to add or remove a component from `concile.config.ts`, you will need to restart the
+    process. This is not something that `concile deploy` can swap out live. The deploy command only
+    hot-swaps your functions and additive schema changes against the set of components that are
+    already running. You can read more about this in [Deploy and
+    build](/docs/deploy/deploy-and-build).
+*   **Each component's configuration is just a plain value.** You pass these values directly to the
+    component's `define*()` function. Concile does not own or manage these fields. This means that
+    provider API keys, OAuth client credentials, and other secrets are read from `process.env`
+    directly by your own `concile.config.ts` file, rather than by the engine itself. We cover this
+    in more detail in the [Component config from environment
+    variables](#component-config-from-environment-variables) section down below.
 
 ## `crons.ts`
 
-`crons.ts` is the typical file you use to set up recurring or scheduled tasks for your app. As we showed earlier, it gets pulled into your project when you use `defineScheduler({ crons })`. Since `cronJobs()` and its registry come directly from `@concile/scheduler` and are re-exported through the codegen's `_generated/server`, you only need a single import to get started:
+`crons.ts` is the typical file you use to set up recurring or scheduled tasks for your app. As we
+showed earlier, it gets pulled into your project when you use `defineScheduler({ crons })`. Since
+`cronJobs()` and its registry come directly from `@concile/scheduler` and are re-exported through
+the codegen's `_generated/server`, you only need a single import to get started:
 
 ```ts title="concile/crons.ts"
 import { cronJobs } from "./_generated/server";
@@ -314,7 +386,8 @@ crons.monthly("invoice", { day: 1, hourUTC: 0, minuteUTC: 0 }, internal.billing.
 export default crons;
 ```
 
-Then, back in your `concile.config.ts`, you just import it and use it like this: `import crons from "./concile/crons"; defineScheduler({ crons })`.
+Then, back in your `concile.config.ts`, you just import it and use it like this: `import crons from
+"./concile/crons"; defineScheduler({ crons })`.
 
 <TypeTable
   type={{
@@ -344,20 +417,36 @@ Then, back in your `concile.config.ts`, you just import it and use it like this:
       type: "at: { day, hourUTC, minuteUTC }",
       description: "This runs once a month on a specific day, in UTC time.",
     },
-  }}
-/>
+  }} />
 
-For every one of these methods, `fnRef` needs to be an `internal.*` or `api.*` function reference, and `args` is just the JSON arguments object for that function. This is the exact same format you would use with `ctx.scheduler.runAfter` or `runAt`. Be sure to give each cron a unique `name`. If you accidentally try to register the same name twice, the system will throw an error right when it loads.
+For every one of these methods, `fnRef` needs to be an `internal.*` or `api.*` function reference,
+and `args` is just the JSON arguments object for that function. This is the exact same format you
+would use with `ctx.scheduler.runAfter` or `runAt`. Be sure to give each cron a unique `name`. If
+you accidentally try to register the same name twice, the system will throw an error right when it
+loads.
 
-If you are using `.interval` or `.cron`, you can pass a `CronOpts` object that looks like `{ tz?: string; catchUp?: "skip" | "fireOnce" | "fireAll" }`. The other methods, like `.daily`, `.hourly`, `.weekly`, and `.monthly`, only accept the `{ catchUp? }` option. They don't take a `tz` override because their scheduling fields are already strictly defined in UTC, so adding a timezone could make it confusing to know which field it applies to.
+If you are using `.interval` or `.cron`, you can pass a `CronOpts` object that looks like `{ tz?:
+string; catchUp?: "skip" | "fireOnce" | "fireAll" }`. The other methods, like `.daily`, `.hourly`,
+`.weekly`, and `.monthly`, only accept the `{ catchUp? }` option. They don't take a `tz` override
+because their scheduling fields are already strictly defined in UTC, so adding a timezone could make
+it confusing to know which field it applies to.
 
-The `catchUp` setting determines what happens if your application was down and missed some scheduled runs. By default, it is set to `"skip"`, which means any missed runs are simply dropped. If you choose `"fireOnce"`, it will execute just the single most recent occurrence you missed. If you select `"fireAll"`, it will replay all of the missed occurrences in chronological order.
+The `catchUp` setting determines what happens if your application was down and missed some scheduled
+runs. By default, it is set to `"skip"`, which means any missed runs are simply dropped. If you
+choose `"fireOnce"`, it will execute just the single most recent occurrence you missed. If you
+select `"fireAll"`, it will replay all of the missed occurrences in chronological order.
 
-If you edit a cron's timing, function, or arguments in `concile.config.ts` and deploy those changes, its schedule will automatically restart from that exact moment. However, if you only update the `catchUp` setting, the running schedule stays exactly as it is. If you remove an entry entirely from `crons.ts`, the system will cancel its upcoming task on the next boot or reconcile cycle, and it will remove the database row. Any actual work jobs that were already added to the queue are left alone to finish processing.
+If you edit a cron's timing, function, or arguments in `concile.config.ts` and deploy those changes,
+its schedule will automatically restart from that exact moment. However, if you only update the
+`catchUp` setting, the running schedule stays exactly as it is. If you remove an entry entirely from
+`crons.ts`, the system will cancel its upcoming task on the next boot or reconcile cycle, and it
+will remove the database row. Any actual work jobs that were already added to the queue are left
+alone to finish processing.
 
 ## `http.ts`
 
-`http.ts` is the standard file where you set up an `httpRouter()` filled with your routes, each powered by an `httpAction`, and then export it as the default.
+`http.ts` is the standard file where you set up an `httpRouter()` filled with your routes, each
+powered by an `httpAction`, and then export it as the default.
 
 ```ts title="concile/http.ts"
 import { httpRouter } from "./_generated/server";
@@ -396,20 +485,34 @@ export default http;
       description:
         "You must provide exactly one of either `path` or `pathPrefix`. If you try to pass both, or if you forget to pass either one, it will throw an error when registering the route.",
     },
-  }}
-/>
+  }} />
 
-**Matching.** The HTTP method always has to be an exact match. If you have an exact `path` match, it will take priority over any `pathPrefix`. When multiple `pathPrefix` rules match, the longest one wins.
+**Matching.** The HTTP method always has to be an exact match. If you have an exact `path` match, it
+will take priority over any `pathPrefix`. When multiple `pathPrefix` rules match, the longest one
+wins.
 
-Any path starting with `/api/` or where the first segment starts with an underscore, like `/_admin`, is strictly reserved for the engine itself. If you try to register one of these with `route()`, it will fail immediately. This prevents a misconfigured `http.ts` file from accidentally shadowing important built-in endpoints like the file storage routes or the deploy targets.
+Any path starting with `/api/` or where the first segment starts with an underscore, like `/_admin`,
+is strictly reserved for the engine itself. If you try to register one of these with `route()`, it
+will fail immediately. This prevents a misconfigured `http.ts` file from accidentally shadowing
+important built-in endpoints like the file storage routes or the deploy targets.
 
-An `httpAction` handler works exactly like a regular `action`, meaning it follows the same rules about running in a non-deterministic context. You have full access to `ctx.runQuery`, `ctx.runMutation`, `ctx.runAction`, native `fetch`, `Date`, and timers, but you cannot use `ctx.db` directly. The only real difference is how it handles inputs and outputs. Instead of taking JSON arguments and returning a JSON value, it receives a raw `Request` object and expects you to return a raw `Response`. You can read more about this shared execution model in the [Actions](/docs/core-concepts/actions) guide.
+An `httpAction` handler works exactly like a regular `action`, meaning it follows the same rules
+about running in a non-deterministic context. You have full access to `ctx.runQuery`,
+`ctx.runMutation`, `ctx.runAction`, native `fetch`, `Date`, and timers, but you cannot use `ctx.db`
+directly. The only real difference is how it handles inputs and outputs. Instead of taking JSON
+arguments and returning a JSON value, it receives a raw `Request` object and expects you to return a
+raw `Response`. You can read more about this shared execution model in the
+[Actions](/docs/core-concepts/actions) guide.
 
-Just to be clear, there is no automatic CORS handling, no support for named path parameters like `:id`, and no way to add per-route middleware. These features were deliberately excluded, rather than just being saved for later.
+Just to be clear, there is no automatic CORS handling, no support for named path parameters like
+`:id`, and no way to add per-route middleware. These features were deliberately excluded, rather
+than just being saved for later.
 
 ## Environment variables
 
-Every variable listed below starts with `CONCILE_` and is read by the CLI, whether you are running `concile dev`, `serve`, or `deploy`. If there is a CLI flag for the exact same thing, the flag will always take priority over its environment variable equivalent.
+Every variable listed below starts with `CONCILE_` and is read by the CLI, whether you are running
+`concile dev`, `serve`, or `deploy`. If there is a CLI flag for the exact same thing, the flag will
+always take priority over its environment variable equivalent.
 
 ### Core
 
@@ -435,11 +538,16 @@ Every variable listed below starts with `CONCILE_` and is read by the CLI, wheth
 | `CONCILE_STORAGE_PUBLIC_URL` | This is the public base URL that will be used when you call `getUrl()` on files with `"public"` visibility, pointing directly to your CDN or public bucket endpoint rather than generating a private token URL. |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | These are the standard AWS credentials for the S3 backend. We deliberately do not treat simply having these set as an intent to use S3, because they are often hanging around in environments for other reasons. Only setting `CONCILE_STORAGE_BUCKET` actually turns on the backend. |
 
-If you decide to use the `--storage-bucket` or `--storage-endpoint` flags while running `dev` or `serve`, those will override whatever you put in your environment variables. Read more about this in the [File storage](/docs/core-concepts/file-storage) section.
+If you decide to use the `--storage-bucket` or `--storage-endpoint` flags while running `dev` or
+`serve`, those will override whatever you put in your environment variables. Read more about this in
+the [File storage](/docs/core-concepts/file-storage) section.
 
 ### Fleet (Tier 2: Postgres multi-writer)
 
-You can opt into a symmetric fleet of `serve` processes that all share a single Postgres database by using `--fleet` or setting `CONCILE_FLEET=1` or `true`. Just remember that this requires the enterprise `@concile/fleet` package. You can find out more in the [Scaling](/docs/deploy/scaling) documentation.
+You can opt into a symmetric fleet of `serve` processes that all share a single Postgres database by
+using `--fleet` or setting `CONCILE_FLEET=1` or `true`. Just remember that this requires the
+enterprise `@concile/fleet` package. You can find out more in the [Scaling](/docs/deploy/scaling)
+documentation.
 
 | Variable | Meaning |
 |---|---|
@@ -452,7 +560,10 @@ You can opt into a symmetric fleet of `serve` processes that all share a single 
 
 ### Object storage (Tier 3: bucket-backed, no database)
 
-You can choose to run the engine directly against an object-storage bucket or local directory, using that as the foundational layer instead of SQLite or Postgres. To do this, use `--object-store <url>` or the `CONCILE_OBJECT_STORE` variable. Keep in mind that this is mutually exclusive with `--fleet`. Learn more in the [Scaling](/docs/deploy/scaling) guide.
+You can choose to run the engine directly against an object-storage bucket or local directory, using
+that as the foundational layer instead of SQLite or Postgres. To do this, use `--object-store <url>`
+or the `CONCILE_OBJECT_STORE` variable. Keep in mind that this is mutually exclusive with `--fleet`.
+Learn more in the [Scaling](/docs/deploy/scaling) guide.
 
 | Variable | Meaning |
 |---|---|
@@ -461,11 +572,16 @@ You can choose to run the engine directly against an object-storage bucket or lo
 | `CONCILE_REPLICA` | Setting this to `1`, `true`, or `yes` will boot the node as a completely read-only replica of the object store's shard. It will materialize data and tail the feed, but it will never try to grab a write lease, and it will reject all mutations. You must also have `--object-store` or `CONCILE_OBJECT_STORE` set for this to work. It acts the same as the `--replica` flag. |
 | `CONCILE_WRITER_URL` | This is only relevant if you are booting a `--replica`. It specifies the URL of the active writer node. When you provide this, any mutation or action hitting the replica will simply be forwarded to the writer instead of being outright rejected. This mirrors the behavior of the `--writer-url` flag. |
 
-The `--shards N` flag, which corresponds to the shared `CONCILE_FLEET_SHARDS` variable we talked about earlier, determines how many object-storage lanes a writer is responsible for when `N > 1`. You cannot use this in combination with `--replica`, since a replica is single-shard by definition, or with `--fleet`, which has its own shard resolution logic.
+The `--shards N` flag, which corresponds to the shared `CONCILE_FLEET_SHARDS` variable we talked
+about earlier, determines how many object-storage lanes a writer is responsible for when `N > 1`.
+You cannot use this in combination with `--replica`, since a replica is single-shard by definition,
+or with `--fleet`, which has its own shard resolution logic.
 
 ### The wake seam (serverless / stop-between-requests hosts)
 
-This section is for hosting environments that stop the process entirely between requests, like Cloudflare Containers. In those cases, a standard `setTimeout` will never actually fire, meaning all of your scheduler, trigger, and reaper drivers would completely freeze.
+This section is for hosting environments that stop the process entirely between requests, like
+Cloudflare Containers. In those cases, a standard `setTimeout` will never actually fire, meaning all
+of your scheduler, trigger, and reaper drivers would completely freeze.
 
 | Variable | Meaning |
 |---|---|
@@ -478,11 +594,17 @@ This section is for hosting environments that stop the process entirely between 
 |---|---|
 | `CONCILE_DO_LOCATION_HINT` | This pins the single-shard Cloudflare Durable Object host's ONE Durable Object to a specific home region. You can use any of the 11 location hint codes, such as `wnam`, `enam`, `sam`, `weur`, `eeur`, `apac`, `apac-ne`, `apac-se`, `oc`, `afr`, or `me`. If you leave it unset, Cloudflare will simply place the Durable Object near wherever the very first request comes from, which is its normal behavior. Keep in mind that only the very first `get()` call ever pays attention to this hint, as a Durable Object stays single-homed in that region for its entire life once it gets created. |
 
-As a quick note, the `durable_objects` binding name itself, like `CONCILE_DO` in your `wrangler.jsonc` file, is just a Wrangler binding identifier. The engine does not actually read it from `process.env`. Check out the [Cloudflare](/docs/deploy/cloudflare) documentation to see the full setup for Workers deployments.
+As a quick note, the `durable_objects` binding name itself, like `CONCILE_DO` in your
+`wrangler.jsonc` file, is just a Wrangler binding identifier. The engine does not actually read it
+from `process.env`. Check out the [Cloudflare](/docs/deploy/cloudflare) documentation to see the
+full setup for Workers deployments.
 
 ## Component config from environment variables
 
-Concile itself doesn't actually manage any environment variables for component secrets. Provider API keys, OAuth client credentials, and other sensitive values are simply plain fields on each component's `define*()` options. It is entirely up to your own `concile.config.ts` file to populate them from `process.env` however you see fit:
+Concile itself doesn't actually manage any environment variables for component secrets. Provider API
+keys, OAuth client credentials, and other sensitive values are simply plain fields on each
+component's `define*()` options. It is entirely up to your own `concile.config.ts` file to populate
+them from `process.env` however you see fit:
 
 ```ts title="concile.config.ts"
 import { defineConfig } from "@concile/component";
@@ -522,13 +644,26 @@ export default defineConfig({
 });
 ```
 
-The specific variable names used here, like `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`, or `TWILIO_ACCOUNT_SID`, are completely your choice. They are not a strict contract that the engine enforces or attempts to read on its own. You can pick whatever names make the most sense for how you handle secrets in your deployment, whether that means using a Docker Compose `env_file`, a dedicated platform secrets manager, or just a simple `.env` file that gets loaded before `concile serve` boots up. Be sure to look at the [Auth](/docs/components/auth), [Notifications](/docs/components/notifications), and [Authorization](/docs/components/authorization) guides to see the complete provider and configuration options for each component.
+The specific variable names used here, like `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`, or
+`TWILIO_ACCOUNT_SID`, are completely your choice. They are not a strict contract that the engine
+enforces or attempts to read on its own. You can pick whatever names make the most sense for how you
+handle secrets in your deployment, whether that means using a Docker Compose `env_file`, a dedicated
+platform secrets manager, or just a simple `.env` file that gets loaded before `concile serve` boots
+up. Be sure to look at the [Auth](/docs/components/auth),
+[Notifications](/docs/components/notifications), and [Authorization](/docs/components/authorization)
+guides to see the complete provider and configuration options for each component.
 
 ## See also
 
-*   [Schema & tables](/docs/core-concepts/schema-and-tables): an explanation of the core concepts and guarantees that these validators and the schema builder provide.
-*   [Queries](/docs/core-concepts/queries): a look at how an index you declare here actually influences what gets read from the database.
-*   [Components overview](/docs/components/overview): the definitive reference for every component's `define*()` function.
-*   [CLI](/docs/core-concepts/cli): a complete list of every command and flag that interacts with `concile.config.ts` and the environment variables we discussed.
-*   [Scaling](/docs/deploy/scaling) and [Cloudflare](/docs/deploy/cloudflare): deep dives into the fleet, object-storage, and DO-native deployment models that rely on those multi-node variables.
-*   [Self-hosting](/docs/deploy/self-hosting) and [Postgres](/docs/deploy/postgres): step-by-step walkthroughs for configuring your core deployment.
+*   [Schema & tables](/docs/core-concepts/schema-and-tables): an explanation of the core concepts
+    and guarantees that these validators and the schema builder provide.
+*   [Queries](/docs/core-concepts/queries): a look at how an index you declare here actually
+    influences what gets read from the database.
+*   [Components overview](/docs/components/overview): the definitive reference for every component's
+    `define*()` function.
+*   [CLI](/docs/core-concepts/cli): a complete list of every command and flag that interacts with
+    `concile.config.ts` and the environment variables we discussed.
+*   [Scaling](/docs/deploy/scaling) and [Cloudflare](/docs/deploy/cloudflare): deep dives into the
+    fleet, object-storage, and DO-native deployment models that rely on those multi-node variables.
+*   [Self-hosting](/docs/deploy/self-hosting) and [Postgres](/docs/deploy/postgres): step-by-step
+    walkthroughs for configuring your core deployment.

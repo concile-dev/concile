@@ -5,10 +5,14 @@ description: Get a concile backend running and watch it update live, in a few mi
 
 {/* diataxis: tutorial */}
 
-In this quickstart, you will build a tiny backend with a `messages` table, a query that lists those messages, and a mutation that adds a new one. Then, you will watch the list update the exact moment you write a new row. It only takes a few minutes, and there are no skipped steps below.
+In this quickstart, you will build a tiny backend with a `messages` table, a query that lists those
+messages, and a mutation that adds a new one. Then, you will watch the list update the exact moment
+you write a new row. It only takes a few minutes, and there are no skipped steps below.
 
 <Callout title="Before you start">
-  You will need **Bun** or **Node.js 22.5+** and a package manager. Your backend will live in a folder called `concile/`. This is just the default name (since everything you import uses `@concile/*`), and you can easily change it later using the `--dir` flag.
+  You will need **Bun** or **Node.js 22.5+** and a package manager. Your backend will live in a
+  folder called `concile/`. This is just the default name (since everything you import uses
+  `@concile/*`), and you can easily change it later using the `--dir` flag.
 </Callout>
 
 <Steps>
@@ -61,9 +65,9 @@ export default defineSchema({
 });
 ```
 
-Every row also gets an `_id` and a `_creationTime` automatically, so you never declare those. The full
-list of field types (`v.number()`, `v.id(...)`, `v.optional(...)`, and so on) is in
-[Schema & tables](/docs/core-concepts/schema-and-tables).
+Every row also gets an `_id` and a `_creationTime` automatically, so you never declare those. The
+full list of field types (`v.number()`, `v.id(...)`, `v.optional(...)`, and so on) is in [Schema &
+tables](/docs/core-concepts/schema-and-tables).
 
 </Step>
 
@@ -107,7 +111,8 @@ npx concile dev
 ```
 
 `concile dev` generates the typed `concile/_generated/` helpers, starts the engine on a local SQLite
-file, serves a dashboard, and reloads whenever you edit a file. It prints its URL and a dev admin key:
+file, serves a dashboard, and reloads whenever you edit a file. It prints its URL and a dev admin
+key:
 
 ```
 concile dev → http://127.0.0.1:3000  (dashboard: http://127.0.0.1:3000/_dashboard)
@@ -128,7 +133,8 @@ subscription:
 
 1. Open the dashboard URL that `concile dev` printed.
 2. Open the **data browser** and select the `messages` table. Leave it on screen.
-3. Open the **function runner** and call `messages:send` with `{ "author": "Ada", "body": "hello" }`.
+3. Open the **function runner** and call `messages:send` with `{ "author": "Ada", "body": "hello"
+   }`.
 4. The new row shows up in the data browser right away, with no refresh.
 
 That live view is a real reactive subscription (the dashboard subscribes to a built-in admin query,
@@ -223,7 +229,8 @@ Run `concile help` for every command and flag.
 
 <Accordion title="What's in concile/_generated/">
 
-After the first run, `concile/_generated/` holds typed helpers derived from your schema and functions:
+After the first run, `concile/_generated/` holds typed helpers derived from your schema and
+functions:
 
 - `Doc<"messages">` and `Id<"messages">`: the type of a row, and a typed id to reference one.
 - `api`: a typed object mirroring your functions (`api.messages.list`, `api.messages.send`). Pass
@@ -247,8 +254,8 @@ in your app. See [Postgres](/docs/deploy/postgres).
 
 ## Next steps
 
-- [Tutorial](/docs/get-started/tutorial): build a real React app (a task list) and watch it sync live
-  across two tabs.
+- [Tutorial](/docs/get-started/tutorial): build a real React app (a task list) and watch it sync
+  live across two tabs.
 - [How it works](/docs/get-started/how-it-works): why the list updated on its own.
 - [Schema & tables](/docs/core-concepts/schema-and-tables) and
   [Queries](/docs/core-concepts/queries): go deeper on what you just wrote.

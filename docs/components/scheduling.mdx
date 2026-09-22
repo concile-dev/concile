@@ -5,11 +5,20 @@ description: runAfter, runAt, and cron jobs.
 
 {/* diataxis: explanation */}
 
-Think of `@concile/scheduler` as cron that is built right into your database, rather than something awkwardly bolted on the side. A scheduled job is literally just a row in a `jobs` table. Whether you want to run it later, just once, at a very specific time, or on a regular schedule, it works exactly like any other write in concile: it is durable, and there is absolutely nothing polling in the background.
+Think of `@concile/scheduler` as cron that is built right into your database, rather than something
+awkwardly bolted on the side. A scheduled job is literally just a row in a `jobs` table. Whether you
+want to run it later, just once, at a very specific time, or on a regular schedule, it works exactly
+like any other write in concile: it is durable, and there is absolutely nothing polling in the
+background.
 
-A background driver takes care of dispatching the work. It wakes up instantly on every commit and keeps a wall-clock timer set for the very next pending job. This means you will never lose a job to a crash right after claiming it but before finishing it.
+A background driver takes care of dispatching the work. It wakes up instantly on every commit and
+keeps a wall-clock timer set for the very next pending job. This means you will never lose a job to
+a crash right after claiming it but before finishing it.
 
-It also serves as the rock-solid foundation for two other components. [`@concile/workflow`](/docs/components/workflows) routes every single step through the scheduler's job queue, while both `@concile/triggers` and `@concile/notifications` lean on the same recurring driver system for their own background loops.
+It also serves as the rock-solid foundation for two other components.
+[`@concile/workflow`](/docs/components/workflows) routes every single step through the scheduler's
+job queue, while both `@concile/triggers` and `@concile/notifications` lean on the same recurring
+driver system for their own background loops.
 
 ## Enabling it
 
@@ -25,13 +34,13 @@ component. It's the base layer. Once composed, `ctx.scheduler` is available in e
 in every action too, via a delegating action-mode facade, so a function scheduling work is portable
 between the two. More on that in [Scheduling from an action](#scheduling-from-an-action).
 
-Composing it adds three namespaced tables to your deployment: `scheduler/jobs`, `scheduler/job_args`,
-and `scheduler/crons`. You can browse them like any other table in the
+Composing it adds three namespaced tables to your deployment: `scheduler/jobs`,
+`scheduler/job_args`, and `scheduler/crons`. You can browse them like any other table in the
 [dashboard](/docs/deploy/local-dev)'s data browser.
 
 `jobs` and `job_args` are split on purpose. `jobs` is the small, hot row the driver scans every pass
-(id, state, `nextTs`, attempt count). `job_args` holds the arguments and `context` payload, which can
-be large, so scanning for due work never has to page through it.
+(id, state, `nextTs`, attempt count). `job_args` holds the arguments and `context` payload, which
+can be large, so scanning for due work never has to page through it.
 
 ## Scheduling work
 
@@ -49,8 +58,8 @@ export const notifyLater = mutation({
   from now. It returns the new job's id (a `string`).
 - `ctx.scheduler.runAt(ts, fnRef, args)` schedules it for an absolute time. `ts` is either a
   `number` (epoch milliseconds) or a `Date`.
-- `ctx.scheduler.cancel(id)` cancels a still-`pending` job by id. See
-  [Canceling and cascading cancel](#canceling-and-cascading-cancel).
+- `ctx.scheduler.cancel(id)` cancels a still-`pending` job by id. See [Canceling and cascading
+  cancel](#canceling-and-cascading-cancel).
 
 Both `runAfter` and `runAt` insert the job row in the calling mutation's own transaction. The
 schedule commits, or rolls back, atomically with the rest of your write. In a mutation, delay is
@@ -62,8 +71,8 @@ as possible.)
 `fnRef` is a bare function-path string (`"reminders:_send"`) or a codegen'd `api`/`internal`
 reference. Both resolve to the same string path. The target can be a mutation or an action: the
 scheduler resolves which at enqueue time (via the runtime's function registry) and dispatches
-accordingly. This matters because the two have different delivery guarantees, covered in
-[Delivery guarantees](#delivery-guarantees).
+accordingly. This matters because the two have different delivery guarantees, covered in [Delivery
+guarantees](#delivery-guarantees).
 
 ## The lower-level `enqueue` method
 
@@ -128,8 +137,7 @@ await ctx.scheduler.enqueue(
       type: 'string',
       description: "A human-readable label stored on the row, useful for identifying jobs in the dashboard's data browser. Purely observational: not used for dispatch or dedup.",
     },
-  }}
-/>
+  }} />
 
 This is also the primitive other components build on. `@concile/workflow` schedules every step
 through this same `enqueue` path, using `onComplete`/`context` to learn when a step finished and
@@ -143,19 +151,19 @@ guarantees, because only mutations are safely retryable:
 
 - **Mutations** are deterministic and transactional, so a retry after a crash just re-runs the same
   write. That's safe by construction. Scheduled mutations get retried on failure (with backoff, see
-  [Retries and backoff](#retries-and-backoff)) and on an infra kill (see
-  [Delivery guarantees](#delivery-guarantees)).
+  [Retries and backoff](#retries-and-backoff)) and on an infra kill (see [Delivery
+  guarantees](#delivery-guarantees)).
 - **Actions** have arbitrary external side effects (an HTTP call, a charge), so re-running one that
   may have already partially executed risks doing it twice. Scheduled actions are at most once by
   default: whether the process died mid-flight (an infra kill) or the action's own code threw after
   doing external work, the job dead-letters (`state: "failed"`) instead of being re-dispatched.
 
-Retries for an action are opt-in. Passing `retry: { maxFailures }` on the lower-level `enqueue`
-path (which is how `@concile/workflow` threads a step's declared `maxAttempts` through) is your
-statement that the target is safe to re-run, and a cleanly-failed action then retries with backoff
-exactly like a mutation. An infra kill still dead-letters even with the opt-in, because an expired
-lease can't tell the scheduler whether the side effects already ran. Make any action you opt into
-retries for idempotent.
+Retries for an action are opt-in. Passing `retry: { maxFailures }` on the lower-level `enqueue` path
+(which is how `@concile/workflow` threads a step's declared `maxAttempts` through) is your statement
+that the target is safe to re-run, and a cleanly-failed action then retries with backoff exactly
+like a mutation. An infra kill still dead-letters even with the opt-in, because an expired lease
+can't tell the scheduler whether the side effects already ran. Make any action you opt into retries
+for idempotent.
 
 ## Job states
 
@@ -189,11 +197,10 @@ await ctx.scheduler.cancel(jobId);
 A job scheduled while its parent is already `canceled` is born canceled: it never gets a chance to
 run at all. One honest note on scope, though: nothing in production sets `parentId` today. The
 schema field, the `by_parent` cascade walk, and the born-canceled check all exist and work, but
-`@concile/workflow` cancels its step jobs directly via `scheduler.cancel` rather than chaining
-them, and a plain `ctx.scheduler.runAfter` call made from inside another job's own handler is a
-top-level job, not a child. The mechanism is wired for a future slice that threads a real "current
-job id" through the driver; until then, the cascade only reaches jobs whose `parentId` was set
-explicitly.
+`@concile/workflow` cancels its step jobs directly via `scheduler.cancel` rather than chaining them,
+and a plain `ctx.scheduler.runAfter` call made from inside another job's own handler is a top-level
+job, not a child. The mechanism is wired for a future slice that threads a real "current job id"
+through the driver; until then, the cascade only reaches jobs whose `parentId` was set explicitly.
 
 ## The `onComplete`/`context` round-trip
 
@@ -221,7 +228,8 @@ current commit lands) with `{ jobId, context, result }` on every terminal transi
 
 <Callout type="info">
 
-`onComplete` doesn't fire on the back-to-`pending` retry transition. The job isn't actually done yet.
+`onComplete` doesn't fire on the back-to-`pending` retry transition. The job isn't actually done
+yet.
 
 </Callout>
 
@@ -260,8 +268,8 @@ export default defineConfig({ components: [defineScheduler({ crons })] });
 `cronJobs()` itself just collects entries in memory. Nothing is scheduled until it's passed to
 `defineScheduler({ crons })`, whose boot step reconciles the registry into the `crons` table
 (matched by `name`). That reconciliation is idempotent and diff-aware: adding, removing, or editing
-a cron between restarts converges to the new schedule on the next boot without double-firing, and
-an unchanged registry restarting doesn't restart the cadence's phase.
+a cron between restarts converges to the new schedule on the next boot without double-firing, and an
+unchanged registry restarting doesn't restart the cadence's phase.
 
 The six registration methods:
 
@@ -291,8 +299,7 @@ The six registration methods:
       type: '(name, at, fnRef, args, opts?)',
       description: 'at: { day, hourUTC, minuteUTC }. day is the day of month.',
     },
-  }}
-/>
+  }} />
 
 `.cron()`'s `opts` is `{ tz?: string; catchUp?: CatchUpPolicy }`. The four UTC-anchored convenience
 methods (`.daily`/`.hourly`/`.weekly`/`.monthly`) only accept `{ catchUp? }`. They don't take a
@@ -321,9 +328,9 @@ If a deployment is down when one or more occurrences would have fired, `catchUp`
 
 Every policy re-anchors the cadence past the entire true backlog on the same tick, regardless of how
 much of it was actually fired, so a cron's future phase never drifts. Only the discarded or skipped
-occurrences are lost for good. Each fired occurrence is enqueued with
-`idempotencyKey: "<cronName>:<fireTs>"`, so even if the same occurrence were ever computed twice, it
-collapses into one work job rather than running twice.
+occurrences are lost for good. Each fired occurrence is enqueued with `idempotencyKey:
+"<cronName>:<fireTs>"`, so even if the same occurrence were ever computed twice, it collapses into
+one work job rather than running twice.
 
 For `"fireAll"` on an interval spec, the occurrence count is computed in O(1) arithmetic, never by
 stepping through the backlog one at a time, so even a fast interval down for months materializes its
@@ -387,8 +394,8 @@ between mutations and actions matters specifically for infra kills: the process 
 - **Action** jobs are reclaimed straight to `state: "failed"` instead, even if they opted into
   retries. An expired lease means there's no way to know whether the action's side effects already
   ran, so retrying could double-run them. `onComplete`, if set, fires with `{ kind: "failed" }`, so
-  a caller relying on the callback (like a workflow step) still observes the terminal outcome
-  rather than hanging forever.
+  a caller relying on the callback (like a workflow step) still observes the terminal outcome rather
+  than hanging forever.
 
 Put another way: scheduled mutations are effectively at-least-once at the granularity of the whole
 job (bounded by `maxFailures`), since a crash-recovered retry always eventually lands the same
