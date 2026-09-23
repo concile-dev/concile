@@ -7,6 +7,10 @@ import { Inter, Outfit } from 'next/font/google';
 // Without it Next resolves them against localhost and the cards never load.
 export const metadata: Metadata = {
   metadataBase: new URL('https://concile.dev'),
+  // Self-referencing canonical on every route. http, trailing-slash and www
+  // variants already redirect, but shared links pick up query strings (utm,
+  // ref) and this keeps those from being indexed as separate pages.
+  alternates: { canonical: './' },
   // Google Search Console ownership proof. Renders the google-site-verification
   // meta tag in <head> on every page.
   verification: { google: 'kiKhCzpdz32bLp_YjGbYMjPcRlpWIlyHkIpXq_zGP9I' },
