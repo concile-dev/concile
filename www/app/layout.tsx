@@ -11,6 +11,10 @@ export const metadata: Metadata = {
   // variants already redirect, but shared links pick up query strings (utm,
   // ref) and this keeps those from being indexed as separate pages.
   alternates: { canonical: './' },
+  // Every page title carries the site name, so a tab or a search result for
+  // "Quickstart" says whose quickstart it is. The home page sets an absolute
+  // title of its own.
+  title: { template: '%s | Concile', default: 'Concile' },
   // Google Search Console ownership proof. Renders the google-site-verification
   // meta tag in <head> on every page.
   verification: { google: 'kiKhCzpdz32bLp_YjGbYMjPcRlpWIlyHkIpXq_zGP9I' },
