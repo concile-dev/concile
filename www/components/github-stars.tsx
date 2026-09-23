@@ -6,7 +6,9 @@ import { gitConfig } from '@/lib/shared';
 // Live GitHub star count. Honest social proof we can show pre-1.0. Falls back
 // to "Star" if the API is unreachable or rate-limited (unauthenticated GitHub
 // allows ~60 req/hr per IP).
-export function GitHubStars() {
+// `className` lets the landing header reuse the same live count with its own
+// styling instead of carrying a second, hardcoded number.
+export function GitHubStars({ className = 'nb-stars' }: { className?: string }) {
   const [stars, setStars] = useState<number | null>(null);
 
   useEffect(() => {
@@ -24,7 +26,7 @@ export function GitHubStars() {
 
   return (
     <a
-      className="nb-stars"
+      className={className}
       href={`https://github.com/${gitConfig.user}/${gitConfig.repo}`}
       target="_blank"
       rel="noreferrer"
