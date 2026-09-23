@@ -7,6 +7,9 @@ import { Inter, Outfit } from 'next/font/google';
 // Without it Next resolves them against localhost and the cards never load.
 export const metadata: Metadata = {
   metadataBase: new URL('https://concile.dev'),
+  // Google Search Console ownership proof. Renders the google-site-verification
+  // meta tag in <head> on every page.
+  verification: { google: 'kiKhCzpdz32bLp_YjGbYMjPcRlpWIlyHkIpXq_zGP9I' },
 };
 
 const inter = Inter({
