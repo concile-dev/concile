@@ -1,6 +1,13 @@
 import { RootProvider } from 'fumadocs-ui/provider/next';
 import './global.css';
+import type { Metadata } from 'next';
 import { Inter, Outfit } from 'next/font/google';
+
+// Absolute base for the share images (opengraph-image.tsx and the docs cards).
+// Without it Next resolves them against localhost and the cards never load.
+export const metadata: Metadata = {
+  metadataBase: new URL('https://concile.dev'),
+};
 
 const inter = Inter({
   subsets: ['latin'],

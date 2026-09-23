@@ -1,42 +1,12 @@
 // The Concile mark, inline.
 //
-// One source of truth for the 8x7 cell bitmap, so the header, the navbar and the
-// brand page can never drift from the files in public/brand. Ink cells take
-// currentColor, so the mark follows whatever text colour surrounds it. The
-// reconciled cell is the one fixed colour, --brand-violet, which global.css
-// sets per theme.
-//
-// The bitmap: a pixel "c" whose open side dissolves into smaller dither cells,
-// and a single violet cell arriving to close it. The name comes from
-// "reconcile", and that cell is the piece that makes the state whole.
+// The bitmap lives in brand-grid.ts, shared with the wordmark and the social
+// posters, so the header, the navbar, the brand page and the files in
+// public/brand can never drift. Ink cells take currentColor, so the mark
+// follows whatever text colour surrounds it. The reconciled cell is the one
+// fixed colour, --brand-violet, which global.css sets per theme.
 
-const ROWS = [
-  '..XXXXh.',
-  '.XXXXXhq',
-  'XX....hq',
-  'XX.....V',
-  'XX....hq',
-  '.XXXXXhq',
-  '..XXXXh.',
-] as const;
-
-const PITCH = 8;
-const CELL = 7;
-const OX = 0.5;
-const OY = 4.5;
-const SIZE: Record<string, number> = { X: CELL, V: CELL, h: 4.4, q: 2.6 };
-
-type Cell = { x: number; y: number; s: number; violet: boolean };
-
-const CELLS: Cell[] = [];
-ROWS.forEach((row, r) => {
-  [...row].forEach((ch, c) => {
-    if (ch === '.') return;
-    const s = SIZE[ch];
-    const d = (CELL - s) / 2;
-    CELLS.push({ x: OX + c * PITCH + d, y: OY + r * PITCH + d, s, violet: ch === 'V' });
-  });
-});
+import { MARK_CELLS as CELLS } from './brand-grid';
 
 export function BrandMark({
   size = 24,
