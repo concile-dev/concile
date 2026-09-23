@@ -6,6 +6,7 @@
     "build": "next build",
     "dev": "next dev",
     "start": "next start",
+    "brand:social": "bun run scripts/export-brand-social.tsx",
     "types:check": "fumadocs-mdx && next typegen && tsc --noEmit",
     "postinstall": "fumadocs-mdx"
   },
@@ -38,6 +39,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/three": "^0.186.0",
     "postcss": "^8.5.17",
+    "satori": "^0.33.5",
     "tailwindcss": "^4.3.2",
     "typescript": "^6.0.3",
     "zod": "^4.4.3"

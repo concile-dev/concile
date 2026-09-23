@@ -31,6 +31,15 @@ const FILES = {
     { label: 'SVG, one colour', href: '/brand/concile-display-wordmark-mono.svg' },
     { label: 'SVG, inherits text colour', href: '/brand/concile-display-wordmark-currentcolor.svg' },
   ],
+  social: [
+    { label: 'Share card, 1200 x 630', href: '/brand/social/concile-og-1200x630.png' },
+    { label: 'GitHub social preview, 1280 x 640', href: '/brand/social/concile-github-social-1280x640.png' },
+    { label: 'README header, SVG', href: '/brand/social/concile-readme-header-1280x400.svg' },
+    { label: 'README header, PNG', href: '/brand/social/concile-readme-header-1280x400.png' },
+    { label: 'LinkedIn profile banner, 1584 x 396', href: '/brand/social/concile-linkedin-profile-banner-1584x396.png' },
+    { label: 'LinkedIn company cover, 1128 x 191', href: '/brand/social/concile-linkedin-company-cover-1128x191.png' },
+    { label: 'Avatar, 512', href: '/brand/social/concile-avatar-512.png' },
+  ],
 };
 
 const COLOURS = [
@@ -224,6 +233,47 @@ export default function BrandPage() {
           <li>Use the display wordmark below 48 px, or in place of the lockup in a header.</li>
           <li>Use the mark to imply that Concile endorses your project.</li>
         </ul>
+      </section>
+
+      <section className="mb-14">
+        <h2 className="text-2xl font-semibold mb-2">Share images</h2>
+        <p className="text-fd-muted-foreground max-w-2xl">
+          One poster, cut to every size the outside world asks for. The site serves the same
+          card when a page is shared, and the docs put the page title on it. Use these for the
+          GitHub social preview, a README, a LinkedIn banner or an avatar. They are always dark.
+        </p>
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <figure className="m-0">
+            <img
+              className="w-full rounded-lg border border-fd-border"
+              src="/brand/social/concile-github-social-1280x640.png"
+              alt="Concile share card"
+              width={1280}
+              height={640}
+            />
+            <figcaption className="mt-2 text-sm text-fd-muted-foreground">Share card and GitHub social preview</figcaption>
+          </figure>
+          <figure className="m-0 flex flex-col gap-4">
+            <img
+              className="w-full rounded-lg border border-fd-border"
+              src="/brand/social/concile-linkedin-profile-banner-1584x396.png"
+              alt="Concile LinkedIn banner"
+              width={1584}
+              height={396}
+            />
+            <div className="flex items-center gap-4">
+              <img
+                className="w-20 h-20 rounded-lg border border-fd-border"
+                src="/brand/social/concile-avatar-512.png"
+                alt="Concile avatar"
+                width={512}
+                height={512}
+              />
+              <figcaption className="text-sm text-fd-muted-foreground">LinkedIn banner, and the avatar for GitHub and npm</figcaption>
+            </div>
+          </figure>
+        </div>
+        <Links items={FILES.social} />
       </section>
 
       <section>

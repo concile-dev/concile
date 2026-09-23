@@ -1,5 +1,5 @@
 <div align="center">
-  <img src=".github/assets/hero.svg" alt="Concile, the backend that keeps your data alive" width="100%" />
+  <img src=".github/assets/hero.svg" alt="Concile. Your entire backend. Realtime by default." width="100%" />
 </div>
 
 <div align="center">
