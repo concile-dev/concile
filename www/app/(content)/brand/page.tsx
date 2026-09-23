@@ -34,8 +34,10 @@ const FILES = {
   social: [
     { label: 'Share card, 1200 x 630', href: '/brand/social/concile-og-1200x630.png' },
     { label: 'GitHub social preview, 1280 x 640', href: '/brand/social/concile-github-social-1280x640.png' },
-    { label: 'README header, SVG', href: '/brand/social/concile-readme-header-1280x400.svg' },
-    { label: 'README header, PNG', href: '/brand/social/concile-readme-header-1280x400.png' },
+    { label: 'README hero, SVG', href: '/brand/social/concile-readme-hero-1280x400.svg' },
+    { label: 'README hero, PNG', href: '/brand/social/concile-readme-hero-1280x400.png' },
+    { label: 'README header, simple, SVG', href: '/brand/social/concile-readme-header-1280x400.svg' },
+    { label: 'README header, simple, PNG', href: '/brand/social/concile-readme-header-1280x400.png' },
     { label: 'LinkedIn profile banner, 1584 x 396', href: '/brand/social/concile-linkedin-profile-banner-1584x396.png' },
     { label: 'LinkedIn company cover, 1128 x 191', href: '/brand/social/concile-linkedin-company-cover-1128x191.png' },
     { label: 'Avatar, 512', href: '/brand/social/concile-avatar-512.png' },
@@ -242,6 +244,16 @@ export default function BrandPage() {
           card when a page is shared, and the docs put the page title on it. Use these for the
           GitHub social preview, a README, a LinkedIn banner or an avatar. They are always dark.
         </p>
+        <figure className="m-0 mt-6">
+          <img
+            className="w-full rounded-lg border border-fd-border"
+            src="/brand/social/concile-readme-hero-1280x400.png"
+            alt="Concile README hero"
+            width={1280}
+            height={400}
+          />
+          <figcaption className="mt-2 text-sm text-fd-muted-foreground">README hero, the banner at the top of the repository</figcaption>
+        </figure>
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
           <figure className="m-0">
             <img
