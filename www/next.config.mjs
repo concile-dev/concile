@@ -30,7 +30,7 @@ const config = {
       {
         source: '/docs',
         destination: '/docs/get-started/what-is-concile',
-        permanent: false,
+        permanent: true,
       },
       // The CLI page moved from Reference into the Build group.
       {
