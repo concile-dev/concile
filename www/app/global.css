@@ -157,6 +157,8 @@
      rotate the whole palette; if --primary is ever given a hue and the code
      should follow it, set this to the same value. */
   --chroma-h: 25;
+  /* The one fixed colour in the brand mark: the reconciled cell. See components/brand-mark.tsx. */
+  --brand-violet: #6d4bd4;
   --chroma-l: 0.48;
   --chroma-c: 0.15;
   --chroma-1: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 0));
@@ -184,6 +186,7 @@
   --muted: oklch(18.7% 0 0);
   --muted-foreground: oklch(66% 0 0);
   --accent: oklch(25% 0 0);
+  --brand-violet: #a78bfa;
   --accent-foreground: oklch(84% 0 0);
   --destructive: oklch(70% 0.19 22);
   --border: oklch(25% 0 0);
@@ -341,9 +344,12 @@ html > body[data-scroll-locked] {
   gap: 1.25rem;
 }
 .nb-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   font-weight: 700;
   font-size: 1.05rem;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.03em;
   color: var(--color-fd-foreground);
   text-decoration: none;
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { BrandMark } from '@/components/brand-mark';
 import { usePathname } from 'next/navigation';
 import { appName } from '@/lib/shared';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -24,6 +25,7 @@ export function Navbar() {
     <header className="nb backdrop-blur-md">
       <div className="nb-inner">
         <Link href="/" className="nb-brand">
+          <BrandMark size={19} />
           {appName}
         </Link>
 

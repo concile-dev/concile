@@ -164,6 +164,9 @@
 .hp-page > header,
 .hp-page > main,
 .hp-page > footer { position: relative; z-index: 1; }
+/* The header out-ranks main so its narrow-viewport menu panel (.hp-mobile)
+   paints over the hero. main comes later in the DOM and would win at equal z. */
+.hp-page > header { z-index: 2; }
 
 /* ---------------- v2 chrome: header ---------------- */
 
@@ -179,13 +182,14 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-weight: 600;
-  font-size: 15px;
-  letter-spacing: -0.02em;
+  /* The lockup as the brand page defines it: Inter Bold, tight tracking, lowercase. */
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.03em;
   color: var(--hp-text);
   text-decoration: none;
 }
-.hp-mark svg { width: 15px; height: 15px; }
+.hp-mark svg { width: 19px; height: 19px; }
 .hp-nav { display: flex; gap: clamp(0.9rem, 1.8vw, 1.7rem); font-size: 13px; }
 .hp-head-right { margin-left: auto; display: flex; align-items: center; gap: 1rem; font-size: 13px; }
 .hp-stars { display: flex; align-items: center; gap: 0.35rem; color: var(--hp-muted); }
@@ -215,6 +219,29 @@
 .hp-icon:hover { color: var(--hp-text); }
 .hp-icon svg { width: 15px; height: 15px; }
 .hp-burger { display: none; }
+/* The narrow-viewport menu panel, opened by .hp-burger. Anchored to the header so
+   it sits under the bar, full width, on the page wash rather than the backdrop. */
+.hp-head { position: relative; }
+.hp-mobile {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0;
+  background: var(--wash-3);
+  border-bottom: 1px solid var(--rule-2);
+  backdrop-filter: blur(12px);
+  z-index: 20;
+}
+.hp-mobile-link {
+  padding: 0.8rem 1.25rem;
+  font-size: 15px;
+  color: var(--hp-text);
+  text-decoration: none;
+}
+.hp-mobile-link:hover { background: var(--wash-1); }
 .hp-link {
   color: var(--hp-muted);
   text-decoration: none;
