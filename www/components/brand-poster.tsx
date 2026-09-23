@@ -12,13 +12,15 @@
 // lib/brand-fonts.ts.
 
 import { CELL, MARK_BOX, MARK_CELLS, WORDMARK_CELLS, WORDMARK_HEIGHT, WORDMARK_WIDTH } from './brand-grid';
+import { README_HERO, ReadmeHero } from './brand-hero';
 
-export type PosterKind = 'og' | 'github' | 'readme' | 'linkedin' | 'linkedinCompany' | 'avatar' | 'docs';
+export type PosterKind = 'og' | 'github' | 'readme' | 'readmeHero' | 'linkedin' | 'linkedinCompany' | 'avatar' | 'docs';
 
 export const POSTER_SIZES: Record<PosterKind, { width: number; height: number }> = {
   og: { width: 1200, height: 630 }, // Open Graph and Twitter cards
   github: { width: 1280, height: 640 }, // GitHub repository social preview
-  readme: { width: 1280, height: 400 }, // README header, full width
+  readme: { width: 1280, height: 400 }, // README header, the simple wordmark card
+  readmeHero: README_HERO, // README header, the full banner (brand-hero.tsx)
   linkedin: { width: 1584, height: 396 }, // LinkedIn personal profile banner
   linkedinCompany: { width: 1128, height: 191 }, // LinkedIn company page cover
   avatar: { width: 512, height: 512 }, // GitHub org and npm avatars
@@ -256,6 +258,7 @@ export function BrandPoster({
   description?: string;
 }) {
   if (kind === 'avatar') return <Avatar />;
+  if (kind === 'readmeHero') return <ReadmeHero />;
   if (kind === 'docs') return <Docs title={title ?? 'Documentation'} description={description} />;
   return <Wide kind={kind} />;
 }
