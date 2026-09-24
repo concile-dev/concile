@@ -2,10 +2,10 @@ import Link from 'next/link';
 import './landing.css';
 import { STACK_LOGOS } from './stack-logos';
 import { Hero } from './Hero';
+import { BeamIsland, DashboardIsland } from './islands';
 import { Reveal } from './Reveal';
 import { SpotlightGrid } from './SpotlightGrid';
 import { StatNumber } from './StatNumber';
-import { BeamDiagram } from './BeamDiagram';
 import { Steps } from './Steps';
 import { FeatureCards } from './FeatureCards';
 import { Components } from './Components';
@@ -13,9 +13,6 @@ import { Pillars } from './Pillars';
 import { ComparisonTable } from './ComparisonTable';
 import { Faq } from './Faq';
 import { CopyCommand } from './CopyCommand';
-import { DashboardShowcase } from './DashboardShowcase';
-import { BrowserFrame } from './BrowserFrame';
-import { MacbookScroll } from './MacbookScroll';
 
 export default function HomePage() {
   return (
@@ -81,11 +78,7 @@ export default function HomePage() {
               We include a built-in dashboard that runs on the exact same origin as your app. It uses live subscriptions, meaning you see writes land in the database immediately. We didn't even build a refresh button, because you'll never need it.
             </p>
           </div>
-          <MacbookScroll>
-            <BrowserFrame url="localhost:3000/_dashboard">
-              <DashboardShowcase />
-            </BrowserFrame>
-          </MacbookScroll>
+          <DashboardIsland />
         </Reveal>
 
         {/* ---------------- REACTIVITY DIAGRAM ---------------- */}
@@ -102,7 +95,7 @@ export default function HomePage() {
               Read about reactivity
             </Link>
           </div>
-          <BeamDiagram />
+          <BeamIsland />
         </Reveal>
 
         {/* ---------------- CAPABILITIES (live mini-visuals) ---------------- */}

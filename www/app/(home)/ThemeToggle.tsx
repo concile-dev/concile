@@ -1,11 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-// Import useTheme from fumadocs, NOT from 'next-themes' directly. fumadocs
-// bundles its own next-themes copy inside RootProvider; a direct import
-// resolves to a second module instance whose context is empty, so setTheme()
-// silently no-ops. fumadocs re-exports the matching hook for this reason.
-import { useTheme } from 'fumadocs-ui/provider/base';
+// The landing has its own next-themes provider (see layout.tsx), so the hook
+// comes from next-themes directly.
+import { useTheme } from 'next-themes';
 
 // The landing's own theme control.
 //
