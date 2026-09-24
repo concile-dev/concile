@@ -1,5 +1,15 @@
 # @concile/client
 
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/id-codec@0.1.6
+  - @concile/index-key-codec@0.1.6
+  - @concile/sync@0.1.6
+  - @concile/values@0.1.6
+
 ## 0.1.5
 
 ### Patch Changes

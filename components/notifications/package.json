@@ -1,6 +1,6 @@
 {
   "name": "@concile/notifications",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "license": "FSL-1.1-Apache-2.0",
   "type": "module",
   "exports": {

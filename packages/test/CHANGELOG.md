@@ -1,5 +1,23 @@
 # @concile/test
 
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies [[`1cb1a7c`](https://github.com/concile-dev/concile/commit/1cb1a7cae0ac5ce783db71184a620377ac1cc790)]:
+  - @concile/scheduler@0.1.6
+  - @concile/storage@0.1.6
+  - @concile/blobstore-fs@0.1.6
+  - @concile/client@0.1.6
+  - @concile/component@0.1.6
+  - @concile/docstore@0.1.6
+  - @concile/docstore-sqlite@0.1.6
+  - @concile/executor@0.1.6
+  - @concile/id-codec@0.1.6
+  - @concile/runtime-embedded@0.1.6
+  - @concile/sync@0.1.6
+  - @concile/values@0.1.6
+
 ## 0.1.5
 
 ### Patch Changes
