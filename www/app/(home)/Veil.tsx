@@ -14,18 +14,40 @@ import { useEffect, useState } from 'react';
 // its plain ground colour, which is what the canvas fades in over anyway.
 const PixelBlast = dynamic(() => import('./PixelBlast').then((m) => m.PixelBlast), { ssr: false });
 
-function useIdle(): boolean {
-  const [idle, setIdle] = useState(false);
+// When to load the backdrop at all, and when.
+//
+// Not on phones: the field sits behind a column of text that covers most of
+// it, and three.js is the largest download on the page. Not for people who
+// asked for reduced motion or data saving. On everything else, after the
+// window load event and an idle callback, so the hero, fonts and the page's
+// own scripts are all done before the GPU work starts.
+function useBackdropReady(): boolean {
+  const [ready, setReady] = useState(false);
   useEffect(() => {
-    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
-    if (w.requestIdleCallback) {
-      const id = w.requestIdleCallback(() => setIdle(true), { timeout: 2000 });
-      return () => (window as Window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(id);
-    }
-    const t = setTimeout(() => setIdle(true), 200);
-    return () => clearTimeout(t);
+    const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
+    if (window.innerWidth < 768) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (nav.connection?.saveData) return;
+
+    let idleId: number | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    const arm = () => {
+      if (w.requestIdleCallback) idleId = w.requestIdleCallback(() => setReady(true), { timeout: 4000 });
+      else timer = setTimeout(() => setReady(true), 1000);
+    };
+    if (document.readyState === 'complete') arm();
+    else window.addEventListener('load', arm, { once: true });
+    return () => {
+      window.removeEventListener('load', arm);
+      if (idleId !== undefined) w.cancelIdleCallback?.(idleId);
+      if (timer !== undefined) clearTimeout(timer);
+    };
   }, []);
-  return idle;
+  return ready;
 }
 
 // The backdrop field, tuned per theme.
@@ -49,12 +71,12 @@ const LIGHT = '#0c0722';
 
 export function Veil() {
   const { resolvedTheme } = useTheme();
-  const idle = useIdle();
+  const ready = useBackdropReady();
   // Theme is unknown during SSR, so the server renders dark and the client keeps
   // it until it knows better. Matches Wordmark.
   const color = resolvedTheme === 'light' ? LIGHT : DARK;
 
-  if (!idle) return null;
+  if (!ready) return null;
   return (
     <PixelBlast
       // Circles, not squares: the page is already all right angles, and square
