@@ -26,7 +26,7 @@ flowchart LR
 
 <Step>
 
-### Write the handler with httpAction
+## Write the handler with httpAction
 
 Think of `httpAction` as an [action](/docs/core-concepts/actions) that speaks raw HTTP rather than
 relying on typed arguments. It takes a standard Web `Request` as input and returns a `Response`, but
@@ -72,7 +72,7 @@ updates for free.
 
 <Step>
 
-### Register it in http.ts
+## Register it in http.ts
 
 A typical `concile/http.ts` file usually has a default export of an `httpRouter()` that is populated
 with your `route()` calls. This is exactly how the engine finds and sets up your endpoints when your
@@ -115,7 +115,7 @@ http.route handler for "/webhooks/messages" must be an exported httpAction
 
 <Step>
 
-### Understand match precedence
+## Understand match precedence
 
 If an incoming request happens to match more than one of your registered routes, the system figures
 out which one to use in a very predictable way:
@@ -153,7 +153,7 @@ of the reserved built-ins below already claimed it, falls through to a plain `40
 
 <Step>
 
-### Know the reserved paths
+## Know the reserved paths
 
 `/api/*` and any path whose first segment starts with `_` (for example `/_dashboard`,
 `/_admin/anything`) belong to the engine: the sync WebSocket, `/api/run`, `/api/health`, file
@@ -176,7 +176,7 @@ worse, intercepting traffic meant for the engine. The reservation is a single pr
 
 <Step>
 
-### Call it
+## Call it
 
 The endpoint is just HTTP. No client SDK required:
 
