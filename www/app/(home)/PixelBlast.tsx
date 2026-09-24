@@ -294,6 +294,12 @@ export function PixelBlast({
     // back to SwiftShader (CPU rasterization) rather than failing outright on
     // machines with no usable driver, and that path cannot afford the full field.
     let quality = getQuality();
+    // CPU rasterization cannot afford a loop at any rate. Every frame of the
+    // shader runs on the main thread, so even 15fps means the page is blocked
+    // for as long as it is open. Lighthouse and PageSpeed run this way (no
+    // GPU), and reported 17 seconds of blocking time. On a software renderer
+    // the field is drawn once and left still.
+    let staticOnly = false;
     try {
       const gl = renderer.getContext();
       const ext = gl.getExtension('WEBGL_debug_renderer_info');
@@ -301,6 +307,7 @@ export function PixelBlast({
       if (name && isSoftwareRenderer(name)) {
         demoteToLow();
         quality = LOW;
+        staticOnly = true;
       }
     } catch {
       // Some browsers hide the extension for fingerprinting reasons. Not knowing
@@ -440,8 +447,9 @@ export function PixelBlast({
       draw();
     };
 
+    let drewStatic = false;
     const park = () => {
-      const shouldRun = visible && !document.hidden && !reduced.matches;
+      const shouldRun = !staticOnly && visible && !document.hidden && !reduced.matches;
       if (shouldRun && !frame) {
         // Unparking is not a slow frame. Clearing this both draws immediately on
         // the next tick and keeps the gap out of the adaptive sample.
@@ -451,6 +459,10 @@ export function PixelBlast({
         cancelAnimationFrame(frame);
         frame = 0;
         // One frame so a parked canvas shows the field rather than nothing.
+        draw();
+      } else if (staticOnly && visible && !drewStatic) {
+        // The one and only frame on a software renderer.
+        drewStatic = true;
         draw();
       }
     };
