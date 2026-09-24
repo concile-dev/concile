@@ -17,7 +17,7 @@ export function CopyCommand({ command }: { command: string }) {
   }
 
   return (
-    <button type="button" className="copycmd" onClick={copy} aria-label={`Copy: ${command}`}>
+    <button type="button" className="copycmd" onClick={copy}>
       <span className="copycmd-cmd">
         <span className="copycmd-d">$</span> {command}
       </span>

@@ -15,7 +15,7 @@
   --pui-line-2: #2b2b2b;
   --pui-fg: #ededed;
   --pui-muted: #7d7d7d;
-  --pui-dim: #565656;
+  --pui-dim: #808080; /* 4.9:1 on --pui-bg, 4.8:1 on --pui-bg-2; #565656 was 2.7:1 */
   --pui-accent: #2563eb;
   --pui-accent-soft: rgba(37, 99, 235, 0.18);
   --pui-ok: #4ade80;

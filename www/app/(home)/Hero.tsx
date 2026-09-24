@@ -73,7 +73,7 @@ export function Hero() {
           </div>
         </div>
 
-        <div className="hp-hero-art hp-rise hp-rise--2" aria-hidden="true">
+        <div className="hp-hero-art hp-rise hp-rise--2" aria-hidden="true" inert>
           <figure
             className="hp-shot hp-shot--editor hp-shot--bleed"
             role="img"

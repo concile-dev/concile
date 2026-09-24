@@ -30,7 +30,9 @@
   --hp-muted: var(--muted-foreground);
   /* A fourth text rank, quieter than muted. shadcn has no token for it, so it
      is mixed toward the page rather than picked. */
-  --hp-dim: color-mix(in srgb, var(--muted-foreground) 62%, var(--background));
+  /* 90% rather than 62%: at 62% this grey sat at 3.1:1 on the dark ground, under
+     the 4.5 floor for the 13px notes and kickers that use it. 90% is 5:1 dark, 4.6:1 light. */
+  --hp-dim: color-mix(in srgb, var(--muted-foreground) 90%, var(--background));
 
   /* The signal.
    *
@@ -289,7 +291,7 @@
 }
 .hp-sub input::placeholder { color: var(--hp-dim); }
 .hp-sub input:focus { outline: none; }
-.hp-sub button { background: none; border: 0; color: var(--hp-dim); cursor: pointer; display: flex; padding: 0.2rem; }
+.hp-sub button { background: none; border: 0; color: var(--hp-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; padding: 0.3rem; }
 .hp-sub button:hover { color: var(--hp-text); }
 .hp-sub svg { width: 14px; height: 14px; }
 .hp-social { display: flex; gap: 0.9rem; margin-top: 24px; }
