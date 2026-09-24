@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-// Import useTheme from fumadocs, NOT from 'next-themes' directly. fumadocs
-// bundles its own next-themes copy inside RootProvider; a direct import
-// resolves to a second module instance whose context is empty.
-import { useTheme } from 'fumadocs-ui/provider/base';
-import { ParticleText } from './ParticleText';
+import { useTheme } from 'next-themes';
+import dynamic from 'next/dynamic';
+import { LazyIsland } from './islands';
+
+// The particle field is the last thing on a page twelve thousand pixels tall.
+// Its code loads when the footer comes within a screen, not before.
+const ParticleText = dynamic(() => import('./ParticleText').then((m) => m.ParticleText), { ssr: false });
 
 // The wordmark that closes the page.
 //
@@ -39,7 +41,7 @@ export function Wordmark() {
   const tuning = mounted && resolvedTheme === 'light' ? LIGHT : DARK;
 
   return (
-    <div className="hp-wordmark" aria-hidden="true">
+    <LazyIsland className="hp-wordmark" style={undefined}>
       <ParticleText
         text="concile"
         // Sized to fill the band rather than to overflow it. The sampler caps
@@ -67,6 +69,6 @@ export function Wordmark() {
         idleDrift={0.6}
         {...tuning}
       />
-    </div>
+    </LazyIsland>
   );
 }

@@ -1,0 +1,225 @@
+/* The landing page's base sheet.
+ *
+ * The landing has its own root layout and does not load global.css (Tailwind,
+ * the fumadocs theme and the docs chrome, ~95 KB before compression, of which
+ * the landing used two utilities). What it does need from there: Tailwind's
+ * preflight resets, which home.css and landing.css were written on top of,
+ * and the design tokens, which are copied below so both sheets resolve the
+ * same values. Edit the tokens in global.css first, then mirror here. */
+
+@import 'tailwindcss/preflight.css';
+
+:root {
+  --radius: 0.625rem;
+
+  /* ------------------------------------------------------------------
+     Neutral greyscale, matching payloadcms.com.
+
+     Their whole palette is achromatic: 51 colour tokens, every base step
+     R=G=B, no brand hue anywhere. The only chromatic values on the site are
+     semantic status colours. All the warmth in their hero comes from the
+     background video, not from the theme.
+
+     We keep the neutral surfaces and spend the colour on --primary instead,
+     since we have no hero video to carry it. The tokens that used to hold
+     that video's measured palette (--wave-*, --field-*, and the three
+     opacity values beside them) are gone: nothing referenced them, in CSS
+     or in TSX, after the hero they belonged to was replaced.
+
+     Lightness steps below are read off their base scale:
+       255 -> 100%   221 -> 88.4%   154 -> 66%    47 -> 25%
+       245 -> 96.5%  208 -> 84%     101 -> 47.3%  20 -> 11.5%
+       235 -> 93%    181 -> 75%      74 -> 36.8%   7 ->  4.5%
+     ------------------------------------------------------------------ */
+
+  /* shadcn layer — light */
+  --background: oklch(100% 0 0);
+  --foreground: oklch(18.7% 0 0);
+  --card: oklch(100% 0 0);
+  --card-foreground: oklch(18.7% 0 0);
+  --popover: oklch(100% 0 0);
+  --popover-foreground: oklch(18.7% 0 0);
+  /* Ink, not a hue. --primary drives buttons, active states, the marked phrase
+     and the focus ring, and here it is simply the darkest neutral, inverting to
+     the lightest one on the dark theme. The interface stays monochrome.
+
+     Swapping this for a chromatic value is the single edit that colours the
+     whole site, because everything downstream reads it. */
+  --primary: oklch(18.7% 0 0);
+  --primary-foreground: oklch(100% 0 0);
+  --secondary: oklch(96.5% 0 0);
+  --secondary-foreground: oklch(25% 0 0);
+  --muted: oklch(96.5% 0 0);
+  --muted-foreground: oklch(47.3% 0 0);
+  --accent: oklch(93% 0 0);
+  --accent-foreground: oklch(31% 0 0);
+  /* Destructive keeps its hue. Payload keeps chroma for status too: a neutral
+     palette is a brand decision, not a reason to make errors unreadable. */
+  --destructive: oklch(58% 0.21 25);
+  --border: oklch(88.4% 0 0);
+  --input: oklch(88.4% 0 0);
+  --ring: oklch(47.3% 0 0);
+
+  /* fumadocs layer.
+   *
+   * Aliases, not copies. These were the same sixteen values typed a second
+   * time, with nothing tying the two sets together, so editing one and not the
+   * other was silent and the docs drifted away from everything else.
+   *
+   * Declared once, here, and NOT repeated under .dark. Each one resolves
+   * through a shadcn token that .dark already redefines, so the docs follow
+   * the theme with no second block. A second block is the copy that drifts. */
+  --color-fd-background: var(--background);
+  --color-fd-foreground: var(--foreground);
+  --color-fd-card: var(--card);
+  --color-fd-card-foreground: var(--card-foreground);
+  --color-fd-popover: var(--popover);
+  --color-fd-popover-foreground: var(--popover-foreground);
+  --color-fd-muted: var(--muted);
+  --color-fd-muted-foreground: var(--muted-foreground);
+  --color-fd-secondary: var(--secondary);
+  --color-fd-secondary-foreground: var(--secondary-foreground);
+  --color-fd-border: var(--border);
+  --color-fd-primary: var(--primary);
+  --color-fd-primary-foreground: var(--primary-foreground);
+  --color-fd-ring: var(--ring);
+  --color-fd-accent: var(--accent);
+  --color-fd-accent-foreground: var(--accent-foreground);
+
+  /* ------------------------------------------------------------------
+     The semantic steps shadcn does not provide.
+
+     shadcn gives one --border and one --card. The landing uses four edge
+     weights and three translucent panel washes, so those extra steps are
+     derived here instead of being hardcoded in home.css. That file used to
+     hold them as literals, which is why it needed a whole second copy of
+     itself for light mode.
+     ------------------------------------------------------------------ */
+
+  /* Edge weights. These were rgba(black, a) on white and rgba(white, a) on
+     black, which is exactly a foreground mix, so they carry over without loss.
+     The alphas differ per theme on purpose: a black hairline on white reads
+     heavier than a white one on black at the same alpha. */
+  --rule-1: color-mix(in srgb, var(--foreground) 8%, transparent);
+  --rule-2: color-mix(in srgb, var(--foreground) 13%, transparent);
+  --rule-3: color-mix(in srgb, var(--foreground) 30%, transparent);
+  --rule-frame: color-mix(in srgb, var(--foreground) 14%, transparent);
+  --rule-grid: color-mix(in srgb, var(--foreground) 9%, transparent);
+
+  /* Panel washes. Translucent because they sit over the animated canvas. */
+  --wash-1: color-mix(in srgb, var(--card) 72%, transparent);
+  --wash-2: color-mix(in srgb, var(--card) 86%, transparent);
+  --wash-3: color-mix(in srgb, var(--card) 92%, transparent);
+
+  /* A shadow is an absence of light, not a colour from the palette, so this
+     stays black in both themes and only its strength changes. Deriving it from
+     --foreground would make it white on the dark theme, which is a glow. */
+  --shadow-page: 0 30px 70px rgb(0 0 0 / 0.1);
+
+  /* Syntax colours. Code cannot go monochrome the way the interface can: a
+     single-colour listing reads as a quote block rather than as code. So this
+     is the one part of the theme that stays chromatic while --primary is ink.
+
+     Six hues at one lightness and one chroma, so only the hue varies. Holding L
+     and C is what keeps them distinguishable from each other and readable on
+     the page at the same time.
+
+     --chroma-h is a real anchor rather than a reading of --primary's hue, and
+     that is deliberate. An achromatic --primary has no meaningful hue: the
+     browser serialises it with a floating-point crumb in the b channel, which
+     came out as roughly 112 degrees rather than 0. Anchoring a palette on that
+     is anchoring it on rounding noise. Two knobs are worth the honesty.
+
+     At 25 the ramp runs red, orange, yellow-green, green, blue, magenta, which
+     is close to how most editors colour code already. Move this one number to
+     rotate the whole palette; if --primary is ever given a hue and the code
+     should follow it, set this to the same value. */
+  --chroma-h: 25;
+  /* The one fixed colour in the brand mark: the reconciled cell. See components/brand-mark.tsx. */
+  --brand-violet: #6d4bd4;
+  --chroma-l: 0.48;
+  --chroma-c: 0.15;
+  --chroma-1: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 0));
+  --chroma-2: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 40));
+  --chroma-3: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 80));
+  --chroma-4: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 130));
+  --chroma-5: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 200));
+  --chroma-6: oklch(var(--chroma-l) var(--chroma-c) calc(var(--chroma-h) + 300));
+}
+
+.dark {
+  /* shadcn layer — dark */
+  --background: oklch(4.5% 0 0);
+  --foreground: oklch(100% 0 0);
+  --card: oklch(11.5% 0 0);
+  --card-foreground: oklch(100% 0 0);
+  --popover: oklch(11.5% 0 0);
+  --popover-foreground: oklch(100% 0 0);
+  /* The same ink, inverted. Black primary on a black page would be invisible,
+     so the dark theme takes the lightest neutral and puts the dark one on top. */
+  --primary: oklch(100% 0 0);
+  --primary-foreground: oklch(4.5% 0 0);
+  --secondary: oklch(18.7% 0 0);
+  --secondary-foreground: oklch(93% 0 0);
+  --muted: oklch(18.7% 0 0);
+  --muted-foreground: oklch(66% 0 0);
+  --accent: oklch(25% 0 0);
+  --brand-violet: #a78bfa;
+  --accent-foreground: oklch(84% 0 0);
+  --destructive: oklch(70% 0.19 22);
+  --border: oklch(25% 0 0);
+  --input: oklch(25% 0 0);
+  --ring: oklch(66% 0 0);
+
+  /* No --color-fd-* here on purpose. They alias the shadcn tokens in :root,
+     and every one of those is redefined above, so the docs are already dark.
+     Repeating them here is what made the two sets drift.
+
+     The --rule-*, --wash-* and --chroma-* steps are not repeated either: they
+     are built from --foreground, --card and --primary, all redefined above.
+     Only the values that genuinely differ by theme are listed below. */
+
+  /* Below about 7% a white hairline composites to #0e0e0e on black and reads
+     as nothing, so the dark ground needs its own alphas rather than the ones
+     tuned for paper. */
+  --rule-1: color-mix(in srgb, var(--foreground) 7.5%, transparent);
+  --rule-2: color-mix(in srgb, var(--foreground) 12%, transparent);
+  --rule-3: color-mix(in srgb, var(--foreground) 28%, transparent);
+  --rule-frame: color-mix(in srgb, var(--foreground) 16%, transparent);
+  --rule-grid: color-mix(in srgb, var(--foreground) 10%, transparent);
+
+  --wash-1: color-mix(in srgb, var(--card) 66%, transparent);
+  --wash-2: color-mix(in srgb, var(--card) 72%, transparent);
+  --wash-3: color-mix(in srgb, var(--card) 86%, transparent);
+
+  /* A black page can carry a heavy shadow because it has nowhere to go. White
+     cannot: at 0.8 the screenshots look like they are floating off the sheet. */
+  --shadow-page: 0 30px 70px rgb(0 0 0 / 0.8);
+
+  /* Lifted for the dark ground. Same hues, read against black instead of white. */
+  --chroma-l: 0.78;
+  --chroma-c: 0.13;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+/* No page-level horizontal scroll (clip, never hidden — preserves sticky). */
+html,
+body {
+  overflow-x: clip;
+}
+
+/* The one utility the landing used from Tailwind. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

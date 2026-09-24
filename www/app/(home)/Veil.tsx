@@ -1,9 +1,6 @@
 'use client';
 
-// Import useTheme from fumadocs, NOT from 'next-themes' directly. fumadocs
-// bundles its own next-themes copy inside RootProvider; a direct import
-// resolves to a second module instance whose context is empty.
-import { useTheme } from 'fumadocs-ui/provider/base';
+import { useTheme } from 'next-themes';
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 

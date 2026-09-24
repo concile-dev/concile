@@ -828,3 +828,14 @@ html:not(.dark) .hp-veil canvas {
 }
 /* No light .hp-veil-scrim override. The scrim derives from --background, which
    is already white here. */
+
+/* Scroll-mounted islands (islands.tsx). Each reserves the height its content
+   takes at that breakpoint, measured on the built page, so mounting later
+   moves nothing below it. The dashboard scene is a landscape mock that
+   stacks on phones; the beam diagram is the reverse. */
+.island--dashboard { min-height: 550px; }
+.island--beam { min-height: 556px; }
+@media (min-width: 1024px) {
+  .island--dashboard { min-height: 689px; }
+  .island--beam { min-height: 258px; }
+}

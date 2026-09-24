@@ -1,5 +1,5 @@
 import { RootProvider } from 'fumadocs-ui/provider/next';
-import './global.css';
+import '../global.css';
 import type { Metadata } from 'next';
 import { Inter, Outfit } from 'next/font/google';
 import Script from 'next/script';
