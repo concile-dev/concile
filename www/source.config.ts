@@ -29,6 +29,18 @@ export const blogPosts = defineCollections({
   }),
 });
 
+// Comparison pages, one per named competitor. Every factual claim about the
+// other product on these pages traces to that product's own docs or pricing
+// page, checked on the date in the frontmatter.
+export const comparePages = defineCollections({
+  type: 'doc',
+  dir: 'content/compare',
+  schema: pageSchema.extend({
+    competitor: z.string(),
+    checked: z.string().date().or(z.date()),
+  }),
+});
+
 export default defineConfig({
   mdxOptions: {
     // Converts ```mermaid code fences into the <Mermaid> component (registered in components/mdx.tsx).

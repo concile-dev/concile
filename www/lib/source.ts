@@ -1,4 +1,4 @@
-import { blogPosts, docs } from 'collections/server';
+import { blogPosts, comparePages, docs } from 'collections/server';
 import { loader } from 'fumadocs-core/source';
 import { lucideIconsPlugin } from 'fumadocs-core/source/lucide-icons';
 import { toFumadocsSource } from 'fumadocs-mdx/runtime/server';
@@ -14,6 +14,11 @@ export const source = loader({
 export const blog = loader({
   baseUrl: '/blog',
   source: toFumadocsSource(blogPosts, []),
+});
+
+export const compare = loader({
+  baseUrl: '/compare',
+  source: toFumadocsSource(comparePages, []),
 });
 
 export function getPageImage(page: (typeof source)['$inferPage']) {

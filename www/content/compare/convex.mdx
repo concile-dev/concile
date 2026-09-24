@@ -1,0 +1,82 @@
+---
+title: Concile vs Convex
+description: Two reactive TypeScript backends with the same function model. The differences are where they run, what they store, what they ship, and what you pay.
+competitor: Convex
+checked: 2026-09-21
+---
+
+## The short version
+
+- Same shape. Both give you queries, mutations and actions in TypeScript. Queries are live subscriptions. Mutations are transactions. Both use the FSL-1.1-Apache-2.0 license.
+- Different posture. Convex is a hosted cloud product. It offers a self-hostable open-source backend on the side. Concile has no cloud. Self-hosting is the only way to run it. We design it for that purpose.
+- Different box. Concile runs as one process on SQLite or Postgres. It compiles to a single binary. Convex has search, an AI gateway and a component library. These are ahead of anything Concile ships today.
+
+## What is the same
+
+We modeled the reactive system of Concile on the public architecture of Convex on purpose. A query records the index ranges it reads. A mutation records its writes. A subscription re-runs only when a committed write intersects its read ranges. This single mechanism provides serializable transactions and live results. There is no cache to invalidate. You know how to think about Concile if you know Convex.
+
+Concile is a clean-room build. We built it from that public documentation. It is not a fork. It does not use Convex code.
+
+## Side by side
+
+| | Concile | Convex |
+| --- | --- | --- |
+| Live results from your own server code | Yes, read-set precise | Yes, cached, subscribable queries |
+| Backend is plain TypeScript functions | Yes | Yes |
+| Self-host the whole product | Yes. One process, one command. | Partly. Open-source backend. The cloud is the product. |
+| Single binary with no database to run | Yes. Use `concile build`. | No |
+| Swap the database without touching app code | Yes. SQLite or Postgres. | No. Fixed store. |
+| Durable workflows with rollback | Yes. Saga compensation. | Partly. Workflow component. |
+| Offline writes that survive a reload | Yes. Durable outbox, exactly once. | Partly. Optimistic updates only. |
+| Full-text and vector search | Not built yet | Yes, both built in |
+| Hosted cloud | None | Yes |
+| Price | Free to self-host | Free tier. Pro $25 per developer per month. Enterprise from $2,500 per month. |
+
+## Where Convex is ahead
+
+- Search. Convex includes text and vector search from the free tier. Concile has neither yet. The `concile migrate` command flags `.searchIndex()` and `.vectorIndex()` as unsupported. It does not fake them.
+- Components. Convex publishes a library of sandboxed, open-source building blocks. Concile ships its components in the repo instead of a marketplace. These include auth, scheduler, workflows, notifications, triggers and storage.
+- An AI gateway. It starts from the Starter plan. It is priced in line with OpenRouter.
+- Compliance. SOC 2 and HIPAA reports are a line item on the Professional tier. A self-hoster must assemble that story themselves.
+- Someone else runs it. Convex is a hosted product. Concile is not.
+
+## Where Concile is ahead
+
+- Nothing to steer you back to. The Convex docs recommend their hosted cloud for an easier experience. They say self-hosting is not for everyone. Concile has no cloud. The single binary and single container are the primary ways to run it. They are fully supported.
+- One process. The engine, database, dashboard and your functions run together. You can run one executable or type `docker compose up`.
+- Your choice of store. Use SQLite for zero-config local development and small deployments. Use Postgres for production. You change one flag. You do not touch app code.
+- Durable workflows with saga compensation. Multi-step work survives restarts. It unwinds in reverse when a step fails.
+- A durable offline outbox. Writes made offline survive a reload. They replay exactly once. They use client-supplied ids. You can create a record and reference it before the server has seen it.
+- No per-seat pricing. Convex bills its Professional tier per developer per month. The enterprise tier has a $2,500 monthly floor. Self-hosted software has no seat count.
+
+## Performance
+
+We benchmarked both on the same host. Each ran in its own Docker container. They were driven by their native WebSocket clients. We used matched test code.
+
+| metric | Concile | Convex |
+| --- | ---: | ---: |
+| reactive propagation p50, 50 subscribers | 8.6 ms | 13.4 ms |
+| reactive propagation p99 | 13.7 ms | 27.3 ms |
+
+They are in the same ballpark. The full scorecard contains every caveat. You can read it on the [Performance](/docs/get-started/performance) page.
+
+## Moving from Convex
+
+The `concile migrate --from convex` command rewrites imports. It renames the functions directory. It scaffolds `concile.config.ts` if you use crons. It writes a report of what it could not do. You will meet these API differences:
+
+- There is no `ctx.db.patch()`. Read the document and call `ctx.db.replace(id, { ...doc, ...changes })`.
+- There is no `.withIndex()`. You must call `ctx.db.query(table, "index").eq(f, v).collect()`.
+- The `paginate()` function returns `{ page, nextCursor, hasMore }`.
+- Auth is a string identity. It comes through `@concile/auth` or your own JWT provider. It is not a claims object.
+- Crons live in `concile.config.ts`. They use `defineScheduler()`.
+- A mutation promise resolves when it commits. It does not wait for the later flicker-free gate used by Convex.
+
+The full list is in [Migrate from Convex](/docs/reference/migrate-from-convex). It includes a fix for each issue.
+
+## When to pick Convex
+
+Pick Convex if you want a hosted product. It has built-in search and a component marketplace. You can buy compliance reports. You must be fine with usage fees and per-seat pricing. The cloud is the primary path.
+
+## When to pick Concile
+
+Pick Concile if you want to run the whole backend yourself. You can run it on your own hardware or cloud. It runs as one process or one binary. You can choose SQLite or Postgres. Nothing is metered. The software does not phone home. Pick it if you want durable workflows and a real offline story today. You must be willing to wait for search.

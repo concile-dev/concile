@@ -29,6 +29,7 @@ const COLS: { head: string; links: { label: string; href: string }[] }[] = [
       { label: 'What is Concile', href: '/docs/get-started/what-is-concile' },
       { label: 'Performance', href: '/docs/get-started/performance' },
       { label: 'Migrate from Convex', href: '/docs/reference/migrate-from-convex' },
+      { label: 'Compare', href: '/compare' },
       { label: 'Licensing', href: '/docs/contributing/licensing' },
       { label: 'FAQ', href: '/docs/reference/faq' },
       { label: 'Blog', href: '/blog' },

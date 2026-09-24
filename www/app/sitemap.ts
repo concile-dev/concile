@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { blog, source } from '@/lib/source';
+import { blog, compare, source } from '@/lib/source';
 
 // Served at /sitemap.xml. Every indexable page: the static routes, each blog
 // post with its publish date, and every docs page from the fumadocs source.
@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE}/`, changeFrequency: 'weekly', priority: 1 },
     { url: `${SITE}/blog`, changeFrequency: 'weekly', priority: 0.6 },
     { url: `${SITE}/brand`, changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${SITE}/compare`, changeFrequency: 'monthly', priority: 0.5 },
   ];
   const posts: MetadataRoute.Sitemap = blog.getPages().map((page) => ({
     url: `${SITE}${page.url}`,
@@ -18,10 +19,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: 'monthly',
     priority: 0.6,
   }));
+  const compares: MetadataRoute.Sitemap = compare.getPages().map((page) => ({
+    url: `${SITE}${page.url}`,
+    lastModified: new Date(page.data.checked),
+    changeFrequency: 'monthly',
+    priority: 0.7,
+  }));
   const docs: MetadataRoute.Sitemap = source.getPages().map((page) => ({
     url: `${SITE}${page.url}`,
     changeFrequency: 'weekly',
     priority: 0.8,
   }));
-  return [...statics, ...posts, ...docs];
+  return [...statics, ...posts, ...compares, ...docs];
 }
