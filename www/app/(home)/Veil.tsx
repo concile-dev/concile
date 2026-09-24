@@ -14,21 +14,13 @@ import { useEffect, useState } from 'react';
 // its plain ground colour, which is what the canvas fades in over anyway.
 const PixelBlast = dynamic(() => import('./PixelBlast').then((m) => m.PixelBlast), { ssr: false });
 
-// When to load the backdrop at all, and when.
-//
-// Not on phones: the field sits behind a column of text that covers most of
-// it, and three.js is the largest download on the page. Not for people who
-// asked for reduced motion or data saving. On everything else, after the
-// window load event and an idle callback, so the hero, fonts and the page's
-// own scripts are all done before the GPU work starts.
+// When to load the backdrop: after the window load event and an idle
+// callback, so the hero, the fonts and the page's own scripts are all done
+// before three.js (the largest download on the page) and the GPU work start.
+// Every device gets it; the field is part of how the page looks.
 function useBackdropReady(): boolean {
   const [ready, setReady] = useState(false);
   useEffect(() => {
-    const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
-    if (window.innerWidth < 768) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if (nav.connection?.saveData) return;
-
     let idleId: number | undefined;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const w = window as Window & {
