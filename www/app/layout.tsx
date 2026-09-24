@@ -2,6 +2,7 @@ import { RootProvider } from 'fumadocs-ui/provider/next';
 import './global.css';
 import type { Metadata } from 'next';
 import { Inter, Outfit } from 'next/font/google';
+import Script from 'next/script';
 
 // Absolute base for the share images (opengraph-image.tsx and the docs cards).
 // Without it Next resolves them against localhost and the cards never load.
@@ -48,6 +49,13 @@ export default function Layout({ children }: LayoutProps<'/'>) {
     >
       <body className="flex flex-col min-h-screen">
         <RootProvider>{children}</RootProvider>
+        {/* Microsoft Clarity, production only, loaded after hydration so it never
+            competes with the page's own scripts. */}
+        {process.env.NODE_ENV === 'production' ? (
+          <Script id="clarity" strategy="afterInteractive">
+            {`(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i+"?ref=bwt";y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","yng0cd0su1");`}
+          </Script>
+        ) : null}
       </body>
     </html>
   );
