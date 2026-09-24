@@ -7,12 +7,9 @@ checked: 2026-09-21
 
 ## The short version
 
-- Supabase is a Postgres platform. Every project is a Postgres database, with auto-generated REST
-  and GraphQL APIs, auth, storage, Edge Functions and a realtime channel layered on top.
-- Concile is a reactive backend. You write TypeScript functions. Every query is live. Authorization
-  is code. The database is a detail you pick with a flag.
-- Supabase wins on the Postgres ecosystem and on being a hosted product. Concile wins on live
-  queries, on authorization you can unit test, and on running as one process.
+- Supabase is a Postgres platform. Every project is a Postgres database. It layers auto-generated REST and GraphQL APIs, auth, storage, Edge Functions and a realtime channel on top.
+- Concile is a reactive backend. You write TypeScript functions. Every query is live. Authorization is code. The database is a detail you pick with a flag.
+- Supabase wins on the Postgres ecosystem and on being a hosted product. Concile wins on live queries, on unit-testable authorization, and on running as one process.
 
 ## Side by side
 
@@ -32,73 +29,46 @@ checked: 2026-09-21
 
 ## Live query versus change feed
 
-Supabase Realtime is three primitives: Broadcast for messages between clients, Presence for who is
-online, and Postgres Changes, which streams row events off the database. A row event tells you a
-row changed. It does not tell you whether that row still belongs in the filtered, joined, sorted
-list your screen is showing. Anything beyond "watch this whole table" is the client's job to work
-out.
+Supabase Realtime has three primitives. Broadcast is for messages between clients. Presence shows who is online. Postgres Changes streams row events off the database. A row event tells you a row changed. It does not tell you whether that row still belongs in the filtered, joined, or sorted list your screen shows. Anything beyond watching a whole table is the client's job to work out.
 
-In Concile, the query is the subscription. The server records what the query read, notices when a
-commit touches it, re-runs it, and pushes the current, correct result. The client never
-re-derives anything. This is what "realtime by default" means.
+In Concile, the query is the subscription. The server records what the query read. It notices when a commit touches it. Then it re-runs the query and pushes the correct result. The client never re-derives anything. This is what realtime by default means.
 
 ## Authorization: code versus SQL policies
 
-Supabase authorization is Postgres Row Level Security: policies written in SQL, one per operation
-per table, enforced by the database on every access. Supabase's own docs describe what makes that
-hard to get right. A table in an exposed schema without RLS enabled is readable and writable by any
-role with a grant. Views bypass RLS unless `security_invoker` is set. Two tables whose policies
-reference each other raise a recursion error. Supabase recommends a pgTAP test file per protected
-table, because there is no other way to know the policies do what you meant.
+Supabase authorization uses Postgres Row Level Security. These are policies written in SQL. You write one per operation per table. The database enforces them on every access. Supabase's own docs describe why this is hard to get right. A table in an exposed schema without RLS enabled is readable and writable by any role with a grant. Views bypass RLS unless `security_invoker` is set. Two tables with policies that reference each other raise a recursion error. Supabase recommends a pgTAP test file for each protected table. There is no other way to know the policies do what you meant.
 
-In Concile, authorization is a function. It runs in the same transaction as the read or write, it
-is type-checked with the rest of your app, and you unit test it like anything else. Row policies
-are available through `@concile/authz` if you want them composed for you.
+In Concile, authorization is a function. It runs in the same transaction as the read or write. It is type-checked with the rest of your app. You unit test it like anything else. Row policies are available through `@concile/authz` if you want them composed for you.
 
 ## Deploying it yourself
 
-Supabase's core is open source and self-hostable with Docker Compose or the CLI, Studio included.
-What you run is Postgres plus the services around it: PostgREST, pg_graphql, Realtime, GoTrue for
-auth, Storage, Studio. Each is a process to keep alive and upgrade.
+Supabase's core is open source. You can self-host it with Docker Compose or the CLI. This includes Studio. You run Postgres and the services around it. These services include PostgREST, pg_graphql, Realtime, GoTrue for auth, Storage, and Studio. Each one is a process you must keep alive and upgrade.
 
-Concile is one process. `docker compose up` starts the engine, the database and the dashboard. Or
-`concile build` and ship one executable. It also runs on Cloudflare Workers.
+Concile is one process. Running `docker compose up` starts the engine, the database, and the dashboard. You can also run `concile build` to ship one executable. It runs on Cloudflare Workers too.
 
 ## Where Supabase is ahead
 
-- It is Postgres. Decades of tooling, standard SQL, 40-plus preinstalled extensions, and no
-  vendor query language.
-- Auto-generated REST and GraphQL APIs from your schema, with no code to write for a plain CRUD
-  API.
-- Search. Full-text through tsvector and vectors through pgvector are built in. Concile has
-  neither yet.
-- A hosted product in 16-plus regions with SOC 2 Type 2, and compute tiers up to 64 vCPU and
-  256 GB on a single published tier.
+- It is Postgres. You get decades of tooling, standard SQL, and 40-plus preinstalled extensions. There is no vendor query language.
+- You get auto-generated REST and GraphQL APIs from your schema. You do not need to write code for a plain CRUD API.
+- Search is built in. It has full-text search through tsvector and vector search through pgvector. Concile has neither yet.
+- It is a hosted product in 16-plus regions with SOC 2 Type 2 compliance. It offers compute tiers up to 64 vCPU and 256 GB on a single published tier.
 
 ## Where Concile is ahead
 
-- Live queries computed on the server, not row events for the client to interpret.
-- Authorization as code, in the transaction, under the type checker.
-- One process to run instead of a ring of services.
-- SQLite when you want zero config, Postgres when you want Postgres. Same app code.
-- Durable workflows with compensation and a durable offline outbox, built in.
-- No connection caps or compute bills. Supabase caps realtime peak connections at 200 on Free and
-  500 on Pro and Team, with $10 per additional 1,000, and bills compute hourly per project on top of
-  the plan.
+- Live queries are computed on the server. The client does not have to interpret row events.
+- Authorization is code. It runs in the transaction and under the type checker.
+- You run one process instead of a ring of services.
+- You can use SQLite for zero config or Postgres when you want Postgres. The app code stays the same.
+- Durable workflows with compensation and a durable offline outbox are built in.
+- There are no connection caps or compute bills. Supabase caps realtime peak connections at 200 on Free and 500 on Pro and Team. Supabase charges $10 per additional 1,000 connections. It also bills compute hourly per project on top of the plan.
 
 ## Moving from Supabase
 
-There is no migration tool, because the model changes: functions replace PostgREST calls plus RLS
-policies. Your data is portable. Export it from Postgres, define the same tables in `schema.ts`,
-and import with `concile migrate import`. Each RLS policy becomes an `if` in the function that
-reads or writes that table, which is usually shorter than the policy was.
+There is no migration tool because the model changes. Functions replace PostgREST calls and RLS policies. Your data remains portable. Export it from Postgres. Define the same tables in `schema.ts`. Import the data with `concile migrate import`. Each RLS policy becomes an `if` statement in the function that reads or writes that table. This is usually shorter than the policy was.
 
 ## When to pick Supabase
 
-You want Postgres and its ecosystem as the centre of the system, a hosted product with regions and
-compliance today, and search built in. You are comfortable writing and testing SQL policies.
+You want Postgres and its ecosystem as the center of the system. You want a hosted product with regions and compliance today. You need built-in search. You are comfortable writing and testing SQL policies.
 
 ## When to pick Concile
 
-You want every screen to update on its own without writing the invalidation logic, authorization
-you can read and test as code, and a backend you run as one process anywhere.
+You want every screen to update on its own. You do not want to write invalidation logic. You want authorization you can read and test as code. You want a backend you can run as one process anywhere.
