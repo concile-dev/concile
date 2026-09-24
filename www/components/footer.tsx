@@ -18,6 +18,7 @@ const COLUMNS = [
       { href: '/docs', label: 'Documentation' },
       { href: '/docs/reference/faq', label: 'FAQ' },
       { href: '/blog', label: 'Blog' },
+      { href: '/compare', label: 'Compare' },
       { href: '/brand', label: 'Brand' },
     ],
   },

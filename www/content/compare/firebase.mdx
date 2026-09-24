@@ -1,0 +1,92 @@
+---
+title: Concile vs Firebase
+description: Firebase is Google's managed backend. Concile is an open-source backend you host yourself. This page is about what that trade actually buys and costs.
+competitor: Firebase
+checked: 2026-09-21
+---
+
+## The short version
+
+- Firebase is fully managed and proprietary. It runs only on Google Cloud, and there is no
+  self-hosted or open-source version of the backend.
+- Concile is open source under FSL-1.1-Apache-2.0 and runs wherever you put it: your hardware, a
+  VPS, a container, a single binary, or a Cloudflare Worker.
+- Firebase's realtime model is document listeners plus a rules language. Concile's is live queries
+  over server-side functions with authorization in code.
+
+## Side by side
+
+| | Concile | Firebase |
+| --- | --- | --- |
+| Live results from your own server code | Yes, read-set precise | Partly, document listeners |
+| Backend is plain TypeScript functions | Yes | Partly, Cloud Functions |
+| Authorization is ordinary code, not a rules language | Yes | No, Security Rules DSL |
+| Self-host the whole product | Yes | No, Google Cloud only |
+| Single binary with no database to run | Yes | No |
+| Swap the database without touching app code | Yes, SQLite or Postgres | No, Firestore or Realtime Database |
+| Durable workflows with rollback | Yes, saga compensation | No, bring your own |
+| Offline writes that survive a reload | Yes, durable outbox | Yes, Firestore persistence |
+| Full-text and vector search | Not built yet | Partly, vector only; text needs an add-on |
+| Hosted cloud | None | Yes, only |
+| Price | Free to self-host | Spark free; Blaze pay as you go, metered per service |
+
+## Realtime: listeners versus live queries
+
+Firestore realtime is `onSnapshot()`. You attach a listener to a document or a query, get an initial
+snapshot at once, and get a new one on every change. Local writes fire the listener immediately
+through latency compensation, before the backend confirms them, and `metadata.hasPendingWrites`
+tells you which state you are looking at. It is a good model, with documented edges: pipeline
+operations do not support realtime listeners, and the PHP client library does not support them
+at all.
+
+In Concile there is no listener to attach. A query is a subscription. The server records what it
+read, re-runs it when a commit touches that data, and pushes the new result. Optimistic updates
+are there too, and a durable outbox means a write made offline survives a page reload and replays
+exactly once.
+
+## Authorization: rules versus code
+
+Firebase Security Rules live outside your app, in the console or the CLI. They are a path match
+plus a condition. Firestore and Cloud Storage use a `service`/`match`/`allow if` block; Realtime
+Database uses a separate JSON `.read`/`.write` format. Rules combine as OR: if any matching rule
+grants access, access is granted, which the docs call out as something to design around.
+
+In Concile, the client never touches the database. Every read and write goes through a function
+you wrote, in a transaction, and the authorization check is a line of TypeScript in that
+function. It is type-checked with the app and unit tested with the app.
+
+## Where Firebase is ahead
+
+- Nobody runs anything. Firebase is fully managed on Google's infrastructure. If you do not want
+  a server, Firebase does not give you one.
+- Offline persistence in Firestore is mature and comes with the client SDKs.
+- A no-cost Spark tier and a pay-as-you-go Blaze tier, with $300 in free credit eligibility.
+- Vector search is available; full-text needs an add-on.
+
+## Where Concile is ahead
+
+- You own it. Open source, self-hosted, no phone home, and portable across a binary, a container,
+  your own Postgres, or Cloudflare Workers. Firebase has one hosting path.
+- Live queries computed on the server, not listeners the client reasons about.
+- Authorization in ordinary code, in the same transaction as the data access.
+- One bill, which is zero. Firebase meters Firestore, Realtime Database, Functions, Auth and
+  Hosting separately, each with its own free threshold and overage rate.
+- Durable workflows with compensation, cron jobs, and a dashboard, in the same process.
+
+## Moving from Firebase
+
+There is no automatic migration. Export your Firestore collections, define the same shapes in
+`schema.ts`, and import with `concile migrate import`. Each Security Rule becomes a check inside
+the function that does the read or write. Client code changes from `onSnapshot()` to `useQuery()`,
+and from direct document writes to `useMutation()` calls.
+
+## When to pick Firebase
+
+You want a fully managed backend from Google, first-party mobile SDKs, and never to run a server.
+You are fine with Google Cloud being the only place it lives.
+
+## When to pick Concile
+
+You want to own the backend, run it anywhere, and write authorization as code. You want live
+queries without the listener bookkeeping, and you would rather have one process than a set of
+metered services.

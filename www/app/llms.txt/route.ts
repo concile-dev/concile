@@ -1,4 +1,4 @@
-import { source } from '@/lib/source';
+import { compare, source } from '@/lib/source';
 
 export const revalidate = false;
 
@@ -67,5 +67,9 @@ export function GET() {
   walk(source.pageTree.children as Node[], lines);
   const seen = new Set(lines.flatMap((l) => (l.match(/\]\((https?:[^)]+)\)/) ? [l.match(/\]\((https?:[^)]+)\)/)![1].slice(SITE.length)] : [])));
   leftovers(seen, lines);
+  lines.push('', '## Compare', '');
+  for (const page of compare.getPages()) {
+    lines.push(pageLine({ type: 'page', name: page.data.title, description: page.data.description, url: page.url }));
+  }
   return new Response(lines.join('\n') + '\n', { headers: { 'content-type': 'text/plain; charset=utf-8' } });
 }
