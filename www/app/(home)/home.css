@@ -739,6 +739,14 @@
 }
 .hp-rise { animation: hp-rise 620ms var(--hp-ease) both; }
 .hp-rise--2 { animation-delay: 140ms; }
+/* The hero copy holds the page's largest text, so it is the LCP element. An
+   element at opacity 0 has not painted, and LCP waits for the fade to finish.
+   The copy keeps the rise and skips the fade; the art next to it still fades. */
+@keyframes hp-rise-move {
+  from { transform: translateY(14px); }
+  to { transform: none; }
+}
+.hp-hero-copy.hp-rise { animation-name: hp-rise-move; }
 
 @media (max-width: 1024px) {
   .hp-hero { min-height: 0; display: block; }

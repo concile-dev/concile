@@ -4,7 +4,29 @@
 // bundles its own next-themes copy inside RootProvider; a direct import
 // resolves to a second module instance whose context is empty.
 import { useTheme } from 'fumadocs-ui/provider/base';
-import { PixelBlast } from './PixelBlast';
+import dynamic from 'next/dynamic';
+import { useEffect, useState } from 'react';
+
+// PixelBlast pulls in three.js, the largest chunk on the page. It is a
+// backdrop, so nothing about the first paint depends on it. Loaded after the
+// browser goes idle, once the hero text is already on screen, instead of
+// riding in the critical bundle ahead of hydration. Until then the page shows
+// its plain ground colour, which is what the canvas fades in over anyway.
+const PixelBlast = dynamic(() => import('./PixelBlast').then((m) => m.PixelBlast), { ssr: false });
+
+function useIdle(): boolean {
+  const [idle, setIdle] = useState(false);
+  useEffect(() => {
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(() => setIdle(true), { timeout: 2000 });
+      return () => (window as Window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(() => setIdle(true), 200);
+    return () => clearTimeout(t);
+  }, []);
+  return idle;
+}
 
 // The backdrop field, tuned per theme.
 //
@@ -27,10 +49,12 @@ const LIGHT = '#0c0722';
 
 export function Veil() {
   const { resolvedTheme } = useTheme();
+  const idle = useIdle();
   // Theme is unknown during SSR, so the server renders dark and the client keeps
   // it until it knows better. Matches Wordmark.
   const color = resolvedTheme === 'light' ? LIGHT : DARK;
 
+  if (!idle) return null;
   return (
     <PixelBlast
       // Circles, not squares: the page is already all right angles, and square
