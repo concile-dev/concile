@@ -1,5 +1,17 @@
 # concile
 
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/cli@0.1.6
+  - @concile/client@0.1.6
+  - @concile/component@0.1.6
+  - @concile/executor@0.1.6
+  - @concile/values@0.1.6
+  - @concile/tui@0.1.6
+
 ## 0.1.5
 
 ### Patch Changes

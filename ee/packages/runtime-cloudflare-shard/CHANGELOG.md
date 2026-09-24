@@ -1,5 +1,15 @@
 # @concile/runtime-cloudflare-shard
 
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies [[`1cb1a7c`](https://github.com/concile-dev/concile/commit/1cb1a7cae0ac5ce783db71184a620377ac1cc790)]:
+  - @concile/runtime-cloudflare@0.1.6
+  - @concile/cli@0.1.6
+  - @concile/id-codec@0.1.6
+  - @concile/index-key-codec@0.1.6
+
 ## 0.1.5
 
 ### Patch Changes

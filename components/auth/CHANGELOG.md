@@ -1,5 +1,15 @@
 # @concile/auth
 
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/component@0.1.6
+  - @concile/errors@0.1.6
+  - @concile/executor@0.1.6
+  - @concile/values@0.1.6
+
 ## 0.1.5
 
 ### Patch Changes
