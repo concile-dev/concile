@@ -61,7 +61,7 @@ export default function HomePage() {
         <Reveal className="stp">
           <div className="stp-copy">
             <span className="k">Just TypeScript</span>
-            <h3>From an empty folder to a live app in five steps</h3>
+            <h2>From an empty folder to a live app in five steps</h2>
             <p>
               You write one language for the entire backend. Define your tables, create mutations and queries, and subscribe right from the client. When you're ready to deploy, it ships as a single container or binary. You don't have to design an API, and there are no migrations to run.
             </p>

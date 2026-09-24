@@ -229,7 +229,7 @@ html:not(.dark) .ed-code {
   text-transform: none;
   letter-spacing: 0.02em;
 }
-.ed-side-more { opacity: 0.6; letter-spacing: 0.1em; }
+.ed-side-more { letter-spacing: 0.1em; } /* was opacity 0.6: 2.95:1, under the 4.5 floor for 10px text */
 .ed-root {
   font-family: var(--font-mono);
   font-size: 0.72rem;

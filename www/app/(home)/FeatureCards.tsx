@@ -192,6 +192,13 @@ function DashViz({ tick }: { tick: number }) {
   const s = states[tick % states.length];
   return (
     <table className="fc-table fc-mono">
+      <thead className="sr-only">
+        <tr>
+          <th scope="col">Run</th>
+          <th scope="col">Job</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
       <tbody>
         <tr>
           <td>#1041</td>

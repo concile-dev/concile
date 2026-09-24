@@ -112,7 +112,7 @@ export function Steps() {
             {String(i + 1).padStart(2, '0')}
           </span>
           <span className="stp-label">{step.label}</span>
-          <h4 className="stp-title">{step.title}</h4>
+          <h3 className="stp-title">{step.title}</h3>
           <p className="stp-body">{step.body}</p>
           <div className="stp-code">
             <div className="stp-file">{step.file}</div>
