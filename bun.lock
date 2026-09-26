@@ -15,7 +15,7 @@
     },
     "apps/dashboard": {
       "name": "@concile/dashboard",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@base-ui-components/react": "^1.0.0-alpha.5",
         "@tanstack/react-query": "^5.62.7",
@@ -42,7 +42,7 @@
     },
     "components/auth": {
       "name": "@concile/auth",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/component": "workspace:*",
         "@concile/errors": "workspace:*",
@@ -66,7 +66,7 @@
     },
     "components/authz": {
       "name": "@concile/authz",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/auth": "workspace:*",
         "@concile/component": "workspace:*",
@@ -85,7 +85,7 @@
     },
     "components/notifications": {
       "name": "@concile/notifications",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/component": "workspace:*",
         "@concile/executor": "workspace:*",
@@ -103,7 +103,7 @@
     },
     "components/scheduler": {
       "name": "@concile/scheduler",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/component": "workspace:*",
         "@concile/errors": "workspace:*",
@@ -123,7 +123,7 @@
     },
     "components/triggers": {
       "name": "@concile/triggers",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/component": "workspace:*",
         "@concile/executor": "workspace:*",
@@ -141,7 +141,7 @@
     },
     "components/workflow": {
       "name": "@concile/workflow",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/component": "workspace:*",
         "@concile/executor": "workspace:*",
@@ -160,7 +160,7 @@
     },
     "ee/packages/fleet": {
       "name": "@concile/fleet",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/docstore": "workspace:*",
         "@concile/docstore-postgres": "workspace:*",
@@ -189,7 +189,7 @@
     },
     "ee/packages/objectstore-substrate": {
       "name": "@concile/objectstore-substrate",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/component": "workspace:*",
         "@concile/docstore": "workspace:*",
@@ -213,7 +213,7 @@
     },
     "ee/packages/runtime-cloudflare-shard": {
       "name": "@concile/runtime-cloudflare-shard",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/cli": "workspace:*",
         "@concile/id-codec": "workspace:*",
@@ -234,7 +234,7 @@
     },
     "examples/auth-demo": {
       "name": "@concile/example-auth-demo",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "dependencies": {
         "@concile/auth": "workspace:*",
         "@concile/component": "workspace:*",
@@ -261,7 +261,7 @@
     },
     "examples/chat": {
       "name": "concile-example-chat",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "dependencies": {
         "@concile/component": "workspace:*",
         "@concile/executor": "workspace:*",
@@ -286,7 +286,7 @@
     },
     "examples/offline-demo": {
       "name": "concile-example-offline-demo",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "dependencies": {
         "@concile/errors": "workspace:*",
         "@concile/executor": "workspace:*",
@@ -312,7 +312,7 @@
     },
     "examples/optimistic-demo": {
       "name": "concile-example-optimistic-demo",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "dependencies": {
         "@concile/errors": "workspace:*",
         "@concile/executor": "workspace:*",
@@ -339,7 +339,7 @@
     },
     "packages/admin": {
       "name": "@concile/admin",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/docstore": "workspace:*",
         "@concile/errors": "workspace:*",
@@ -361,7 +361,7 @@
     },
     "packages/blobstore": {
       "name": "@concile/blobstore",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "devDependencies": {
         "@types/node": "catalog:",
         "tsup": "catalog:",
@@ -371,7 +371,7 @@
     },
     "packages/blobstore-fs": {
       "name": "@concile/blobstore-fs",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/blobstore": "workspace:*",
       },
@@ -384,7 +384,7 @@
     },
     "packages/blobstore-r2": {
       "name": "@concile/blobstore-r2",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/blobstore": "workspace:*",
       },
@@ -398,7 +398,7 @@
     },
     "packages/blobstore-s3": {
       "name": "@concile/blobstore-s3",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@aws-sdk/client-s3": "catalog:",
         "@aws-sdk/s3-request-presigner": "catalog:",
@@ -413,7 +413,7 @@
     },
     "packages/cli": {
       "name": "@concile/cli",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "bin": {
         "concile": "./dist/bin.js",
       },
@@ -468,7 +468,7 @@
     },
     "packages/client": {
       "name": "@concile/client",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/id-codec": "workspace:*",
         "@concile/index-key-codec": "workspace:*",
@@ -500,7 +500,7 @@
     },
     "packages/codegen": {
       "name": "@concile/codegen",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/values": "workspace:*",
       },
@@ -513,7 +513,7 @@
     },
     "packages/component": {
       "name": "@concile/component",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/errors": "workspace:*",
         "@concile/executor": "workspace:*",
@@ -534,7 +534,7 @@
     },
     "packages/concile": {
       "name": "concile",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "bin": {
         "concile": "./bin/concile.js",
       },
@@ -553,7 +553,7 @@
     },
     "packages/deploy": {
       "name": "@concile/deploy",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/component": "workspace:*",
       },
@@ -566,7 +566,7 @@
     },
     "packages/docstore": {
       "name": "@concile/docstore",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/id-codec": "workspace:*",
         "@concile/values": "workspace:*",
@@ -580,7 +580,7 @@
     },
     "packages/docstore-d1": {
       "name": "@concile/docstore-d1",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/values": "workspace:*",
       },
@@ -596,7 +596,7 @@
     },
     "packages/docstore-do-sqlite": {
       "name": "@concile/docstore-do-sqlite",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/docstore-sqlite": "workspace:*",
       },
@@ -613,7 +613,7 @@
     },
     "packages/docstore-postgres": {
       "name": "@concile/docstore-postgres",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/docstore": "workspace:*",
         "@concile/id-codec": "workspace:*",
@@ -637,7 +637,7 @@
     },
     "packages/docstore-sqlite": {
       "name": "@concile/docstore-sqlite",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/docstore": "workspace:*",
         "@concile/id-codec": "workspace:*",
@@ -653,7 +653,7 @@
     },
     "packages/errors": {
       "name": "@concile/errors",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "devDependencies": {
         "tsup": "catalog:",
         "typescript": "catalog:",
@@ -662,7 +662,7 @@
     },
     "packages/executor": {
       "name": "@concile/executor",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/docstore": "workspace:*",
         "@concile/docstore-d1": "workspace:*",
@@ -684,7 +684,7 @@
     },
     "packages/id-codec": {
       "name": "@concile/id-codec",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/index-key-codec": "workspace:*",
       },
@@ -696,7 +696,7 @@
     },
     "packages/index-key-codec": {
       "name": "@concile/index-key-codec",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/values": "workspace:*",
       },
@@ -708,7 +708,7 @@
     },
     "packages/objectstore": {
       "name": "@concile/objectstore",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "devDependencies": {
         "@types/node": "catalog:",
         "tsup": "catalog:",
@@ -718,7 +718,7 @@
     },
     "packages/objectstore-fs": {
       "name": "@concile/objectstore-fs",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/objectstore": "workspace:*",
       },
@@ -731,7 +731,7 @@
     },
     "packages/objectstore-s3": {
       "name": "@concile/objectstore-s3",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@aws-sdk/client-s3": "catalog:",
         "@concile/objectstore": "workspace:*",
@@ -745,7 +745,7 @@
     },
     "packages/query-engine": {
       "name": "@concile/query-engine",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/docstore": "workspace:*",
         "@concile/id-codec": "workspace:*",
@@ -761,7 +761,7 @@
     },
     "packages/receipts": {
       "name": "@concile/receipts",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/component": "workspace:*",
         "@concile/docstore": "workspace:*",
@@ -777,7 +777,7 @@
     },
     "packages/runtime-cloudflare": {
       "name": "@concile/runtime-cloudflare",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/admin": "workspace:*",
         "@concile/blobstore": "workspace:*",
@@ -808,7 +808,7 @@
     },
     "packages/runtime-embedded": {
       "name": "@concile/runtime-embedded",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/component": "workspace:*",
         "@concile/docstore": "workspace:*",
@@ -833,7 +833,7 @@
     },
     "packages/storage": {
       "name": "@concile/storage",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/blobstore": "workspace:*",
         "@concile/component": "workspace:*",
@@ -853,7 +853,7 @@
     },
     "packages/sync": {
       "name": "@concile/sync",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/errors": "workspace:*",
         "@concile/index-key-codec": "workspace:*",
@@ -874,7 +874,7 @@
     },
     "packages/test": {
       "name": "@concile/test",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/blobstore-fs": "workspace:*",
         "@concile/client": "workspace:*",
@@ -898,7 +898,7 @@
     },
     "packages/transactor": {
       "name": "@concile/transactor",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@concile/docstore": "workspace:*",
         "@concile/errors": "workspace:*",
@@ -915,7 +915,7 @@
     },
     "packages/tui": {
       "name": "@concile/tui",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@opentui/core": "^0.4.5",
         "@opentui/react": "^0.4.5",
@@ -932,7 +932,7 @@
     },
     "packages/values": {
       "name": "@concile/values",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "devDependencies": {
         "tsup": "catalog:",
         "typescript": "catalog:",
@@ -941,7 +941,7 @@
     },
     "packages/vite": {
       "name": "@concile/vite",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "devDependencies": {
         "@concile/cli": "workspace:*",
         "@concile/client": "workspace:*",

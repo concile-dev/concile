@@ -1,6 +1,6 @@
 {
   "name": "concile",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "The reactive backend you self-host, in one package: server functions, a typed client, React hooks, and the concile CLI.",
   "type": "module",
   "license": "FSL-1.1-Apache-2.0",
@@ -43,12 +43,12 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@concile/cli": "0.1.5",
-    "@concile/client": "0.1.5",
-    "@concile/component": "0.1.5",
-    "@concile/executor": "0.1.5",
-    "@concile/values": "0.1.5",
-    "@concile/tui": "0.1.5"
+    "@concile/cli": "0.1.6",
+    "@concile/client": "0.1.6",
+    "@concile/component": "0.1.6",
+    "@concile/executor": "0.1.6",
+    "@concile/values": "0.1.6",
+    "@concile/tui": "0.1.6"
   },
   "devDependencies": {
     "tsup": "catalog:",

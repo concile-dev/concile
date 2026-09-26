@@ -1,5 +1,12 @@
 # @concile/id-codec
 
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/index-key-codec@0.1.6
+
 ## 0.1.5
 
 ### Patch Changes
