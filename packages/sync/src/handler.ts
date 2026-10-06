@@ -15,6 +15,7 @@ import type { DiffableRange, DiffablePage } from "@concile/executor";
 import {
   encodeServerMessage,
   parseClientMessage,
+  ProtocolError,
   INITIAL_VERSION,
   type ClientMessage,
   type ServerMessage,
@@ -483,7 +484,17 @@ export class SyncProtocolHandler {
     const session = this.sessions.get(sessionId);
     if (!session) throw new Error(`unknown session: ${sessionId}`);
     session.hb.noteActivity(); // any inbound frame is liveness credit
-    const msg: ClientMessage = parseClientMessage(raw);
+    let msg: ClientMessage;
+    try {
+      msg = parseClientMessage(raw);
+    } catch (e) {
+      if (!(e instanceof ProtocolError)) throw e;
+      // A malformed frame is that peer's protocol violation: tell it why and drop only its session.
+      // Rethrowing would surface as an unhandled rejection in the fire-and-forget transports.
+      this.send(session, { type: "FatalError", message: e.message });
+      this.reap(sessionId);
+      return;
+    }
     switch (msg.type) {
       case "Connect":
         return this.handleConnect(session, msg);

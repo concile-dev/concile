@@ -291,7 +291,14 @@ async function startNodeServer(runtime: EmbeddedRuntime, options: DevServerOptio
         },
       };
       runtime.handler.connect(sessionId, syncSocket);
-      ws.on("message", (data: Buffer) => void runtime.handler.handleMessage(sessionId, data.toString("utf8")));
+      ws.on("message", (data: Buffer) => {
+        // Fire-and-forget: a rejection here would otherwise be unhandled and exit the process, so a
+        // failing frame costs only its own connection.
+        runtime.handler.handleMessage(sessionId, data.toString("utf8")).catch((e: unknown) => {
+          console.error("[concile] sync message failed; closing connection:", e);
+          ws.close(1011);
+        });
+      });
       ws.on("close", () => runtime.handler.disconnect(sessionId));
       ws.on("error", () => runtime.handler.disconnect(sessionId));
     });
@@ -432,7 +439,12 @@ async function startBunServer(runtime: EmbeddedRuntime, options: DevServerOption
         runtime.handler.connect(ws.data.sessionId, syncSocket);
       },
       message(ws, message) {
-        void runtime.handler.handleMessage(ws.data.sessionId, typeof message === "string" ? message : new TextDecoder().decode(message));
+        const raw = typeof message === "string" ? message : new TextDecoder().decode(message);
+        // See the node `ws` path above: never leave this rejection unhandled.
+        runtime.handler.handleMessage(ws.data.sessionId, raw).catch((e: unknown) => {
+          console.error("[concile] sync message failed; closing connection:", e);
+          ws.close();
+        });
       },
       close(ws) {
         bunPongCallbacks.delete(ws.data.sessionId);
