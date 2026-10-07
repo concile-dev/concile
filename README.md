@@ -111,6 +111,8 @@ We didn't guess these numbers. We built a strict benchmark suite that boots our 
 
 Concile actually speaks the Convex dialect. We share the same value system, the same validators, and the same shapes for queries, mutations, and actions. Your instincts will carry right over, and a simple codemod can move most of your app.
 
+Check out [Concile vs Convex](https://concile.dev/compare/convex) to see how they differ and follow the [migration guide](https://concile.dev/docs/reference/migrate-from-convex) to run the codemod.
+
 But Concile is its own distinct project with its own roadmap and its own home. We keep the door open for you, but we are building our own house.
 
 ***
