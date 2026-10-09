@@ -39,11 +39,11 @@ export function publishablePackages() {
     if (!existsSync(pj)) continue;
     const p = JSON.parse(readFileSync(pj, "utf8"));
     if (p.private) continue;
-    if (p.name !== "concile" && !p.name?.startsWith("@concile/")) continue;
+    if (p.name !== "concile" && p.name !== "create-concile" && !p.name?.startsWith("@concile/")) continue;
     const deps = new Set();
     for (const k of ["dependencies", "devDependencies", "peerDependencies"]) {
       for (const d of Object.keys(p[k] ?? {})) {
-        if (d === "concile" || d.startsWith("@concile/")) deps.add(d);
+        if (d === "concile" || d === "create-concile" || d.startsWith("@concile/")) deps.add(d);
       }
     }
     pkgs.push({ name: p.name, dir, version: p.version, deps });

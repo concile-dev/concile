@@ -10,6 +10,7 @@ import { dirname, join, resolve } from "node:path";
 import { writeGenerated } from "@concile/codegen";
 import { loadFunctionsDir, listFunctionModuleFiles, moduleKeyForFile } from "./load-modules";
 import { loadConfig } from "./load-config";
+import { ensureGeneratedStub } from "./generated-stub";
 import { push } from "./push-pipeline";
 import { generateEntrySource } from "./build-entry";
 import { resolveFunctionsDir, ensureFunctionsDirExists } from "./functions-dir";
@@ -65,9 +66,10 @@ export async function buildCommand(args: string[]): Promise<number> {
   const functionsDirAbs = opts.functionsDir;
   // Fail loudly — with the migrate hint — before `loadFunctionsDir` below can throw a raw ENOENT.
   if (!ensureFunctionsDirExists(functionsDirAbs)) return 1;
+  const config = await loadConfig(dirname(functionsDirAbs));
+  ensureGeneratedStub(functionsDirAbs, config.components);
   // 1. Load + refresh codegen so `import "./_generated/server"` resolves when bun bundles the modules.
   const loaded = await loadFunctionsDir(functionsDirAbs);
-  const config = await loadConfig(dirname(functionsDirAbs));
   const { generated } = push(loaded, config.components);
   writeGenerated(generated.files, join(functionsDirAbs, "_generated"));
   // 2. Codegen the entrypoint.

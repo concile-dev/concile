@@ -107,9 +107,9 @@ npx concile dev
 
 Bun is the main runtime here, but Node is fully supported too.
 
-The Node path relies on the built-in `node:sqlite` module, which means it requires **Node.js 22.5 or
-newer**. If you run into a `Cannot find module 'node:sqlite'` error, be sure to check your Node
-version.
+The Node path relies on the built-in `node:sqlite` module and loads `concile.config.ts` without a
+build step. That means it requires **Node.js 22.18 or newer**. If you run into a `Cannot find module
+'node:sqlite'` error, be sure to check your Node version.
 
 ## Admin key
 

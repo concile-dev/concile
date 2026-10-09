@@ -47,15 +47,14 @@ multi-node.
 ### Set up the project
 
 ```bash
-mkdir chat-app && cd chat-app
-bun init -y
-bun add @concile/cli @concile/values @concile/client react react-dom
+npx concile init chat-app --starter none --components "" --pm bun
+cd chat-app
+bun add react react-dom
 ```
 
-- `@concile/cli` is the `concile` command.
-- `@concile/values` gives you `defineSchema`, `defineTable`, and the `v` validators.
-- `@concile/client` is the browser client: the reactive connection, plus its `/react` subpath
-  for hooks.
+`init` creates the folder, installs the concile packages, and writes a `concile/` directory. It also
+writes `concile.config.ts`, `.env.local`, `.gitignore` and `AGENTS.md`. The next steps replace the
+sample files it wrote in `concile/`.
 
 </Step>
 
@@ -63,7 +62,8 @@ bun add @concile/cli @concile/values @concile/client react react-dom
 
 ### Define the schema
 
-Your backend lives in `concile/` (the default function directory). Create `concile/schema.ts`:
+Your backend lives in `concile/` (the default function directory). Replace the contents of
+`concile/schema.ts`, which `init` wrote:
 
 ```ts title="concile/schema.ts"
 import { defineSchema, defineTable, v } from "@concile/values";
@@ -140,7 +140,7 @@ optimistic update) know their exact result type. See
 
 ### Messages: insert, replace, delete
 
-Create `concile/messages.ts`. This is the file that does the real work: three mutations covering
+Replace the contents of `concile/messages.ts`. This is the file that does the real work: three mutations covering
 every way a mutation writes, plus two queries:
 
 ```ts title="concile/messages.ts"

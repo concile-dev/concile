@@ -26,6 +26,7 @@ export { loadConfig } from "./load-config";
 export type { ResolvedFunctionsDir } from "./functions-dir";
 export { resolveFunctionsDir, functionsDirNotFoundMessage, DEFAULT_FUNCTIONS_DIR } from "./functions-dir";
 export { runCli, devCommand, codegenCommand } from "./cli";
+export { initCommand, addCommand } from "./init/command";
 
 // The shared boot core + codegen writer, re-exported so an out-of-CLI host (e.g. `@concile/vite`'s
 // in-process embed mode) can boot the engine and write `_generated` through the package boundary
