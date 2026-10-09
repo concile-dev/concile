@@ -19,7 +19,7 @@
   },
   "peerDependencies": {
     "vite": ">=5.0.0",
-    "@concile/cli": "workspace:*"
+    "@concile/cli": "*"
   },
   "peerDependenciesMeta": {
     "@concile/cli": {
