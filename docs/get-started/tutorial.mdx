@@ -52,7 +52,9 @@ cd chat-app
 bun add react react-dom
 ```
 
-`init` creates the folder, installs the concile packages, and writes a `concile/` directory. It also writes `concile.config.ts`, `.env.local`, `.gitignore` and `AGENTS.md`. The next steps replace the sample files it wrote in `concile/`.
+`init` creates the folder, installs the concile packages, and writes a `concile/` directory. It also
+writes `concile.config.ts`, `.env.local`, `.gitignore` and `AGENTS.md`. The next steps replace the
+sample files it wrote in `concile/`.
 
 </Step>
 
@@ -60,7 +62,8 @@ bun add react react-dom
 
 ### Define the schema
 
-Your backend lives in `concile/` (the default function directory). Replace the contents of `concile/schema.ts`, which `init` wrote:
+Your backend lives in `concile/` (the default function directory). Replace the contents of
+`concile/schema.ts`, which `init` wrote:
 
 ```ts title="concile/schema.ts"
 import { defineSchema, defineTable, v } from "@concile/values";
