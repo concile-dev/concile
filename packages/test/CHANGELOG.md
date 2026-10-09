@@ -1,5 +1,23 @@
 # @concile/test
 
+## 0.2.0
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/blobstore-fs@0.2.0
+  - @concile/client@0.2.0
+  - @concile/component@0.2.0
+  - @concile/docstore@0.2.0
+  - @concile/docstore-sqlite@0.2.0
+  - @concile/executor@0.2.0
+  - @concile/id-codec@0.2.0
+  - @concile/runtime-embedded@0.2.0
+  - @concile/storage@0.2.0
+  - @concile/sync@0.2.0
+  - @concile/values@0.2.0
+  - @concile/scheduler@0.2.0
+
 ## 0.1.6
 
 ### Patch Changes

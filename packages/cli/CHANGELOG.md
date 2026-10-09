@@ -1,5 +1,38 @@
 # @concile/cli
 
+## 0.2.0
+
+### Minor Changes
+
+- [#49](https://github.com/concile-dev/concile/pull/49) [`0c4fbd3`](https://github.com/concile-dev/concile/commit/0c4fbd3d0d9174949d2d077f7d372d0fc5403cdc) Thanks [@dbjpanda](https://github.com/dbjpanda)! - Add `concile init` and `concile add`: one-command setup for new and existing projects, with starters and components.
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/dashboard@0.2.0
+  - @concile/admin@0.2.0
+  - @concile/blobstore@0.2.0
+  - @concile/blobstore-fs@0.2.0
+  - @concile/blobstore-s3@0.2.0
+  - @concile/codegen@0.2.0
+  - @concile/component@0.2.0
+  - @concile/deploy@0.2.0
+  - @concile/docstore@0.2.0
+  - @concile/docstore-postgres@0.2.0
+  - @concile/docstore-sqlite@0.2.0
+  - @concile/errors@0.2.0
+  - @concile/executor@0.2.0
+  - @concile/id-codec@0.2.0
+  - @concile/objectstore@0.2.0
+  - @concile/objectstore-fs@0.2.0
+  - @concile/objectstore-s3@0.2.0
+  - @concile/query-engine@0.2.0
+  - @concile/receipts@0.2.0
+  - @concile/runtime-embedded@0.2.0
+  - @concile/storage@0.2.0
+  - @concile/sync@0.2.0
+  - @concile/values@0.2.0
+
 ## 0.1.6
 
 ### Patch Changes

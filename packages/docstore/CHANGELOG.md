@@ -1,5 +1,13 @@
 # @concile/docstore
 
+## 0.2.0
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/id-codec@0.2.0
+  - @concile/values@0.2.0
+
 ## 0.1.6
 
 ### Patch Changes
