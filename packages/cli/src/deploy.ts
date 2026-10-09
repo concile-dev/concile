@@ -14,6 +14,7 @@ import { writeGenerated } from "@concile/codegen";
 import { resolveDeploy, loadTarget, NodeSpawner, type Spawner, type DeployContext, DeployError } from "@concile/deploy";
 import { loadFunctionsDir } from "./load-modules";
 import { loadConfig } from "./load-config";
+import { ensureGeneratedStub } from "./generated-stub";
 import { push } from "./push-pipeline";
 import { resolveFunctionsDir, ensureFunctionsDirExists } from "./functions-dir";
 
@@ -172,6 +173,7 @@ export async function deployCommand(args: string[], deps: DeployDeps = {}): Prom
     log: (m) => process.stdout.write(`  ${m}\n`),
     packageApp: async () => ({ files: await packageApp(functionsDir) }),
     codegen: async () => {
+      ensureGeneratedStub(functionsDir, config.components);
       const { generated } = push(await loadFunctionsDir(functionsDir), config.components);
       writeGenerated(generated.files, join(functionsDir, "_generated"));
     },

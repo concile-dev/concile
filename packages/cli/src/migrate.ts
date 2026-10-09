@@ -3,12 +3,13 @@
  * imports, scaffold config, write a divergence report, and regenerate `_generated/`. v1 supports
  * only `--from convex`; other origin backends register into `SOURCES` the same way.
  */
-import { writeFileSync, existsSync, mkdirSync, rmSync, renameSync } from "node:fs";
+import { writeFileSync, existsSync, rmSync, renameSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
-import { writeGenerated, generateServer } from "@concile/codegen";
+import { writeGenerated } from "@concile/codegen";
 import { loadFunctionsDir } from "./load-modules";
 import { loadConfig } from "./load-config";
+import { ensureGeneratedStub } from "./generated-stub";
 import { push } from "./push-pipeline";
 import { resolveSource, type MigrationSource, type ReportEntry } from "./migrate/source";
 import { convexSource } from "./migrate/convex-source";
@@ -184,20 +185,9 @@ export async function migrateCommand(args: string[]): Promise<number> {
 
     const config = await loadConfig(projectRoot);
 
-    // A project migrated straight from Convex source has NEVER had `_generated/` written — its
-    // hand-authored function files (e.g. `notes.ts`) already `import ... from "./_generated/
-    // server"`, so `loadFunctionsDir`'s dynamic import of them needs that file to exist on disk
-    // *before* the real codegen below ever runs. `generateServer`'s output doesn't depend on the
-    // schema (only on composed components), so pre-writing it here is safe — the accurate,
-    // final version (from the fully-loaded project) overwrites this stub a few lines down.
-    if (!existsSync(join(generatedDir, "server.ts"))) {
-      const stub = generateServer(
-        { tables: {}, schemaValidation: false },
-        { components: config.components.map((c) => ({ name: c.name, contextType: c.contextType, serverExports: c.serverExports })) },
-      );
-      mkdirSync(generatedDir, { recursive: true });
-      writeFileSync(join(generatedDir, "server.ts"), stub.content);
-    }
+    // A project migrated straight from Convex source has never had `_generated/` written; its
+    // function files import `./_generated/server`, so stub it before loading (real codegen overwrites).
+    ensureGeneratedStub(migratedDir, config.components);
 
     const loaded = await loadFunctionsDir(migratedDir);
     const { generated } = push(loaded, config.components);

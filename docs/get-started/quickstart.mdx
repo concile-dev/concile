@@ -10,7 +10,7 @@ messages, and a mutation that adds a new one. Then, you will watch the list upda
 you write a new row. It only takes a few minutes, and there are no skipped steps below.
 
 <Callout title="Before you start">
-  You will need **Bun** or **Node.js 22.5+** and a package manager. Your backend will live in a
+  You will need **Bun** or **Node.js 22.18+** and a package manager. Your backend will live in a
   folder called `concile/`. This is just the default name (since everything you import uses
   `@concile/*`), and you can easily change it later using the `--dir` flag.
 </Callout>
@@ -21,30 +21,12 @@ you write a new row. It only takes a few minutes, and there are no skipped steps
 
 ## Install concile
 
-<Tabs items={['npm', 'pnpm', 'bun']}>
-
-```bash tab="npm"
-mkdir my-app && cd my-app && npm init -y
-npm install @concile/values @concile/client
-npm install -D @concile/cli
+```bash
+npx concile init my-app
+cd my-app
 ```
 
-```bash tab="pnpm"
-mkdir my-app && cd my-app && pnpm init
-pnpm add @concile/values @concile/client
-pnpm add -D @concile/cli
-```
-
-```bash tab="bun"
-mkdir my-app && cd my-app && bun init -y
-bun add @concile/values @concile/client
-bun add -d @concile/cli
-```
-
-</Tabs>
-
-`values` gives you the schema and validators, `client` is the browser and Node client, and `cli` is
-the `concile` command you'll run.
+`init` creates the folder and a `concile/` directory with a sample `messages` table, query and mutation. It also installs the packages. Already have an app? Run `npx concile init` inside it instead. To see every option, run `npx concile init --help`.
 
 </Step>
 
@@ -52,7 +34,7 @@ the `concile` command you'll run.
 
 ## Define a schema
 
-Create `concile/schema.ts`. It lists your tables and the shape of each row:
+`init` already wrote `concile/schema.ts`. Here is what is in it. It lists your tables and the shape of each row:
 
 ```ts title="concile/schema.ts"
 import { defineSchema, defineTable, v } from "@concile/values";
@@ -75,7 +57,7 @@ tables](/docs/core-concepts/schema-and-tables).
 
 ## Write a query and a mutation
 
-Create `concile/messages.ts`:
+`init` already wrote `concile/messages.ts`. Here is what is in it:
 
 ```ts title="concile/messages.ts"
 import { v } from "@concile/values";
@@ -97,7 +79,8 @@ export const send = mutation({
 no index of your own.
 
 <Callout type="info">
-  Your editor will flag `./_generated/server` as missing. That's expected. The next step creates it.
+  Did you use `--no-install`? Then nothing is installed yet and `init` skips type generation.
+  Install the packages it lists, then run `npx concile codegen` or `npx concile dev`.
 </Callout>
 
 </Step>
@@ -121,6 +104,9 @@ admin key → 3q2xN7vRkYw8pTzL5mA9cB1dE6fGhJ0u
 
 The admin key is a fresh random value on each run (unless you set `CONCILE_ADMIN_KEY` yourself).
 Yours will differ.
+
+Did `init` give you a starter app? Start it in another terminal with `npm run dev`. Then open it in
+two browser tabs: http://localhost:5173 for React + Vite, http://localhost:3001 for Next.js.
 
 </Step>
 

@@ -40,6 +40,7 @@ import { resolveObjectStore } from "./objectstore-select";
 import { ReplicaWriteForwarder } from "./replica-forward";
 import { loadFunctionsDir } from "./load-modules";
 import { loadConfig } from "./load-config";
+import { ensureGeneratedStub } from "./generated-stub";
 import { push } from "./push-pipeline";
 import { detectRuntime } from "./dev-options";
 import type { ProjectArtifacts, LoadedProject } from "./project";
@@ -1187,8 +1188,9 @@ export async function bootProject(opts: BootProjectOptions): Promise<BootResult>
   // re-introducing a hand-enumerated forward re-opens the silent-drop trap documented above (and
   // `boot-options-forwarding.test.ts` is what fails if you do).
   const { functionsDir, ...forwarded } = opts;
-  const loaded = await loadFunctionsDir(functionsDir);
   const config = await loadConfig(dirname(functionsDir));
+  ensureGeneratedStub(functionsDir, config.components);
+  const loaded = await loadFunctionsDir(functionsDir);
   return bootLoaded({ ...forwarded, loaded, components: config.components });
 }
 

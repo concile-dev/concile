@@ -27,7 +27,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "templates"
   ],
   "scripts": {
     "build": "tsup",
@@ -37,6 +38,7 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
+    "@clack/prompts": "^1.8.1",
     "@concile/admin": "workspace:*",
     "@concile/blobstore": "workspace:*",
     "@concile/blobstore-fs": "workspace:*",
@@ -60,6 +62,7 @@
     "@concile/sync": "workspace:*",
     "@concile/values": "workspace:*",
     "esbuild": "^0.27.0",
+    "magicast": "^0.5.5",
     "ws": "^8.18.0",
     "@concile/dashboard": "workspace:*"
   },
@@ -68,6 +71,7 @@
     "@levischuck/tiny-cbor": "0.2.11",
     "@simplewebauthn/server": "13.3.2",
     "@concile/auth": "workspace:*",
+    "@concile/authz": "workspace:*",
     "@concile/client": "workspace:*",
     "@concile/fleet": "workspace:*",
     "@concile/notifications": "workspace:*",

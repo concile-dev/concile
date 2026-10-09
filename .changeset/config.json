@@ -31,6 +31,7 @@
       "@concile/errors",
       "@concile/executor",
       "concile",
+      "create-concile",
       "@concile/id-codec",
       "@concile/index-key-codec",
       "@concile/objectstore",
@@ -46,7 +47,13 @@
       "@concile/transactor",
       "@concile/values",
       "@concile/vite",
-      "@concile/tui"
+      "@concile/tui",
+      "@concile/auth",
+      "@concile/authz",
+      "@concile/notifications",
+      "@concile/scheduler",
+      "@concile/triggers",
+      "@concile/workflow"
     ]
   ],
   "linked": [],

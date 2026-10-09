@@ -72,11 +72,18 @@ You didn't have to write a websocket server. You didn't write a REST endpoint. Y
 ## Get started in one minute
 
 ```bash
-npm i concile        # or: bun add concile
-npx concile dev      # watches your functions, serves live sync, and boots a dashboard
+npx concile init
 ```
 
-Open up the dashboard and add a row. Watch it appear in your app before your finger even leaves the keyboard.
+Run it in an empty folder to get a starter app, or inside the app you already have. It asks a couple of quick questions, shows every file it will add, and changes nothing until you say yes. Want a new folder? Run `npx concile init my-app`. Then:
+
+```bash
+npx concile dev
+```
+
+If you started from an empty folder, start the starter app in another terminal with `npm run dev`. Open it in two browser tabs (http://localhost:5173 for React + Vite, http://localhost:3001 for Next.js). Type in one. It shows up in the other.
+
+Need the flags for scripts or CI? Run `npx concile init --yes`, or see `npx concile init --help`.
 
 Ready to share it with the world?
 

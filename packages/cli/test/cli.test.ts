@@ -9,6 +9,7 @@ import {
   resolveDevOptions,
   handleHttpRequest,
   startDevServer,
+  runCli,
   type LoadedProject,
 } from "../src/index";
 
@@ -163,5 +164,24 @@ describe("dev options: functions directory", () => {
 
   it("honors an explicit value", () => {
     expect(resolveDevOptions({ functionsDir: "convex" }).functionsDir).toBe("convex");
+  });
+});
+
+describe("init and add are registered", () => {
+  it("help lists init first and add", async () => {
+    const chunks: string[] = [];
+    const orig = process.stdout.write.bind(process.stdout);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (process.stdout as any).write = (c: string) => { chunks.push(String(c)); return true; };
+    try { await runCli(["help"]); } finally { (process.stdout as any).write = orig; }
+    const help = chunks.join("");
+    expect(help.indexOf("init")).toBeLessThan(help.indexOf("dev "));
+    expect(help).toContain("add        Add a component");
+  });
+  it("init --help exits 0", async () => {
+    const orig = process.stdout.write.bind(process.stdout);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (process.stdout as any).write = () => true;
+    try { expect(await runCli(["init", "--help"])).toBe(0); } finally { (process.stdout as any).write = orig; }
   });
 });

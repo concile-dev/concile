@@ -12,6 +12,7 @@ import { CLI_VERSION } from "./version";
 import { loadFunctionsDir } from "./load-modules";
 import { resolveFunctionsDir, ensureFunctionsDirExists } from "./functions-dir";
 import { loadConfig } from "./load-config";
+import { ensureGeneratedStub } from "./generated-stub";
 import { push } from "./push-pipeline";
 import { bootProject, loadDashboard, withStorageModules } from "./boot";
 import { ProcessRuntimeHost } from "./server";
@@ -22,6 +23,7 @@ import { buildCommand } from "./build";
 import { migrateCommand } from "./migrate";
 import { fleetCommand } from "./fleet";
 import { objectstoreCommand } from "./objectstore";
+import { loadEnvFiles } from "./env-files";
 
 function parseFlags(args: string[]): DevOptions {
   const out: DevOptions = {};
@@ -42,6 +44,8 @@ function parseFlags(args: string[]): DevOptions {
 
 export async function devCommand(args: string[]): Promise<number> {
   const flags = parseFlags(args);
+  // Before anything reads the environment: .env.local, then .env, never overriding a set variable.
+  loadEnvFiles(flags.functionsDir ? dirname(resolve(process.cwd(), flags.functionsDir)) : process.cwd());
   const { functionsDir, projectRoot } = await resolveFunctionsDir(flags.functionsDir, process.cwd());
   if (!ensureFunctionsDirExists(functionsDir)) {
     return 1;
@@ -227,7 +231,8 @@ export async function devCommand(args: string[]): Promise<number> {
   });
 }
 
-export async function codegenCommand(args: string[]): Promise<number> {
+/** `quiet` skips the "generated ..." line; `concile init` uses it so `--json` stdout stays one JSON document. */
+export async function codegenCommand(args: string[], { quiet = false }: { quiet?: boolean } = {}): Promise<number> {
   const flags = parseFlags(args);
   // Same two-step resolve as `devCommand`: consult `functionsDir` in concile.config.ts when
   // `--dir` isn't given, instead of `resolveDevOptions`'s own bare `?? DEFAULT_FUNCTIONS_DIR`
@@ -236,11 +241,12 @@ export async function codegenCommand(args: string[]): Promise<number> {
   const { functionsDir } = await resolveFunctionsDir(flags.functionsDir, process.cwd());
   if (!ensureFunctionsDirExists(functionsDir)) return 1;
   const opts = resolveDevOptions({ ...flags, functionsDir });
-  const loaded = await loadFunctionsDir(opts.functionsDir);
   const config = await loadConfig(dirname(opts.functionsDir));
+  ensureGeneratedStub(opts.functionsDir, config.components);
+  const loaded = await loadFunctionsDir(opts.functionsDir);
   const { generated } = push(loaded, config.components);
   writeGenerated(generated.files, join(opts.functionsDir, "_generated"));
-  process.stdout.write(`generated ${opts.functionsDir}/_generated\n`);
+  if (!quiet) process.stdout.write(`generated ${opts.functionsDir}/_generated\n`);
   return 0;
 }
 
@@ -252,6 +258,8 @@ function printHelp(): void {
       "Usage: concile <command> [options]",
       "",
       "Commands:",
+      "  init       Set up Concile here, or in a new folder: concile init [folder]",
+      "  add        Add a component: concile add <auth|authz|notifications|scheduler|triggers|workflow>",
       "  dev        Run the engine with hot reload + dashboard",
       "  serve      Run the production server (requires CONCILE_ADMIN_KEY)",
       "  deploy     Deploy the app: --target <serve|cloudflare|docker|railway|fly|aws> --env <name> [--dry-run] [--check]",
@@ -274,6 +282,15 @@ function printHelp(): void {
 export async function runCli(argv: string[]): Promise<number> {
   const [cmd, ...rest] = argv;
   switch (cmd) {
+    // Lazy: dev and serve never load @clack/prompts or magicast.
+    case "init": {
+      const { initCommand } = await import("./init/command");
+      return initCommand(rest);
+    }
+    case "add": {
+      const { addCommand } = await import("./init/command");
+      return addCommand(rest);
+    }
     case "dev":
       return devCommand(rest);
     case "serve":
