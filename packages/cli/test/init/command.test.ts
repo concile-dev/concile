@@ -61,6 +61,54 @@ describe("initCommand (non-interactive)", () => {
     expect(readdirSync(root)).toEqual(["notes.txt"]);
   });
 
+  it("loose folder holding a project: points at it and never suggests a taken name", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cmd3b-"));
+    mkdirSync(join(root, "my-app"));
+    writeFileSync(join(root, "my-app", "package.json"), "{}");
+    writeFileSync(join(root, ".DS_Store"), "");
+    const out: string[] = [];
+    expect(await initCommand([], deps(root, out))).toBe(1);
+    const text = out.join("");
+    expect(text).toContain("To set up my-app:  npx concile init my-app");
+    expect(text).toContain("To start a new app:  npx concile init my-app-2");
+  });
+
+  it("loose folder, interactive: picking a child project runs init inside it", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cmd3c-"));
+    mkdirSync(join(root, "web"));
+    writeFileSync(join(root, "web", "package.json"), JSON.stringify({ name: "web", devDependencies: { vite: "6" } }));
+    writeFileSync(join(root, "notes.txt"), "hi");
+    let asked: { projects: string[]; suggested: string } | null = null;
+    const ui = {
+      ...plainPrompter(() => {}),
+      askLoose: async (projects: string[], suggested: string) => { asked = { projects, suggested }; return "web"; },
+      askRecommended: async () => true,
+      askStartDev: async () => false,
+    };
+    const d = { ...deps(root, []), stdinTTY: true, stdoutTTY: true, prompter: ui };
+    expect(await initCommand(["--no-install"], d)).toBe(0);
+    expect(asked).toEqual({ projects: ["web"], suggested: "my-app" });
+    expect(existsSync(join(root, "web", "concile.config.ts"))).toBe(true);
+    expect(existsSync(join(root, "concile.config.ts"))).toBe(false);
+  });
+
+  it("loose folder, interactive: a new name creates the app in that folder", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cmd3d-"));
+    writeFileSync(join(root, "notes.txt"), "hi");
+    const ui = {
+      ...plainPrompter(() => {}),
+      askLoose: async () => "fresh",
+      askRecommended: async () => false,
+      askStarter: async () => "none" as const,
+      askComponents: async () => [],
+      askDb: async () => ({ db: "sqlite" as const, url: null }),
+      askStartDev: async () => false,
+    };
+    const d = { ...deps(root, []), stdinTTY: true, stdoutTTY: true, prompter: ui };
+    expect(await initCommand(["--no-install"], d)).toBe(0);
+    expect(existsSync(join(root, "fresh", "concile", "schema.ts"))).toBe(true);
+  });
+
   it("Convex project points to concile migrate and changes nothing", async () => {
     const root = mkdtempSync(join(tmpdir(), "cmd4-"));
     writeFileSync(join(root, "package.json"), "{}");

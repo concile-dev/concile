@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { CLI_VERSION } from "../version";
-import { compareVersions, detect, type PackageManager, type ProjectInfo } from "./detect";
+import { childProjects, compareVersions, detect, freeFolderName, type PackageManager, type ProjectInfo } from "./detect";
 import { loadConfig } from "../load-config";
 import { planInit, previewLines, fsView, type Action, type Answers } from "./plan";
 import { ApplyError, applyPlan, defaultApplyDeps, type ApplyDeps, type ApplyResult } from "./apply";
@@ -105,6 +105,9 @@ function installHint(pm: PackageManager, packages: string[]): string {
   return `Packages were not installed. Install them, then run: npx concile codegen\n  ${pm} ${verb} ${packages.join(" ")}`;
 }
 
+/** Quotes a path for a copy-pasteable command when it holds spaces or shell characters. */
+const shellArg = (s: string) => (/^[\w./@+-]+$/.test(s) ? s : `"${s}"`);
+
 function formatError(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
@@ -158,7 +161,26 @@ async function runInit(args: string[], d: InitDeps, nested: boolean): Promise<nu
   if (flags.pm) info = { ...info, packageManager: flags.pm };
 
   if (info.kind === "loose") {
-    return stop("This folder has files but no package.json, so it doesn't look like a project.\nTo start a new app, run:  npx concile init my-app");
+    // Never suggest a folder that already exists: point at child projects, or at a free name.
+    const projects = childProjects(root);
+    const suggested = freeFolderName(root);
+    const at = (dir: string) => relative(d.cwd, resolve(root, dir)) || ".";
+    if (interactive) {
+      let dir: string;
+      try {
+        dir = await ui.askLoose(projects, suggested, (name) => existsSync(resolve(root, name)));
+      } catch (e) {
+        if (e instanceof Cancelled) return 0;
+        throw e;
+      }
+      const rest = flags.folder === null ? args : args.filter((a) => a !== flags.folder);
+      return runInit([at(dir), ...rest], { ...d, prompter: ui }, true);
+    }
+    const lines = [
+      ...projects.map((p) => `To set up ${p}:  npx concile init ${shellArg(at(p))}`),
+      `To start a new app:  npx concile init ${shellArg(at(suggested))}`,
+    ];
+    return stop(`This folder has files but no package.json, so it doesn't look like a project.\n${lines.join("\n")}`, { projects, suggested });
   }
   if (info.kind === "convex") {
     if (!interactive) return stop("This looks like a Convex project. Move it to Concile with:  npx concile migrate");

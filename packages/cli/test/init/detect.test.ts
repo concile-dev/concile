@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { detect, compareVersions, packageNameFor } from "../../src/init/detect";
+import { detect, compareVersions, packageNameFor, childProjects, freeFolderName } from "../../src/init/detect";
 
 function project(files: Record<string, string>): string {
   const root = mkdtempSync(join(tmpdir(), "detect-"));
@@ -108,5 +108,23 @@ describe("packageNameFor", () => {
     expect(packageNameFor("_.Hidden Thing!")).toBe("hidden-thing");
     expect(packageNameFor("ok-name")).toBe("ok-name");
     expect(packageNameFor("...")).toBe("my-app");
+  });
+});
+
+describe("loose folder helpers", () => {
+  it("childProjects lists subfolders with a package.json, skipping dot folders and node_modules", () => {
+    const root = mkdtempSync(join(tmpdir(), "child-"));
+    for (const d of ["b-app", "a-app", "node_modules", ".hidden", "plain"]) mkdirSync(join(root, d));
+    for (const d of ["b-app", "a-app", "node_modules", ".hidden"]) writeFileSync(join(root, d, "package.json"), "{}");
+    expect(childProjects(root)).toEqual(["a-app", "b-app"]);
+    expect(childProjects(join(root, "missing"))).toEqual([]);
+  });
+
+  it("freeFolderName skips names that exist", () => {
+    const root = mkdtempSync(join(tmpdir(), "free-"));
+    expect(freeFolderName(root)).toBe("my-app");
+    mkdirSync(join(root, "my-app"));
+    writeFileSync(join(root, "my-app-2"), "");
+    expect(freeFolderName(root)).toBe("my-app-3");
   });
 });
