@@ -1,5 +1,14 @@
 # concile-example-optimistic-demo
 
+## 0.0.7
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/errors@0.2.2
+  - @concile/executor@0.2.2
+  - @concile/values@0.2.2
+
 ## 0.0.6
 
 ### Patch Changes

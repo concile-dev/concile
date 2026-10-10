@@ -1,5 +1,12 @@
 # @concile/blobstore-s3
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/blobstore@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes

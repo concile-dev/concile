@@ -1,5 +1,15 @@
 # concile-example-chat
 
+## 0.0.7
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/component@0.2.2
+  - @concile/executor@0.2.2
+  - @concile/values@0.2.2
+  - @concile/triggers@0.2.2
+
 ## 0.0.6
 
 ### Patch Changes
