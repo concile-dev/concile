@@ -1,5 +1,12 @@
 # @concile/blobstore-fs
 
+## 0.2.0
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/blobstore@0.2.0
+
 ## 0.1.6
 
 ### Patch Changes
