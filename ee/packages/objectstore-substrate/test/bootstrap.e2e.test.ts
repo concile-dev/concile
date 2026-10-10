@@ -11,7 +11,7 @@
  * asserts byte-for-byte parity — plus the segment seqno chain is dense (no gaps a bootstrap could
  * silently skip over).
  *
- * Runs against `objectstore-fs` (always-on, no docker) AND, gated, against a real `minio/minio`
+ * Runs against `objectstore-fs` (always-on, no docker) AND, gated, against a real `pgsty/minio`
  * container — mirrors `packages/objectstore-s3/test/s3.conformance.test.ts`'s lifecycle. The default
  * `bun run --filter @concile/objectstore-substrate test` must stay green with the MinIO variant
  * skipped (no docker/env required).
@@ -183,7 +183,7 @@ async function startMinio(): Promise<string> {
     `MINIO_ROOT_PASSWORD=${MINIO_PASS}`,
     "-p",
     "127.0.0.1::9000",
-    "minio/minio",
+    "pgsty/minio",
     "server",
     "/data",
   ]);

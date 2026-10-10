@@ -21,7 +21,7 @@
  *      talked to the writer process — fires with the writer's new row.
  *   4. `readGlobalFrontier` over the bucket has advanced to the writer's frontier.
  *
- * Runs against `objectstore-fs` (always-on, no docker) AND, gated, against a real `minio/minio`
+ * Runs against `objectstore-fs` (always-on, no docker) AND, gated, against a real `pgsty/minio`
  * container — mirrors `bootstrap.e2e.test.ts`'s lifecycle. The default
  * `bun run --filter @concile/objectstore-substrate test` must stay green with the MinIO variant
  * skipped (no docker/env required).
@@ -290,7 +290,7 @@ async function startMinio(): Promise<string> {
     `MINIO_ROOT_PASSWORD=${MINIO_PASS}`,
     "-p",
     "127.0.0.1::9000",
-    "minio/minio",
+    "pgsty/minio",
     "server",
     "/data",
   ]);
