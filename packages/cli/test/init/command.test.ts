@@ -326,12 +326,12 @@ describe("final fix wave", () => {
     expect(out2.join("")).toContain("Packages were not installed");
   });
 
-  it("I3: a starter tells the user to run the frontend, with the package manager's command", async () => {
+  it("I3: a starter tells the user one command starts the app and the backend", async () => {
     const tpl = mkdtempSync(join(tmpdir(), "fw-tpl-"));
     for (const t of ["vite", "next"]) { mkdirSync(join(tpl, t)); writeFileSync(join(tpl, t, "package.json"), "{}"); }
     for (const [starter, pm, line] of [
-      ["vite", "npm", "In another terminal: npm run dev, then open http://localhost:5173 in two tabs"],
-      ["next", "pnpm", "In another terminal: pnpm dev, then open http://localhost:3001 in two tabs"],
+      ["vite", "npm", "npm run dev starts the app and the backend together. Open http://localhost:5173 in two tabs."],
+      ["next", "pnpm", "pnpm dev starts the app and the backend together. Open http://localhost:3001 in two tabs."],
     ] as const) {
       const root = mkdtempSync(join(tmpdir(), "fw-start-"));
       const out: string[] = [];

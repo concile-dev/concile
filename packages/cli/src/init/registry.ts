@@ -97,6 +97,8 @@ export type StarterId = "vite" | "next" | "none";
 export const CORE_PACKAGES: readonly string[] = ["concile", "@concile/values", "@concile/client", "@concile/executor", "@concile/id-codec", "@concile/component"];
 
 export const SYNC_URL = "ws://127.0.0.1:3000/api/sync";
+/** Extra packages a starter needs. The Vite starter runs the backend through the @concile/vite plugin. */
+export const STARTER_PACKAGES: Record<StarterId, string[]> = { vite: ["@concile/vite"], next: [], none: [] };
 /** Node strips TypeScript types by default from 22.18.0, and init always writes concile.config.ts. */
 export const MIN_NODE = "22.18.0";
 

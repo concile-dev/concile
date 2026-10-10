@@ -24,6 +24,7 @@ import { migrateCommand } from "./migrate";
 import { fleetCommand } from "./fleet";
 import { objectstoreCommand } from "./objectstore";
 import { loadEnvFiles } from "./env-files";
+import { runAlongside } from "./run-alongside";
 
 function parseFlags(args: string[]): DevOptions {
   const out: DevOptions = {};
@@ -38,6 +39,7 @@ function parseFlags(args: string[]): DevOptions {
     else if (a === "--storage-bucket" && args[i + 1]) out.storageBucket = args[++i];
     else if (a === "--storage-endpoint" && args[i + 1]) out.storageEndpoint = args[++i];
     else if (a === "--no-ui") out.noUi = true;
+    else if (a === "--run" && args[i + 1]) out.run = args[++i];
   }
   return out;
 }
@@ -93,6 +95,7 @@ export async function devCommand(args: string[]): Promise<number> {
       ["Admin key", `${adminKey.slice(0, 7)}…${adminKey.slice(-4)} ${ui.dim("(full key: CONCILE_ADMIN_KEY or plain output)")}`],
     ];
     if (opts.webDir) rows.push(["Web UI", ui.cyan(`${server.url}/`)]);
+    if (flags.run) rows.push(["App", `${flags.run} ${ui.dim("(output below, prefixed app │)")}`]);
     process.stdout.write(`\n${ui.banner("dev", CLI_VERSION)}\n\n${ui.keyValues(rows)}\n\n`);
     process.stdout.write(
       ui.status("ok", `${fnCount} functions · ${tableCount} tables · ${componentCount} components`) + "\n",
@@ -105,6 +108,20 @@ export async function devCommand(args: string[]): Promise<number> {
     if (!dashboard) process.stdout.write(`  (dashboard SPA not built — run \`bun run --filter @concile/dashboard build\`)\n`);
     process.stdout.write(`admin key → ${adminKey}\n`);
     if (opts.webDir) process.stdout.write(`web UI → ${server.url}/\n`);
+    if (flags.run) process.stdout.write(`app → ${flags.run}\n`);
+  }
+
+  // --run: the frontend dev server, started after the backend is listening so it can connect at once.
+  if (flags.run) {
+    const app = runAlongside(flags.run, { cwd: projectRoot, write: (l) => process.stdout.write(l) });
+    void app.exited.then((code) => process.stdout.write(`app exited (code ${code}). The backend keeps running.\n`));
+    for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
+      process.once(sig, () => {
+        app.stop();
+        process.exit(sig === "SIGINT" ? 130 : 143);
+      });
+    }
+    process.once("exit", () => app.stop());
   }
 
   // The live module map, refreshed on every hot reload — the runner reads each
@@ -120,7 +137,7 @@ export async function devCommand(args: string[]): Promise<number> {
   let tuiEmit: TuiEmit | null = null;
   const wantTui =
     process.env.CONCILE_TUI === "1" ||
-    (ui.styled && !flags.noUi && process.env.CONCILE_TUI !== "0" && typeof (globalThis as { Bun?: unknown }).Bun !== "undefined");
+    (ui.styled && !flags.noUi && !flags.run && process.env.CONCILE_TUI !== "0" && typeof (globalThis as { Bun?: unknown }).Bun !== "undefined");
   if (wantTui) {
     try {
       const { attachTui } = await import("./tui-bridge");
@@ -273,6 +290,7 @@ function printHelp(): void {
       "  help       Show this help",
       "",
       "Options: --port <n>  --ip <addr>  --dir <functionsDir>  --data <dbPath>  --database-url <url>",
+      "Dev:     --run \"<cmd>\"  also start your frontend, e.g. --run \"next dev -p 3001\"   --no-ui",
       "Deploy:  --target <name>  --env <name>  --dry-run  --check   (default target: serve; default env: production)",
       "",
     ].join("\n"),

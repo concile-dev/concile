@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { packageNameFor, type ProjectInfo } from "./detect";
-import { AGENTS_BLOCK, CORE_PACKAGES, FRAMEWORKS, SAMPLE_MESSAGES, SAMPLE_SCHEMA, SYNC_URL, componentById, withRequirements, type ComponentId, type StarterId } from "./registry";
+import { AGENTS_BLOCK, CORE_PACKAGES, FRAMEWORKS, SAMPLE_MESSAGES, SAMPLE_SCHEMA, STARTER_PACKAGES, SYNC_URL, componentById, withRequirements, type ComponentId, type StarterId } from "./registry";
 import { envHasKey, gitignoreCovers, gitignoreNegates, hasBlock } from "./text-edit";
 import { renderConfig } from "./config-edit";
 
@@ -62,7 +62,9 @@ export function planInit(info: ProjectInfo, a: Answers, fs: FsView): Action[] {
 
   const envText = fs.read(".env.local") ?? "";
   const keys: { key: string; value: string; comment?: string }[] = [];
-  if (!envHasKey(envText, `${prefix}CONCILE_URL`)) keys.push({ key: `${prefix}CONCILE_URL`, value: SYNC_URL });
+  // The Vite starter reaches the backend on its own address (the @concile/vite plugin), so it needs no URL.
+  const sameOrigin = usingStarter && a.starter === "vite";
+  if (!sameOrigin && !envHasKey(envText, `${prefix}CONCILE_URL`)) keys.push({ key: `${prefix}CONCILE_URL`, value: SYNC_URL });
   if (a.db === "postgres" && !envHasKey(envText, "CONCILE_DATABASE_URL")) keys.push({ key: "CONCILE_DATABASE_URL", value: a.databaseUrl ?? "", comment: "Postgres connection string (leave empty to use SQLite)" });
   for (const id of components) for (const k of componentById(id).envKeys) if (!envHasKey(envText, k.key)) keys.push({ key: k.key, value: "", comment: k.comment });
   if (keys.length) acts.push({ kind: "env", keys });
@@ -79,7 +81,7 @@ export function planInit(info: ProjectInfo, a: Answers, fs: FsView): Action[] {
     .filter((f) => !hasBlock(fs.read(f) ?? "", AGENTS_BLOCK));
   if (agentFiles.length) acts.push({ kind: "agents", files: agentFiles });
 
-  const wanted = [...CORE_PACKAGES, ...components.map((c) => componentById(c).pkg)];
+  const wanted = [...CORE_PACKAGES, ...(usingStarter ? STARTER_PACKAGES[a.starter as StarterId] : []), ...components.map((c) => componentById(c).pkg)];
   const packages = wanted.filter((p) => !info.installedPackages.includes(p));
   if (packages.length || usingStarter) acts.push({ kind: "install", packages, full: usingStarter });
 

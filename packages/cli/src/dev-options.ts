@@ -20,6 +20,8 @@ export interface DevOptions {
   storageEndpoint?: string;
   /** `--no-ui`: opt out of the interactive terminal dashboard in `dev`. */
   noUi?: boolean;
+  /** `--run "<cmd>"`: a frontend dev command to run next to the backend (one command starts both). */
+  run?: string;
 }
 
 export interface ResolvedDevOptions {

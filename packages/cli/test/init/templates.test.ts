@@ -38,9 +38,15 @@ describe("templates", () => {
     const src = readFileSync(join(tpl, "next", "app", "providers.tsx"), "utf8");
     expect(src).toMatch(/return \(\) => \{[^}]*\.close\(\)/);
   });
-  it("next runs on port 3001 (concile dev owns 3000) and is an ES module package", () => {
+  it("next: one dev script runs concile dev and Next on 3001 (concile owns 3000), as an ES module package", () => {
     const pj = JSON.parse(readFileSync(join(tpl, "next", "package.json"), "utf8"));
-    expect(pj.scripts.dev).toBe("next dev -p 3001");
+    expect(pj.scripts.dev).toBe('concile dev --run "next dev -p 3001"');
     expect(pj.type).toBe("module");
+  });
+
+  it("vite: the @concile/vite plugin starts the backend with vite, and the client defaults to the page's address", () => {
+    expect(readFileSync(join(tpl, "vite", "vite.config.ts"), "utf8")).toMatch(/plugins: \[react\(\), concile\(\)\]/);
+    expect(JSON.parse(readFileSync(join(tpl, "vite", "package.json"), "utf8")).scripts.dev).toBe("vite");
+    expect(readFileSync(join(tpl, "vite", "src", "main.tsx"), "utf8")).toContain("${location.host}/api/sync");
   });
 });
