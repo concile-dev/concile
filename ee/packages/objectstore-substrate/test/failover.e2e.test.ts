@@ -28,7 +28,7 @@
  *     byte-identically — asserted doc-by-doc against an independently-tracked expected map (not by
  *     trusting B's own view, which could share a bug with the bootstrap it's being compared against).
  *
- * Runs against `objectstore-fs` (always-on, no docker) AND, gated, against a real `minio/minio`
+ * Runs against `objectstore-fs` (always-on, no docker) AND, gated, against a real `pgsty/minio`
  * container — mirrors `bootstrap.e2e.test.ts`'s and `snapshot-gc.e2e.test.ts`'s harness shape exactly.
  */
 import { spawnSync } from "node:child_process";
@@ -263,7 +263,7 @@ async function startMinio(): Promise<string> {
     `MINIO_ROOT_PASSWORD=${MINIO_PASS}`,
     "-p",
     "127.0.0.1::9000",
-    "minio/minio",
+    "pgsty/minio",
     "server",
     "/data",
   ]);
