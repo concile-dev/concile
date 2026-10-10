@@ -13,6 +13,8 @@ export interface Prompter {
   confirmApply(lines: string[]): Promise<boolean>;
   askStartDev(): Promise<boolean>;
   askMigrate(): Promise<boolean>;
+  /** A folder with files but no package.json: set up a project inside it, or create a new app folder. */
+  askLoose(projects: string[], suggested: string, taken: (name: string) => boolean): Promise<string>;
   info(msg: string): void;
   warn(msg: string): void;
   step(msg: string): { done(msg: string): void; fail(msg: string): void };
@@ -127,6 +129,31 @@ export function clackPrompter(
     async askMigrate() {
       return check(await p.confirm({ message: "This looks like a Convex project. Run `concile migrate` now?", initialValue: true }));
     },
+    async askLoose(projects, suggested, taken) {
+      const NEW = "\0new";
+      if (projects.length) {
+        const pick = check(
+          await p.select({
+            message: "This folder is not a project. What should get Concile?",
+            options: [...projects.map((d) => ({ value: d, label: `${d}/`, hint: "existing project" })), { value: NEW, label: "A new app in a new folder" }],
+          }),
+        );
+        if (pick !== NEW) return pick;
+      }
+      return check(
+        await p.text({
+          message: "Name the new app folder",
+          initialValue: suggested,
+          validate: (v) => {
+            const name = (v ?? "").trim();
+            if (!name) return "Type a folder name.";
+            if (/[\\/]/.test(name)) return "Use a plain folder name, without slashes.";
+            if (taken(name)) return `${name} already exists. Pick another name.`;
+            return undefined;
+          },
+        }),
+      ).trim();
+    },
     info: (m) => p.log.info(m),
     warn: (m) => p.log.warn(m),
     step(msg) {
@@ -153,6 +180,7 @@ export function plainPrompter(write: (s: string) => void): Prompter {
     askDb: never,
     askStartDev: never,
     askMigrate: never,
+    askLoose: never,
     async confirmApply() {
       return true;
     },

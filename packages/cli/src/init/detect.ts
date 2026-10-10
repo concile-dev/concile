@@ -28,6 +28,23 @@ const IGNORED = new Set([".git", ".DS_Store", "Thumbs.db", ".idea", ".vscode", "
 const IGNORED_PREFIXES = [/^readme/i, /^license/i, /^licence/i];
 const ignoredEntry = (e: string) => IGNORED.has(e) || IGNORED_PREFIXES.some((re) => re.test(e));
 
+/** Direct subfolders of `root` that hold a package.json: the projects a loose folder can point to. */
+export function childProjects(root: string): string[] {
+  if (!existsSync(root)) return [];
+  return readdirSync(root, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules" && existsSync(join(root, e.name, "package.json")))
+    .map((e) => e.name)
+    .sort();
+}
+
+/** `base`, or `base-2`, `base-3`... : the first name that does not exist yet in `root`. */
+export function freeFolderName(root: string, base = "my-app"): string {
+  for (let n = 1; ; n++) {
+    const name = n === 1 ? base : `${base}-${n}`;
+    if (!existsSync(join(root, name))) return name;
+  }
+}
+
 /** A valid npm package name from a folder name: "My App" -> "my-app". */
 export function packageNameFor(folder: string): string {
   const name = folder
