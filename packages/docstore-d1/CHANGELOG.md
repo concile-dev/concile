@@ -1,5 +1,12 @@
 # @concile/docstore-d1
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/values@0.2.1
+
 ## 0.2.0
 
 ### Patch Changes

@@ -1,5 +1,19 @@
 # @concile/fleet
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/docstore@0.2.1
+  - @concile/docstore-postgres@0.2.1
+  - @concile/docstore-sqlite@0.2.1
+  - @concile/errors@0.2.1
+  - @concile/id-codec@0.2.1
+  - @concile/index-key-codec@0.2.1
+  - @concile/runtime-embedded@0.2.1
+  - @concile/values@0.2.1
+
 ## 0.2.0
 
 ### Patch Changes

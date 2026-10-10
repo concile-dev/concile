@@ -1,5 +1,36 @@
 # @concile/cli
 
+## 0.2.1
+
+### Patch Changes
+
+- [#53](https://github.com/concile-dev/concile/pull/53) [`da40c16`](https://github.com/concile-dev/concile/commit/da40c168a0978f3fa8ee57df3a511da4e146c57a) Thanks [@dbjpanda](https://github.com/dbjpanda)! - `concile init` in a folder with files but no package.json now asks what to set up: a project inside it, or a new app folder. It never suggests a folder name that is already taken.
+
+- Updated dependencies []:
+  - @concile/dashboard@0.2.1
+  - @concile/admin@0.2.1
+  - @concile/blobstore@0.2.1
+  - @concile/blobstore-fs@0.2.1
+  - @concile/blobstore-s3@0.2.1
+  - @concile/codegen@0.2.1
+  - @concile/component@0.2.1
+  - @concile/deploy@0.2.1
+  - @concile/docstore@0.2.1
+  - @concile/docstore-postgres@0.2.1
+  - @concile/docstore-sqlite@0.2.1
+  - @concile/errors@0.2.1
+  - @concile/executor@0.2.1
+  - @concile/id-codec@0.2.1
+  - @concile/objectstore@0.2.1
+  - @concile/objectstore-fs@0.2.1
+  - @concile/objectstore-s3@0.2.1
+  - @concile/query-engine@0.2.1
+  - @concile/receipts@0.2.1
+  - @concile/runtime-embedded@0.2.1
+  - @concile/storage@0.2.1
+  - @concile/sync@0.2.1
+  - @concile/values@0.2.1
+
 ## 0.2.0
 
 ### Minor Changes
