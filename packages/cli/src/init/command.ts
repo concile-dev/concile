@@ -18,7 +18,8 @@ export interface InitDeps {
   write: (s: string) => void;
   prompter: Prompter | null;
   apply: ApplyDeps;
-  startDev: (root: string) => Promise<number>;
+  /** Starts the dev server. `script` set: run the project's dev script (a starter: backend + app). */
+  startDev: (root: string, script?: { pm: PackageManager }) => Promise<number>;
   /** Runs `concile migrate` on a Convex project at `root`. */
   migrate: (root: string) => Promise<number>;
   nodeVersion?: string;
@@ -33,7 +34,16 @@ function defaults(): InitDeps {
     write: (s) => process.stdout.write(s),
     prompter: null,
     apply: defaultApplyDeps(),
-    startDev: async (root) => {
+    startDev: async (root, script) => {
+      if (script) {
+        const [cmd, ...rest] = RUN_DEV[script.pm].split(" ");
+        const { spawn } = await import("node:child_process");
+        const child = spawn(cmd!, rest, { cwd: root, stdio: "inherit", shell: process.platform === "win32" });
+        return new Promise<number>((done) => {
+          child.on("error", () => done(1));
+          child.on("exit", (code) => done(code ?? 0));
+        });
+      }
       process.chdir(root);
       // Dynamic import: cli.ts imports this file.
       const { devCommand } = await import("../cli");
@@ -103,6 +113,16 @@ const NEXT_PORT_NOTE = "concile dev uses port 3000. Run Next on another port, e.
 function installHint(pm: PackageManager, packages: string[]): string {
   const verb = pm === "npm" ? "install" : "add";
   return `Packages were not installed. Install them, then run: npx concile codegen\n  ${pm} ${verb} ${packages.join(" ")}`;
+}
+
+/** For an existing app: how to start the frontend and the backend with one command. */
+function oneCommandTip(framework: string, pm: PackageManager): string | null {
+  if (framework === "vite") {
+    return `To start the backend with vite too: ${pm === "npm" ? "npm install -D" : `${pm} add -D`} @concile/vite, add concile() from "@concile/vite" to the plugins in vite.config, and set VITE_CONCILE_URL=ws://localhost:5173/api/sync in .env.local.`;
+  }
+  if (framework === "next") return `To start both with one command: npx concile dev --run "next dev -p 3001"`;
+  if (framework === "sveltekit" || framework === "astro") return `To start both with one command: npx concile dev --run "${RUN_DEV[pm]}"`;
+  return null;
 }
 
 /** Quotes a path for a copy-pasteable command when it holds spaces or shell characters. */
@@ -303,8 +323,10 @@ async function runInit(args: string[], d: InitDeps, nested: boolean): Promise<nu
 
   const fw = FRAMEWORKS.find((f) => f.id === (answers.starter && answers.starter !== "none" ? answers.starter : info.framework));
   const cd = flags.folder ? `cd ${flags.folder} && ` : "";
+  const starter = actions.find((a) => a.kind === "copyTemplate");
+  const runDev = starter ? `${cd}${RUN_DEV[info.packageManager]}` : `${cd}npx concile dev`;
   if (flags.json) {
-    d.write(JSON.stringify({ ok: true, root, answers: redactAnswers(answers), done: result.done, manual: result.manual, next: notInstalled ?? `${cd}npx concile dev` }));
+    d.write(JSON.stringify({ ok: true, root, answers: redactAnswers(answers), done: result.done, manual: result.manual, next: notInstalled ?? runDev }));
     return 0;
   }
   for (const m of result.manual) ui.warn(m);
@@ -318,14 +340,15 @@ async function runInit(args: string[], d: InitDeps, nested: boolean): Promise<nu
   if (info.kind !== "empty" && fw && fw.id !== "node") {
     const portNote = fw.id === "next" ? `\n${NEXT_PORT_NOTE}` : "";
     ui.info(`Connect your app (${fw.snippetFile}), using ${fw.envPrefix}CONCILE_URL from .env.local:\n${fw.snippet}${portNote}`);
+    const tip = oneCommandTip(fw.id, info.packageManager);
+    if (tip) ui.info(tip);
   }
   if (notInstalled) {
     ui.outro(notInstalled);
     return 0;
   }
-  const starter = actions.find((a) => a.kind === "copyTemplate");
   if (starter && starter.kind === "copyTemplate") {
-    ui.info(`In another terminal: ${cd}${RUN_DEV[info.packageManager]}, then open http://localhost:${STARTER_PORT[starter.template]} in two tabs`);
+    ui.info(`${runDev} starts the app and the backend together. Open http://localhost:${STARTER_PORT[starter.template]} in two tabs.`);
   }
   if (interactive) {
     let start = false;
@@ -334,9 +357,9 @@ async function runInit(args: string[], d: InitDeps, nested: boolean): Promise<nu
     } catch (e) {
       if (!(e instanceof Cancelled)) throw e;
     }
-    if (start) return d.startDev(root);
+    if (start) return d.startDev(root, starter ? { pm: info.packageManager } : undefined);
   }
-  ui.outro(`Next: ${cd}npx concile dev`);
+  ui.outro(`Next: ${runDev}`);
   return 0;
 }
 

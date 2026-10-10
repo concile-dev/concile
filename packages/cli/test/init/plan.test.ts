@@ -26,8 +26,18 @@ describe("planInit", () => {
   it("empty folder with vite starter copies the template and runs a full install", () => {
     const acts = planInit(info({ kind: "empty", framework: null }), { ...answers, starter: "vite" }, view({}));
     expect(acts[0]).toMatchObject({ kind: "copyTemplate", template: "vite" });
-    expect(acts.find((a) => a.kind === "install")).toMatchObject({ full: true });
-    expect(acts.find((a) => a.kind === "env")).toMatchObject({ keys: [{ key: "VITE_CONCILE_URL" }] });
+    const install = acts.find((a) => a.kind === "install");
+    expect(install).toMatchObject({ full: true });
+    // The plugin serves the backend on the app's own address: installed, and no URL in .env.local.
+    expect(install && install.kind === "install" && install.packages).toContain("@concile/vite");
+    expect(acts.some((a) => a.kind === "env" && a.keys.some((k) => k.key === "VITE_CONCILE_URL"))).toBe(false);
+  });
+
+  it("next starter still gets NEXT_PUBLIC_CONCILE_URL and no vite plugin", () => {
+    const acts = planInit(info({ kind: "empty", framework: null }), { ...answers, starter: "next" }, view({}));
+    expect(acts.find((a) => a.kind === "env")).toMatchObject({ keys: [{ key: "NEXT_PUBLIC_CONCILE_URL" }] });
+    const install = acts.find((a) => a.kind === "install");
+    expect(install && install.kind === "install" && install.packages).not.toContain("@concile/vite");
   });
 
   it("is idempotent: a fully set-up project plans nothing", async () => {

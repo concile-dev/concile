@@ -66,6 +66,8 @@ Here is a look at every flag `concile dev` accepts:
 | `--database-url <url>` | unset | Takes a `postgres://` or `postgresql://` connection string. When this is set, concile uses Postgres instead of SQLite; see [Postgres](/docs/deploy/postgres) for more. It can also be read from `CONCILE_DATABASE_URL`, though the flag takes priority. |
 | `--storage-bucket <name>` | unset | Selects the S3-compatible file storage backend (using a bucket name). If left unset, it uses local filesystem storage under `<data dir>/storage`. It can also be read from `CONCILE_STORAGE_BUCKET`. |
 | `--storage-endpoint <url>` | unset | Sets an S3-compatible endpoint (like MinIO, R2, etc.), which only matters if you also use `--storage-bucket`. It can also be read from `CONCILE_STORAGE_ENDPOINT`. |
+| `--run "<cmd>"` | unset | Starts your frontend dev command next to the backend, so one command runs both. For example `--run "next dev -p 3001"`. Its output shows with an `app │` prefix, and it stops when `concile dev` stops. The Next.js starter's `npm run dev` uses this. |
+| `--no-ui` | unset | Turns off the full-screen terminal dashboard (Bun only) and prints plain lines. `--run` turns it off too. |
 
 A CLI flag will always override its environment variable equivalent if both are set.
 
