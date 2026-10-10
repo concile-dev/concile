@@ -1,5 +1,12 @@
 # @concile/index-key-codec
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/values@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes

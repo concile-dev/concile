@@ -1,5 +1,36 @@
 # @concile/cli
 
+## 0.2.2
+
+### Patch Changes
+
+- [#55](https://github.com/concile-dev/concile/pull/55) [`9e4f109`](https://github.com/concile-dev/concile/commit/9e4f109905bd202fbbc46800d32f639d071c75b4) Thanks [@dbjpanda](https://github.com/dbjpanda)! - Starters run with one command. In the React + Vite starter, `npm run dev` starts the app and the backend together through the `@concile/vite` plugin, on one address. In the Next.js starter, `npm run dev` runs `concile dev --run "next dev -p 3001"`. New `concile dev --run "<cmd>"` starts any frontend dev command next to the backend.
+
+- Updated dependencies []:
+  - @concile/dashboard@0.2.2
+  - @concile/admin@0.2.2
+  - @concile/blobstore@0.2.2
+  - @concile/blobstore-fs@0.2.2
+  - @concile/blobstore-s3@0.2.2
+  - @concile/codegen@0.2.2
+  - @concile/component@0.2.2
+  - @concile/deploy@0.2.2
+  - @concile/docstore@0.2.2
+  - @concile/docstore-postgres@0.2.2
+  - @concile/docstore-sqlite@0.2.2
+  - @concile/errors@0.2.2
+  - @concile/executor@0.2.2
+  - @concile/id-codec@0.2.2
+  - @concile/objectstore@0.2.2
+  - @concile/objectstore-fs@0.2.2
+  - @concile/objectstore-s3@0.2.2
+  - @concile/query-engine@0.2.2
+  - @concile/receipts@0.2.2
+  - @concile/runtime-embedded@0.2.2
+  - @concile/storage@0.2.2
+  - @concile/sync@0.2.2
+  - @concile/values@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes
