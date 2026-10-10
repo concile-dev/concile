@@ -73,6 +73,25 @@ function base64ToBytes(b64: string): Uint8Array {
   return out;
 }
 
+/**
+ * The part of `base` after `cursor` (asc) or before it (desc). The cursor is raw key bytes handed
+ * back by the client, so it is only ever allowed to NARROW `base`: a cursor outside the query's own
+ * range (forged, or from a different query) must not move a bound past it, or a page could return
+ * rows the query's `eq`/range constraints exclude. An out-of-range cursor yields the first page
+ * (cursor before the range) or an empty one (cursor past it).
+ */
+function resumeInterval(base: IndexInterval, cursor: Uint8Array, order: ScanOrder): IndexInterval {
+  if (order === "asc") {
+    const after = keySuccessor(cursor);
+    const start = compareKeyBytes(after, base.start) > 0 ? after : base.start;
+    if (base.end !== null && compareKeyBytes(start, base.end) >= 0) return { start: base.end, end: base.end };
+    return { start, end: base.end };
+  }
+  const end = base.end === null || compareKeyBytes(cursor, base.end) < 0 ? cursor : base.end;
+  if (compareKeyBytes(end, base.start) <= 0) return { start: base.start, end: base.start };
+  return { start: base.start, end };
+}
+
 /** Stable string form of index-key bytes, for keying the overlay merge map. */
 function hexKey(b: Uint8Array): string {
   let s = "";
@@ -170,11 +189,7 @@ export class QueryRuntime {
     const tableId = encodeStorageTableId(query.index.tableNumber);
 
     // Resume from the cursor: keys strictly after it (asc) or strictly before it (desc).
-    let interval: IndexInterval = base;
-    if (opts.cursor) {
-      const k = base64ToBytes(opts.cursor);
-      interval = order === "asc" ? { start: keySuccessor(k), end: base.end } : { start: base.start, end: k };
-    }
+    const interval = opts.cursor ? resumeInterval(base, base64ToBytes(opts.cursor), order) : base;
 
     // Read-your-own-writes overlay (see `collect`). `maxScan`/`scanCapped` don't apply here — the
     // overlay path scans the whole remaining interval to merge staged writes, and runs only inside a

@@ -210,7 +210,13 @@ export function embedPlugin(options: ConcileVitePluginOptions): Plugin {
             ping: (onPong: () => void) => { ws.once("pong", onPong); ws.ping(); },
           };
           runtime.handler.connect(sessionId, syncSocket);
-          ws.on("message", (data: Buffer) => void runtime.handler.handleMessage(sessionId, data.toString("utf8")));
+          ws.on("message", (data: Buffer) => {
+            // An unhandled rejection here would take down the Vite dev server; drop only this socket.
+            runtime.handler.handleMessage(sessionId, data.toString("utf8")).catch((e: unknown) => {
+              console.error("[concile] sync message failed; closing connection:", e);
+              ws.close(1011);
+            });
+          });
           ws.on("close", () => runtime.handler.disconnect(sessionId));
           ws.on("error", () => runtime.handler.disconnect(sessionId));
         });

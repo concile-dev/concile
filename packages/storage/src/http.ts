@@ -24,6 +24,40 @@ import { isReclaimable } from "./context";
 import type { StorageDoc } from "./modules";
 import { STORAGE_TABLE_NUMBER } from "./system-table";
 
+/**
+ * Media types safe to render inline from the app's own origin: none of them can run script in the
+ * page's origin. Everything else (notably `text/html` and `image/svg+xml`, but also unknown or
+ * absent types) is served as an attachment, since `contentType` is whatever the uploader claimed.
+ */
+const INLINE_SAFE_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+  "image/avif",
+  "text/plain",
+  "application/pdf",
+]);
+
+function isInlineSafe(contentType: string): boolean {
+  const essence = contentType.split(";")[0]!.trim().toLowerCase();
+  return INLINE_SAFE_TYPES.has(essence) || essence.startsWith("video/") || essence.startsWith("audio/");
+}
+
+/**
+ * Response headers for bytes streamed from the engine's origin. Uploaded files share that origin
+ * with the app (and, in dev, the dashboard), so an uploaded HTML/SVG file rendered inline would be
+ * stored XSS. `nosniff` stops the browser from upgrading a benign type to an active one;
+ * `attachment` makes a navigation to anything outside the allowlist a download, not a page. Neither
+ * affects `fetch()`, `<img>` or `<video>`, which ignore `Content-Disposition`.
+ */
+function servedFileHeaders(contentType: string | null): Headers {
+  const headers = new Headers({ "x-content-type-options": "nosniff" });
+  if (contentType !== null) headers.set("content-type", contentType);
+  if (contentType === null || !isInlineSafe(contentType)) headers.set("content-disposition", "attachment");
+  return headers;
+}
+
 export interface StorageRouteDeps {
   runMutation(path: string, args: unknown): Promise<unknown>;
   runQuery(path: string, args: unknown): Promise<unknown>;
@@ -244,8 +278,7 @@ export function storageRoutes(blobStore: BlobStore, deps: StorageRouteDeps): Sto
     if (redirectUrl !== null) return new Response(null, { status: 302, headers: { location: redirectUrl } });
 
     const size = doc.size ?? 0;
-    const headers = new Headers();
-    if (doc.contentType !== null) headers.set("content-type", doc.contentType);
+    const headers = servedFileHeaders(doc.contentType);
 
     const range = parseRange(request.headers.get("range"));
     if (range !== undefined) {
