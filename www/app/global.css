@@ -7,6 +7,15 @@
 @custom-variant light (&:is(.light *));
 @custom-variant system (&:is(.system *));
 
+.mermaid-diagram svg .edge-label rect {
+  fill: var(--color-fd-background);
+  stroke: var(--color-fd-muted-foreground);
+}
+
+.mermaid-diagram svg .edge-label text {
+  fill: var(--color-fd-foreground);
+}
+
 /* ============================================================
    The Concile palette. This block is the whole theme.
 

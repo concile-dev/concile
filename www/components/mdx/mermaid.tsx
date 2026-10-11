@@ -10,10 +10,20 @@ export function Mermaid({ chart }: { chart: string }) {
     const svg = renderMermaidSVG(chart, {
       bg: 'var(--color-fd-background)',
       fg: 'var(--color-fd-foreground)',
+      muted: 'var(--color-fd-muted-foreground)',
+      line: 'var(--color-fd-muted-foreground)',
+      accent: 'var(--color-fd-muted-foreground)',
+      surface: 'var(--color-fd-card)',
+      border: 'var(--color-fd-muted-foreground)',
       interactive: true,
       transparent: true,
     });
-    return <div className="my-6 flex justify-center overflow-x-auto" dangerouslySetInnerHTML={{ __html: svg }} />;
+    return (
+      <div
+        className="mermaid-diagram my-6 flex justify-center overflow-x-auto text-fd-foreground"
+        dangerouslySetInnerHTML={{ __html: svg }}
+      />
+    );
   } catch {
     return (
       <pre className="my-6 overflow-x-auto rounded-lg border p-4 text-sm">
