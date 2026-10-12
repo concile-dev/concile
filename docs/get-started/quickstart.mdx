@@ -26,9 +26,10 @@ npx concile init my-app
 cd my-app
 ```
 
-`init` creates the folder and a `concile/` directory with a sample `messages` table, query and
-mutation. It also installs the packages. Already have an app? Run `npx concile init` inside it
-instead. To see every option, run `npx concile init --help`.
+`init` generates the project folder, sets up a `concile/` directory with a sample `messages` schema,
+query, and mutation, and installs dependencies. In an empty folder, run `npx concile init` without a
+name, and it prompts you for one. Type `.` to use that folder. Working in an existing project? Run
+`npx concile init` directly in that repo. Run `npx concile init --help` to view all available flags.
 
 </Step>
 
@@ -36,7 +37,8 @@ instead. To see every option, run `npx concile init --help`.
 
 ## Define a schema
 
-`init` already wrote `concile/schema.ts`. Here is what is in it. It lists your tables and the shape of each row:
+`init` already wrote `concile/schema.ts`. Here is what is in it. It lists your tables and the shape
+of each row:
 
 ```ts title="concile/schema.ts"
 import { defineSchema, defineTable, v } from "@concile/values";
@@ -107,9 +109,10 @@ admin key → 3q2xN7vRkYw8pTzL5mA9cB1dE6fGhJ0u
 The admin key is a fresh random value on each run (unless you set `CONCILE_ADMIN_KEY` yourself).
 Yours will differ.
 
-Did `init` give you a starter app? Run `npm run dev` instead. It starts the app and the backend
-together. Then open it in two browser tabs: http://localhost:5173 for React + Vite,
-http://localhost:3001 for Next.js.
+If you generated a starter app with `init`, run `npm run dev`. This boots both your app and the
+backend in separate terminal tabs. Use `j` and `k` to toggle between tabs, and hit `q` to shut down
+both processes. Next, open your app across two browser windows: http://localhost:5173 for React +
+Vite, or http://localhost:3001 for Next.js.
 
 </Step>
 

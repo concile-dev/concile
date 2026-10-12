@@ -71,11 +71,14 @@ export function concile(options: ConcileVitePluginOptions = {}): Plugin {
 function proxyPlugin(options: ConcileVitePluginOptions): Plugin {
   let port: number;
   let backend: Backend | undefined;
+  // `concile dev --run vite` already runs the backend (in its own tab) and says where. Then this
+  // plugin only proxies to it and starts nothing.
+  const running = process.env.CONCILE_DEV_BACKEND;
   return {
     name: "concile",
     async config() {
       port = options.port ?? (await freePort());
-      const target = `http://127.0.0.1:${port}`;
+      const target = running ?? `http://127.0.0.1:${port}`;
       return {
         server: {
           proxy: {
@@ -87,6 +90,7 @@ function proxyPlugin(options: ConcileVitePluginOptions): Plugin {
       };
     },
     async configureServer(server) {
+      if (running) return;
       const root = server.config.root;
       const cli = resolveCli(root, options.command);
       const args = buildDevArgs(cli.baseArgs, port, options.functionsDir ?? DEFAULT_FUNCTIONS_DIR, options.args ?? []);

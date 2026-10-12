@@ -277,7 +277,7 @@ export default function HomePage() {
             </a>
           </div>
           <div className="cta2-cmd">
-            <CopyCommand command="npm i concile && npx concile dev" />
+            <CopyCommand command="npx concile init" />
           </div>
         </Reveal>
       </section>

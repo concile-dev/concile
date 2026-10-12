@@ -79,6 +79,14 @@ That's the entire configuration. You do not need to add any options.
 npx vite
 ```
 
+<Callout type="info" title="Started with concile dev --run vite?">
+
+If you run `concile dev --run vite`, the backend is already active in its own tab. The plugin reads
+`CONCILE_DEV_BACKEND` and routes requests to that existing instance instead of booting a new one.
+The React + Vite starter uses this setup out of the box.
+
+</Callout>
+
 The backend starts up right along with the dev server. You will see its log lines appear in the same
 terminal, prefixed with `[concile]`. Open your app at the Vite URL, and you'll find the engine's
 surfaces are there too, all on the very same origin:
@@ -180,49 +188,57 @@ are specific to one mode and simply ignored by the other.
       type: '"proxy" | "embed"',
       default: '"proxy"',
       description:
-        'How the backend runs alongside Vite. "proxy" spawns concile dev as a child and proxies to it; "embed" boots the engine inside Vite\'s own process.',
+        'How the backend runs alongside Vite. "proxy" spawns concile dev as a child and proxies to
+it; "embed" boots the engine inside Vite\'s own process.',
     },
     functionsDir: {
       type: "string",
       default: '"concile"',
       description:
-        "Where your schema and functions live, relative to the Vite root. Passed to the backend as --dir. Shared by both modes.",
+        "Where your schema and functions live, relative to the Vite root. Passed to the backend as
+--dir. Shared by both modes.",
     },
     port: {
       type: "number",
       default: "an OS-assigned free port",
       description:
-        "Proxy mode only: the port the spawned concile dev listens on (the browser never sees it; everything goes through Vite's port).",
+        "Proxy mode only: the port the spawned concile dev listens on (the browser never sees it;
+everything goes through Vite's port).",
     },
     command: {
       type: "string",
       default: 'local node_modules/.bin/concile, else "npx concile"',
       description:
-        "Proxy mode only: how to invoke the CLI. A whitespace-split command string, e.g. \"bun concile\".",
+        "Proxy mode only: how to invoke the CLI. A whitespace-split command string, e.g. \"bun
+concile\".",
     },
     args: {
       type: "string[]",
       default: "[]",
       description:
-        'Proxy mode only: extra flags appended to concile dev, e.g. ["--database-url", "postgres://..."].',
+        'Proxy mode only: extra flags appended to concile dev, e.g. ["--database-url",
+"postgres://..."].',
     },
     dataPath: {
       type: "string",
       default: "<root>/.concile/dev.db",
       description:
-        "Embed mode only: the SQLite database file for the in-process engine, resolved against the Vite root.",
+        "Embed mode only: the SQLite database file for the in-process engine, resolved against the
+Vite root.",
     },
     databaseUrl: {
       type: "string",
       default: "unset (SQLite)",
       description:
-        "Embed mode only: a postgres:// connection string. When set, the in-process engine uses Postgres instead of SQLite.",
+        "Embed mode only: a postgres:// connection string. When set, the in-process engine uses
+Postgres instead of SQLite.",
     },
     adminKey: {
       type: "string",
       default: "a per-run ephemeral key",
       description:
-        "Embed mode only: the admin key protecting the in-process engine's /_admin API and dashboard.",
+        "Embed mode only: the admin key protecting the in-process engine's /_admin API and
+dashboard.",
     },
   }} />
 

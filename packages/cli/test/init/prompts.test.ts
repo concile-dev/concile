@@ -14,10 +14,10 @@ describe("clackPrompter intro", () => {
     await clackPrompter("1.2.3", term({ TERM: "dumb" }, out)).intro();
     expect(out.join("")).toBe("concile init v1.2.3\n");
   });
-  it("shows the logo banner with colour", async () => {
+  it("shows the wordmark banner with colour", async () => {
     const out: string[] = [];
     await clackPrompter("1.2.3", term({ TERM: "xterm-256color", COLORTERM: "truecolor" }, out)).intro();
-    expect(out.join("")).toContain("██");
+    expect(out.join("")).toContain("█▀▀▄"); // the n of the pixel wordmark
     expect(out.join("")).toContain("v1.2.3");
   });
 });

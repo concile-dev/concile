@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
-import { isAbsolute, join, relative, resolve } from "node:path";
+import { basename, isAbsolute, join, relative, resolve } from "node:path";
 import { CLI_VERSION } from "../version";
-import { childProjects, compareVersions, detect, freeFolderName, type PackageManager, type ProjectInfo } from "./detect";
+import { compareVersions, detect, freeFolderName, type PackageManager, type ProjectInfo } from "./detect";
 import { loadConfig } from "../load-config";
 import { planInit, previewLines, fsView, type Action, type Answers } from "./plan";
 import { ApplyError, applyPlan, defaultApplyDeps, type ApplyDeps, type ApplyResult } from "./apply";
@@ -19,7 +19,8 @@ export interface InitDeps {
   prompter: Prompter | null;
   apply: ApplyDeps;
   /** Starts the dev server. `script` set: run the project's dev script (a starter: backend + app). */
-  startDev: (root: string, script?: { pm: PackageManager }) => Promise<number>;
+  /** Starts development: the package's own dev script, `concile dev --run <cmd>`, or `concile dev` alone. */
+  startDev: (root: string, how?: DevStart["how"]) => Promise<number>;
   /** Runs `concile migrate` on a Convex project at `root`. */
   migrate: (root: string) => Promise<number>;
   nodeVersion?: string;
@@ -34,9 +35,9 @@ function defaults(): InitDeps {
     write: (s) => process.stdout.write(s),
     prompter: null,
     apply: defaultApplyDeps(),
-    startDev: async (root, script) => {
-      if (script) {
-        const [cmd, ...rest] = RUN_DEV[script.pm].split(" ");
+    startDev: async (root, how) => {
+      if (how && "script" in how) {
+        const [cmd, ...rest] = RUN_DEV[how.script].split(" ");
         const { spawn } = await import("node:child_process");
         const child = spawn(cmd!, rest, { cwd: root, stdio: "inherit", shell: process.platform === "win32" });
         return new Promise<number>((done) => {
@@ -47,7 +48,7 @@ function defaults(): InitDeps {
       process.chdir(root);
       // Dynamic import: cli.ts imports this file.
       const { devCommand } = await import("../cli");
-      return devCommand([]);
+      return devCommand(how ? ["--run", how.run] : []);
     },
     migrate: async (root) => {
       // Dynamic import keeps init/* free of a static cycle through cli.ts.
@@ -115,14 +116,27 @@ function installHint(pm: PackageManager, packages: string[]): string {
   return `Packages were not installed. Install them, then run: npx concile codegen\n  ${pm} ${verb} ${packages.join(" ")}`;
 }
 
-/** For an existing app: how to start the frontend and the backend with one command. */
-function oneCommandTip(framework: string, pm: PackageManager): string | null {
-  if (framework === "vite") {
-    return `To start the backend with vite too: ${pm === "npm" ? "npm install -D" : `${pm} add -D`} @concile/vite, add concile() from "@concile/vite" to the plugins in vite.config, and set VITE_CONCILE_URL=ws://localhost:5173/api/sync in .env.local.`;
-  }
-  if (framework === "next") return `To start both with one command: npx concile dev --run "next dev -p 3001"`;
-  if (framework === "sveltekit" || framework === "astro") return `To start both with one command: npx concile dev --run "${RUN_DEV[pm]}"`;
-  return null;
+export interface DevStart {
+  /** What the user types to start developing. */
+  command: string;
+  /** How init starts it: the package's dev script, the app's dev script next to `concile dev`, or the backend alone. */
+  how?: { script: PackageManager } | { run: string };
+}
+
+/**
+ * One command starts the app and the backend. A starter's dev script already does both. An existing
+ * app keeps its package.json as it is: `concile dev --run` starts its own dev script next to the
+ * backend. A dev script that already runs concile is used as it is.
+ * @internal exported for tests.
+ */
+export function devStart(root: string, pm: PackageManager, starter: boolean): DevStart {
+  const script = RUN_DEV[pm];
+  if (starter) return { command: script, how: { script: pm } };
+  let dev: unknown;
+  try { dev = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).scripts?.dev; } catch { dev = undefined; }
+  if (typeof dev !== "string") return { command: "npx concile dev" };
+  if (/\bconcile\b/.test(dev)) return { command: script, how: { script: pm } };
+  return { command: `npx concile dev --run "${script}"`, how: { run: script } };
 }
 
 /** Quotes a path for a copy-pasteable command when it holds spaces or shell characters. */
@@ -180,27 +194,27 @@ async function runInit(args: string[], d: InitDeps, nested: boolean): Promise<nu
   // Lockfiles win over the user agent in detect(), so an explicit --pm is applied here.
   if (flags.pm) info = { ...info, packageManager: flags.pm };
 
-  if (info.kind === "loose") {
-    // Never suggest a folder that already exists: point at child projects, or at a free name.
-    const projects = childProjects(root);
-    const suggested = freeFolderName(root);
-    const at = (dir: string) => relative(d.cwd, resolve(root, dir)) || ".";
-    if (interactive) {
-      let dir: string;
-      try {
-        dir = await ui.askLoose(projects, suggested, (name) => existsSync(resolve(root, name)));
-      } catch (e) {
-        if (e instanceof Cancelled) return 0;
-        throw e;
-      }
+  // No package.json here. Like create-next-app and create-convex, ask for a folder name and never go
+  // looking through other folders: an existing project is set up by running init inside it.
+  // An empty folder may also take the app itself ("."); a folder with other files may not.
+  const suggested = freeFolderName(root);
+  const at = (dir: string) => relative(d.cwd, resolve(root, dir)) || ".";
+  if (info.kind === "loose" && !interactive) {
+    return stop(`${basename(root)}/ has no package.json, so it is not a project.\nTo start a new app:  npx concile init ${shellArg(at(suggested))}\nTo set up an existing project, run npx concile init inside it.`, { suggested });
+  }
+  // Without flags, agents and CI set up an empty folder right where they are.
+  if (interactive && (info.kind === "loose" || (info.kind === "empty" && flags.folder === null && !nested))) {
+    let dir: string;
+    try {
+      dir = await ui.askWhere(basename(root), suggested, info.kind === "empty", (name) => existsSync(resolve(root, name)));
+    } catch (e) {
+      if (e instanceof Cancelled) return 0;
+      throw e;
+    }
+    if (dir !== ".") {
       const rest = flags.folder === null ? args : args.filter((a) => a !== flags.folder);
       return runInit([at(dir), ...rest], { ...d, prompter: ui }, true);
     }
-    const lines = [
-      ...projects.map((p) => `To set up ${p}:  npx concile init ${shellArg(at(p))}`),
-      `To start a new app:  npx concile init ${shellArg(at(suggested))}`,
-    ];
-    return stop(`This folder has files but no package.json, so it doesn't look like a project.\n${lines.join("\n")}`, { projects, suggested });
   }
   if (info.kind === "convex") {
     if (!interactive) return stop("This looks like a Convex project. Move it to Concile with:  npx concile migrate");
@@ -324,7 +338,8 @@ async function runInit(args: string[], d: InitDeps, nested: boolean): Promise<nu
   const fw = FRAMEWORKS.find((f) => f.id === (answers.starter && answers.starter !== "none" ? answers.starter : info.framework));
   const cd = flags.folder ? `cd ${flags.folder} && ` : "";
   const starter = actions.find((a) => a.kind === "copyTemplate");
-  const runDev = starter ? `${cd}${RUN_DEV[info.packageManager]}` : `${cd}npx concile dev`;
+  const dev = devStart(root, info.packageManager, Boolean(starter));
+  const runDev = `${cd}${dev.command}`;
   if (flags.json) {
     d.write(JSON.stringify({ ok: true, root, answers: redactAnswers(answers), done: result.done, manual: result.manual, next: notInstalled ?? runDev }));
     return 0;
@@ -340,15 +355,15 @@ async function runInit(args: string[], d: InitDeps, nested: boolean): Promise<nu
   if (info.kind !== "empty" && fw && fw.id !== "node") {
     const portNote = fw.id === "next" ? `\n${NEXT_PORT_NOTE}` : "";
     ui.info(`Connect your app (${fw.snippetFile}), using ${fw.envPrefix}CONCILE_URL from .env.local:\n${fw.snippet}${portNote}`);
-    const tip = oneCommandTip(fw.id, info.packageManager);
-    if (tip) ui.info(tip);
   }
   if (notInstalled) {
     ui.outro(notInstalled);
     return 0;
   }
   if (starter && starter.kind === "copyTemplate") {
-    ui.info(`${runDev} starts the app and the backend together. Open http://localhost:${STARTER_PORT[starter.template]} in two tabs.`);
+    ui.info(`${runDev} starts the app and the backend together. Open http://localhost:${STARTER_PORT[starter.template]} in two browser windows to see live updates.`);
+  } else if (dev.how && "run" in dev.how) {
+    ui.info(`${runDev} starts your app and the backend together, each in its own tab.`);
   }
   if (interactive) {
     let start = false;
@@ -357,7 +372,7 @@ async function runInit(args: string[], d: InitDeps, nested: boolean): Promise<nu
     } catch (e) {
       if (!(e instanceof Cancelled)) throw e;
     }
-    if (start) return d.startDev(root, starter ? { pm: info.packageManager } : undefined);
+    if (start) return d.startDev(root, dev.how);
   }
   ui.outro(`Next: ${runDev}`);
   return 0;

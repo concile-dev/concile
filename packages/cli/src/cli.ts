@@ -25,6 +25,7 @@ import { fleetCommand } from "./fleet";
 import { objectstoreCommand } from "./objectstore";
 import { loadEnvFiles } from "./env-files";
 import { runAlongside } from "./run-alongside";
+import { afterBackend, backendUrl, BACKEND_ENV, mprocsBinary, runInTabs, wantTabs } from "./dev-tabs";
 
 function parseFlags(args: string[]): DevOptions {
   const out: DevOptions = {};
@@ -46,6 +47,15 @@ function parseFlags(args: string[]): DevOptions {
 
 export async function devCommand(args: string[]): Promise<number> {
   const flags = parseFlags(args);
+  // --run in a real terminal: the backend and the app each get a tab. This process only hosts them.
+  if (flags.run && wantTabs({ noUi: flags.noUi, env: process.env, stdinTTY: Boolean(process.stdin.isTTY), stdoutTTY: Boolean(process.stdout.isTTY) })) {
+    const binary = mprocsBinary();
+    if (binary) {
+      const { port, ip } = resolveDevOptions(flags);
+      const devArgs = args.filter((a, i) => a !== "--run" && args[i - 1] !== "--run");
+      return runInTabs(binary, { devArgs, run: flags.run, cwd: process.cwd(), url: backendUrl(ip, port) });
+    }
+  }
   // Before anything reads the environment: .env.local, then .env, never overriding a set variable.
   loadEnvFiles(flags.functionsDir ? dirname(resolve(process.cwd(), flags.functionsDir)) : process.cwd());
   const { functionsDir, projectRoot } = await resolveFunctionsDir(flags.functionsDir, process.cwd());
@@ -113,7 +123,7 @@ export async function devCommand(args: string[]): Promise<number> {
 
   // --run: the frontend dev server, started after the backend is listening so it can connect at once.
   if (flags.run) {
-    const app = runAlongside(flags.run, { cwd: projectRoot, write: (l) => process.stdout.write(l) });
+    const app = runAlongside(flags.run, { cwd: projectRoot, write: (l) => process.stdout.write(l), env: { [BACKEND_ENV]: backendUrl(opts.ip, opts.port) } });
     void app.exited.then((code) => process.stdout.write(`app exited (code ${code}). The backend keeps running.\n`));
     for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
       process.once(sig, () => {
@@ -311,6 +321,8 @@ export async function runCli(argv: string[]): Promise<number> {
     }
     case "dev":
       return devCommand(rest);
+    case "__after-backend": // internal: the app tab of `dev --run`
+      return afterBackend(rest);
     case "serve":
       return serveCommand(rest);
     case "deploy":
