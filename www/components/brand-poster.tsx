@@ -35,7 +35,7 @@ const INTER = 'Inter';
 const MONO = 'JetBrains Mono';
 
 export const TAGLINE = 'Your entire backend. Realtime by default.';
-export const INSTALL = '$ npm i concile && npx concile dev';
+export const INSTALL = '$ npx concile init';
 
 function Mark({ size }: { size: number }) {
   return (

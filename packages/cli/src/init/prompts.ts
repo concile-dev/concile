@@ -1,4 +1,5 @@
 import * as p from "@clack/prompts";
+import { TextPrompt } from "@clack/core";
 import { COMPONENTS, type ComponentId, type StarterId } from "./registry";
 import { detectColorLevel, supportsUnicode } from "../ui";
 import { plainBannerLine, showBanner } from "./banner";
@@ -13,8 +14,8 @@ export interface Prompter {
   confirmApply(lines: string[]): Promise<boolean>;
   askStartDev(): Promise<boolean>;
   askMigrate(): Promise<boolean>;
-  /** A folder with files but no package.json: set up a project inside it, or create a new app folder. */
-  askLoose(projects: string[], suggested: string, taken: (name: string) => boolean): Promise<string>;
+  /** Where a new app goes: a folder name, or "." for this folder when `here` allows it. */
+  askWhere(folder: string, suggested: string, here: boolean, taken: (name: string) => boolean): Promise<string>;
   info(msg: string): void;
   warn(msg: string): void;
   step(msg: string): { done(msg: string): void; fail(msg: string): void };
@@ -59,6 +60,11 @@ export function clackPrompter(
   const term = { env: io.env, isTTY: io.isTTY, platform: io.platform };
   const level = detectColorLevel(term, { honorForce: true });
   const dim = (s: string) => (level === 0 ? s : `\x1b[2m${s}\x1b[22m`);
+  const paint = (code: string, s: string) => (level === 0 ? s : `\x1b[${code}m${s}\x1b[0m`);
+  // clack's own symbols, so the one hand-drawn prompt matches the rest.
+  const ui = supportsUnicode(term)
+    ? { bar: "│", end: "└", active: "◆", done: "◇", error: "▲", cancel: "■" }
+    : { bar: "|", end: "—", active: "*", done: "o", error: "x", cancel: "x" };
   return {
     async intro() {
       // No colour (NO_COLOR, TERM=dumb): one plain line instead of the logo (spec section 4, Banner).
@@ -129,30 +135,32 @@ export function clackPrompter(
     async askMigrate() {
       return check(await p.confirm({ message: "This looks like a Convex project. Run `concile migrate` now?", initialValue: true }));
     },
-    async askLoose(projects, suggested, taken) {
-      const NEW = "\0new";
-      if (projects.length) {
-        const pick = check(
-          await p.select({
-            message: "This folder is not a project. What should get Concile?",
-            options: [...projects.map((d) => ({ value: d, label: `${d}/`, hint: "existing project" })), { value: NEW, label: "A new app in a new folder" }],
-          }),
-        );
-        if (pick !== NEW) return pick;
-      }
-      return check(
-        await p.text({
-          message: "Name the new app folder",
-          initialValue: suggested,
-          validate: (v) => {
-            const name = (v ?? "").trim();
-            if (!name) return "Type a folder name.";
-            if (/[\\/]/.test(name)) return "Use a plain folder name, without slashes.";
-            if (taken(name)) return `${name} already exists. Pick another name.`;
-            return undefined;
-          },
-        }),
-      ).trim();
+    async askWhere(folder, suggested, here, taken) {
+      // One line, like create-convex: "Project name › my-app". The suggestion is real, editable text
+      // (Backspace works), dim until changed. clack's text() puts the input on its own line, so this draws its own.
+      const label = here ? `Project name ${dim("(. for this folder)")}` : "Project name";
+      const prompt = new TextPrompt({
+        initialValue: suggested,
+        validate: (v) => {
+          const name = (v ?? "").trim();
+          if (!name) return "Type a folder name.";
+          if (name === ".") return here ? undefined : `${folder}/ already has files. Pick a new folder name.`;
+          if (/[\\/]/.test(name)) return "Use a plain folder name, without slashes.";
+          if (taken(name)) return `${name} already exists. Pick another name, or run init inside it.`;
+          return undefined;
+        },
+        render() {
+          const input = this.userInput === suggested ? `${dim(suggested)}${paint("7", " ")}` : this.userInputWithCursor;
+          const line = (sym: string, value: string) => `${dim(ui.bar)}\n${sym}  ${label} ${dim("›")} ${value}`;
+          switch (this.state) {
+            case "submit": return line(paint("32", ui.done), dim(this.value ?? ""));
+            case "cancel": return `${line(paint("31", ui.cancel), paint("9;2", this.userInput))}\n${dim(ui.bar)}`;
+            case "error": return `${line(paint("33", ui.error), input)}\n${paint("33", ui.end)}  ${paint("33", this.error)}\n`;
+            default: return `${line(paint("36", ui.active), input)}\n${paint("36", ui.end)}\n`;
+          }
+        },
+      });
+      return String(check(await prompt.prompt())).trim();
     },
     info: (m) => p.log.info(m),
     warn: (m) => p.log.warn(m),
@@ -180,7 +188,7 @@ export function plainPrompter(write: (s: string) => void): Prompter {
     askDb: never,
     askStartDev: never,
     askMigrate: never,
-    askLoose: never,
+    askWhere: never,
     async confirmApply() {
       return true;
     },

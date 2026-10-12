@@ -2,76 +2,124 @@ import { BRAND_RGB, rgb, type ColorLevel } from "../ui";
 
 export interface BannerOptions { columns: number; level: ColorLevel; unicode: boolean; version: string }
 
-// The logo mark from www/public/brand/concile-mark.svg on its 8-unit grid. `▓▓` is the single
-// violet cell; `▪` are the small dissolving cells.
-const MARK = [
-  "    ████████▪   ",
-  "  ██████████▪ ▪ ",
-  "████        ▪ ▪ ",
-  "████          ▓▓",
-  "████        ▪ ▪ ",
-  "  ██████████▪ ▪ ",
-  "    ████████▪   ",
-];
-// First animation frame: the violet cell two columns out, "arriving".
-const MARK_ARRIVING = MARK.map((l, i) => (i === 3 ? "████            " : l));
-const ARRIVING_CELL_ROW = 3;
+// The display wordmark, copied from www/components/brand-grid.ts (keep them in step): the name
+// in the mark's own cells, lowercase, with the dot of the i as the one violet cell. The brand uses
+// it stand-alone for hero moments, so the banner shows it without the mark.
+const GLYPHS: Record<string, string[]> = {
+  c: ["", "", ".XXX", "X...", "X...", "X...", ".XXX"],
+  o: ["", "", ".XX.", "X..X", "X..X", "X..X", ".XX."],
+  n: ["", "", "XXX.", "X..X", "X..X", "X..X", "X..X"],
+  i: ["V", "", "X", "X", "X", "X", "X"],
+  l: ["X", "X", "X", "X", "X", "X", "X"],
+  e: ["", "", ".XX.", "X..X", "XXXX", "X...", ".XXX"],
+};
 
-const WORD = [
-  " ██████╗ ██████╗ ███╗   ██╗ ██████╗██╗██╗     ███████╗",
-  "██╔════╝██╔═══██╗████╗  ██║██╔════╝██║██║     ██╔════╝",
-  "██║     ██║   ██║██╔██╗ ██║██║     ██║██║     █████╗  ",
-  "██║     ██║   ██║██║╚██╗██║██║     ██║██║     ██╔══╝  ",
-  "╚██████╗╚██████╔╝██║ ╚████║╚██████╗██║███████╗███████╗",
-  " ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝╚═╝╚══════╝╚══════╝",
-];
+/** "concile" on one 7-row grid, one blank column between letters. */
+function wordRows(): string[] {
+  const rows = Array.from({ length: 7 }, () => "");
+  [..."concile"].forEach((ch, n) => {
+    const g = GLYPHS[ch]!;
+    const w = Math.max(...g.map((r) => r.length));
+    for (let r = 0; r < 7; r++) rows[r] += (n ? "." : "") + (g[r] ?? "").padEnd(w, ".");
+  });
+  return rows;
+}
+const WORD_ROWS = wordRows();
+
+// First animation frame: the i without its dot. The violet cell then drops into place.
+const WORD_ARRIVING = WORD_ROWS.map((r, i) => (i === 0 ? r.replace("V", ".") : r));
+
 /**
- * Wordmark rows, light to dark. Mid greys only: they must read on a dark terminal and on a white one
- * (macOS Terminal's default). At 256 colours these land on cube greys 175 and 135, never near-white.
- * @internal exported for tests.
+ * One brand cell is half a character cell: two grid rows share a line through ▀ ▄ █. A cell is
+ * about as wide as it is tall, so the letters keep their shape at 4 lines high. Plain cells use the
+ * terminal's own foreground (right on dark and light themes) and V is brand violet. Where two
+ * kinds would share a character, V wins.
  */
-export const GREYS = [175, 160, 145, 130, 115, 100];
-const WIDE = 2 + MARK[0]!.length + 3 + WORD[0]!.length; // 75 (2 + 16 + 3 + 54)
+function render(rows: string[], level: ColorLevel): string[] {
+  const violet = rgb(level, ...BRAND_RGB);
+  const kind = (c: string | undefined) => (c === "X" ? "x" : c === "V" ? "v" : null);
+  const paint = (k: string, s: string) => (k === "v" ? violet(s) : s);
+  const out: string[] = [];
+  for (let r = 0; r < rows.length; r += 2) {
+    const top = rows[r]!;
+    const bottom = rows[r + 1] ?? "";
+    let line = "";
+    for (let c = 0; c < top.length; c++) {
+      const t = kind(top[c]);
+      const b = kind(bottom[c]);
+      if (!t && !b) line += " ";
+      else if (t === b) line += paint(t!, "█");
+      else if (t === "v" || (t && !b)) line += paint(t!, "▀");
+      else line += paint(b!, "▄");
+    }
+    out.push(line);
+  }
+  return out;
+}
+
+const TAGLINE = "the reactive backend you self-host";
+const DOCS = "concile.dev/docs";
+/** Columns the wordmark needs. @internal exported for tests. */
+export const WIDE = 2 + WORD_ROWS[0]!.length;
+
+/** The right-hand column of the boxed banner, one line per wordmark row. */
+function infoLines(o: BannerOptions): string[] {
+  const dim = (s: string) => (o.level === 0 ? s : `\x1b[2m${s}\x1b[22m`);
+  const bold = (s: string) => (o.level === 0 ? s : `\x1b[1m${s}\x1b[22m`);
+  return [
+    `${bold("concile init")} ${dim(`v${o.version}`)}`,
+    dim(TAGLINE),
+    `${dim("docs")} ${DOCS}`,
+    dim("nothing changes until you say yes"),
+  ];
+}
+const INFO_W = Math.max(TAGLINE.length, "concile init v0.00.00".length, `docs ${DOCS}`.length, "nothing changes until you say yes".length);
+// │ 2 wordmark 2 │ 2 info 2 │
+const INNER_LEFT = 2 + WORD_ROWS[0]!.length + 2;
+const INNER_RIGHT = 2 + INFO_W + 2;
+/** Columns the boxed banner needs. @internal exported for tests. */
+export const BOXED = 1 + INNER_LEFT + 1 + INNER_RIGHT + 1;
 
 export function plainBannerLine(version: string): string {
   return `concile init v${version}`;
 }
 
-function paintMark(line: string, level: ColorLevel): string {
-  const violet = rgb(level, ...BRAND_RGB);
-  return line.replace("▓▓", violet("██"));
+const visible = (s: string) => s.replace(/\x1b\[[0-9;]*m/g, "").length;
+const padTo = (s: string, w: number) => s + " ".repeat(Math.max(0, w - visible(s)));
+
+/**
+ * One wide box: the wordmark on the left, a separator, the essentials on the right. The
+ * border and the secondary text are dim, so the violet dot of the i stays the one accent.
+ */
+function boxed(word: string[], o: BannerOptions): string[] {
+  const dim = (s: string) => (o.level === 0 ? s : `\x1b[2m${s}\x1b[22m`);
+  const info = infoLines(o);
+  const bar = dim("│");
+  const row = (left: string, right: string) => `${bar}${padTo(left, INNER_LEFT)}${bar}${padTo(right, INNER_RIGHT)}${bar}`;
+  // Starts in column 0, the column of the prompts' vertical bar below it.
+  return [
+    dim(`╭${"─".repeat(INNER_LEFT)}┬${"─".repeat(INNER_RIGHT)}╮`),
+    row("", ""),
+    ...word.map((l, i) => row(`  ${l}`, `  ${info[i] ?? ""}`)),
+    row("", ""),
+    dim(`╰${"─".repeat(INNER_LEFT)}┴${"─".repeat(INNER_RIGHT)}╯`),
+  ];
 }
 
-function frame(mark: string[], o: BannerOptions, extraCell: boolean): string {
-  const violet = rgb(o.level, ...BRAND_RGB);
+function frame(word: string[], o: BannerOptions): string {
   const dim = (s: string) => (o.level === 0 ? s : `\x1b[2m${s}\x1b[22m`);
-  const tagline = `  ${dim(`the reactive backend you self-host · v${o.version}`)}`;
-  const rows: string[] = [""];
-  if (o.columns >= WIDE) {
-    for (let i = 0; i < mark.length; i++) {
-      let m = paintMark(mark[i] ?? "", o.level);
-      if (extraCell && i === ARRIVING_CELL_ROW) m = `${m}${violet("██")}`;
-      const w = i === 0 ? "" : WORD[i - 1] ?? "";
-      const g = GREYS[i - 1] ?? 100;
-      const pad = extraCell && i === ARRIVING_CELL_ROW ? " " : "   ";
-      rows.push(`  ${m}${w ? pad + rgb(o.level, g, g, g)(w) : ""}`.replace(/\s+$/, ""));
-    }
-  } else {
-    for (let i = 0; i < mark.length; i++) {
-      let m = paintMark(mark[i] ?? "", o.level);
-      if (extraCell && i === ARRIVING_CELL_ROW) m = `${m}${violet("██")}`;
-      rows.push(`  ${m}`.replace(/\s+$/, ""));
-    }
-    rows.push("", `  ${violet("concile")}`);
-  }
-  rows.push("", tagline, "");
-  return rows.join("\n");
+  if (o.columns >= BOXED) return ["", ...boxed(render(word, o.level), o), ""].join("\n");
+  const lines: string[] = [""];
+  if (o.columns >= WIDE) for (const l of render(word, o.level)) lines.push(`  ${l}`.replace(/\s+$/, ""));
+  else lines.push(`  ${rgb(o.level, ...BRAND_RGB)("concile")}`);
+  lines.push("", `  ${dim(`${TAGLINE} · v${o.version}`)}`, "");
+  return lines.join("\n");
 }
 
 export function bannerFrames(o: BannerOptions): string[] {
   if (!o.unicode) return [["", "  concile", `  the reactive backend you self-host - v${o.version}`, ""].join("\n")];
-  if (o.level === 0) return [frame(MARK, o, false)];
-  return [frame(MARK_ARRIVING, o, true), frame(MARK, o, false)];
+  if (o.level === 0 || o.columns < WIDE) return [frame(WORD_ROWS, o)];
+  return [frame(WORD_ARRIVING, o), frame(WORD_ROWS, o)];
 }
 
 export async function showBanner(o: BannerOptions, write: (s: string) => void, animate: boolean): Promise<void> {

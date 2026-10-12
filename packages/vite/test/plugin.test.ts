@@ -20,6 +20,21 @@ describe("concile() plugin — config hook", () => {
     expect(Object.keys(proxy).sort()).toEqual(["/_admin", "/_dashboard", "/api"]);
   });
 
+  it("under `concile dev --run`, proxies to the running backend and starts none", async () => {
+    process.env.CONCILE_DEV_BACKEND = "http://127.0.0.1:3999";
+    try {
+      const plugin = concile();
+      const cfg = (await (plugin.config as (c: unknown, e: unknown) => unknown)({}, { command: "serve" })) as {
+        server: { proxy: Record<string, { target: string }> };
+      };
+      expect(cfg.server.proxy["/api"]!.target).toBe("http://127.0.0.1:3999");
+      // A server without config or httpServer would throw if the hook tried to spawn the backend.
+      await expect((plugin.configureServer as (s: unknown) => unknown)({})).resolves.toBeUndefined();
+    } finally {
+      delete process.env.CONCILE_DEV_BACKEND;
+    }
+  });
+
   it("has the plugin name and a configureServer hook", () => {
     const plugin = concile();
     expect(plugin.name).toBe("concile");

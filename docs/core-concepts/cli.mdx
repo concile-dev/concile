@@ -59,11 +59,31 @@ concile dev
 | `--storage-bucket <name>` | `CONCILE_STORAGE_BUCKET` env, else unset (filesystem) | Select the S3-compatible file-storage backend, see [File storage](/docs/core-concepts/file-storage) |
 | `--storage-endpoint <url>` | `CONCILE_STORAGE_ENDPOINT` env, else unset | S3-compatible endpoint (MinIO, R2, …) |
 | `--web <dir>` | unset | Serve a static web UI directory at the site root, alongside the API |
+| `--run "<cmd>"` | unset | Start your frontend dev command next to the backend, see [Run your app alongside](#run-your-app-alongside) |
+| `--no-ui` | unset | Plain output: no terminal dashboard and no `--run` tabs |
 
 The database and storage settings fall back to the same environment variables under `dev` as under
 `serve`: `CONCILE_DATABASE_URL`, `CONCILE_STORAGE_BUCKET`, and `CONCILE_STORAGE_ENDPOINT` (plus the
 rest of the `CONCILE_STORAGE_*` family) all work, with the flag winning when both are set. Both
 commands resolve storage through the same boot path.
+
+### Run your app alongside
+
+Pass `--run "<cmd>"` to launch your frontend dev server alongside the backend from a single command:
+
+```bash
+concile dev --run "npm run dev"
+```
+
+The app waits to launch until the backend starts listening, avoiding port conflicts. Concile also
+exposes the backend URL to your app through `CONCILE_DEV_BACKEND`. In an interactive terminal, the
+app and backend run in dedicated tabs. Press `j` and `k` to cycle through tabs, `r` to restart the
+active process, and `q` to quit both. In non-interactive environments like CI, under coding agents,
+or when piping stdout, the tab interface is disabled. Logs from the app stream inline with an `app
+│` prefix. Pass `--no-ui` or set `CONCILE_TABS=0` to force this view in a regular terminal.
+
+Both starter templates rely on this pattern. The React + Vite starter runs `concile dev --run vite`
+inside `npm run dev`, while the Next.js starter runs `concile dev --run "next dev -p 3001"`.
 
 ### Admin key handling
 

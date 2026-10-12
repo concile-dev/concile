@@ -44,9 +44,9 @@ describe("templates", () => {
     expect(pj.type).toBe("module");
   });
 
-  it("vite: the @concile/vite plugin starts the backend with vite, and the client defaults to the page's address", () => {
+  it("vite: concile dev runs the backend and vite in tabs, the plugin proxies to it, and the client uses the page's address", () => {
     expect(readFileSync(join(tpl, "vite", "vite.config.ts"), "utf8")).toMatch(/plugins: \[react\(\), concile\(\)\]/);
-    expect(JSON.parse(readFileSync(join(tpl, "vite", "package.json"), "utf8")).scripts.dev).toBe("vite");
+    expect(JSON.parse(readFileSync(join(tpl, "vite", "package.json"), "utf8")).scripts.dev).toBe("concile dev --run vite");
     expect(readFileSync(join(tpl, "vite", "src", "main.tsx"), "utf8")).toContain("${location.host}/api/sync");
   });
 });

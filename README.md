@@ -75,13 +75,15 @@ You didn't have to write a websocket server. You didn't write a REST endpoint. Y
 npx concile init
 ```
 
-Run it in an empty folder to get a starter app, or inside the app you already have. It asks a couple of quick questions, shows every file it will add, and changes nothing until you say yes. Want a new folder? Run `npx concile init my-app`. Then:
+Run it in an existing app, and it configures Concile there. Run it in an empty directory, and it prompts for a project name to set up a starter app. Type `.` at that prompt to use the current directory. It lists every file it will touch and waits for your confirmation before writing anything. Then start the dev environment:
 
 ```bash
-npx concile dev
+npm run dev
 ```
 
-Got a starter app? Run `npm run dev` instead. It starts the app and the backend together. Open it in two browser tabs (http://localhost:5173 for React + Vite, http://localhost:3001 for Next.js). Type in one. It shows up in the other.
+Your app and the backend boot together in separate terminal tabs. Open http://localhost:5173 for React + Vite, or http://localhost:3001 for Next.js, across two browser windows. Type a message in one window, and it appears in the other.
+
+Adding Concile to an existing project? Run `npx concile dev --run "npm run dev"` to spin up your dev script alongside the backend. If you only need the backend running, use `npx concile dev`.
 
 Need the flags for scripts or CI? Run `npx concile init --yes`, or see `npx concile init --help`.
 

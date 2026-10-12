@@ -156,7 +156,9 @@ const INSTALL_ARGS: Record<PackageManager, (pkgs: string[]) => string[]> = {
  */
 export function pinPackages(packages: string[], version: string = CLI_VERSION): string[] {
   if (!/^\d+\.\d+\.\d+/.test(version)) return packages;
-  return packages.map((p) => (p === "concile" || p.startsWith("@concile/") ? `${p}@^${version}` : p));
+  // A package that already names its version or file (name@spec) is left as it is.
+  const bare = (p: string) => !p.slice(1).includes("@");
+  return packages.map((p) => ((p === "concile" || p.startsWith("@concile/")) && bare(p) ? `${p}@^${version}` : p));
 }
 
 /**
@@ -188,6 +190,33 @@ export function runCommand(cmd: string, args: string[], cwd: string): Promise<vo
   });
 }
 
+/**
+ * Contributors only (scripts/try-local.sh): CONCILE_LOCAL_PACKAGES names a JSON file mapping each
+ * package name to a packed .tgz. Every one of them, direct or transitive, then installs from that
+ * file through the package manager's overrides, so a local build is tested exactly as npm would ship it.
+ */
+export function useLocalPackages(cwd: string, pm: PackageManager, packages: string[], manifestPath: string): string[] {
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<string, string>;
+  const specs: Record<string, string> = Object.fromEntries(Object.entries(manifest).map(([name, file]) => [name, `file:${file}`]));
+  const pkgPath = join(cwd, "package.json");
+  const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as Record<string, Record<string, unknown> | unknown>;
+  // Direct packages become file dependencies (npm rejects an override on a direct dependency)...
+  const deps = { ...(pkg.dependencies as Record<string, string>) };
+  const rest: string[] = [];
+  for (const p of packages) {
+    if (specs[p]) deps[p] = specs[p];
+    else rest.push(p);
+  }
+  pkg.dependencies = deps;
+  // ...and everything they pull in transitively comes from the same files through overrides.
+  const indirect = Object.fromEntries(Object.entries(specs).filter(([name]) => !(name in deps)));
+  if (pm === "pnpm") pkg.pnpm = { ...(pkg.pnpm as object), overrides: { ...((pkg.pnpm as { overrides?: object })?.overrides), ...indirect } };
+  else if (pm === "yarn") pkg.resolutions = { ...(pkg.resolutions as object), ...indirect };
+  else pkg.overrides = { ...(pkg.overrides as object), ...indirect };
+  writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
+  return rest;
+}
+
 export function defaultApplyDeps(): ApplyDeps {
   const here = dirname(fileURLToPath(import.meta.url));
   // dist/bin.js and dist/index.js sit in dist/; templates ship beside dist/.
@@ -195,6 +224,12 @@ export function defaultApplyDeps(): ApplyDeps {
   return {
     templatesDir,
     async install(pm, packages, full, cwd) {
+      const local = process.env.CONCILE_LOCAL_PACKAGES;
+      if (local) {
+        // The local packages are now in package.json, so a full install picks them up.
+        packages = useLocalPackages(cwd, pm, packages, local);
+        full = true;
+      }
       for (const args of installCommands(pm, packages, full)) await runCommand(pm, args, cwd);
     },
     async codegen(functionsDir) {

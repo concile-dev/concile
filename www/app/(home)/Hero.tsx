@@ -39,12 +39,12 @@ export function Hero() {
                 is decoration, not content: a screen reader should hear the
                 command, not the dollar sign. */}
             <span>
-              <i className="hp-prompt" aria-hidden="true">$</i> npm i concile && npx concile dev
+              <i className="hp-prompt" aria-hidden="true">$</i> npx concile init
             </span>
             <button
               type="button"
               onClick={() => {
-                navigator.clipboard?.writeText('npm i concile && npx concile dev');
+                navigator.clipboard?.writeText('npx concile init');
                 setCopied(true);
                 setTimeout(() => setCopied(false), 1600);
               }}
