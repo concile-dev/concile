@@ -79,6 +79,14 @@ That's the entire configuration. You do not need to add any options.
 npx vite
 ```
 
+<Callout type="info" title="Started with concile dev --run vite?">
+
+If you run `concile dev --run vite`, the backend is already active in its own tab. The plugin reads
+`CONCILE_DEV_BACKEND` and routes requests to that existing instance instead of booting a new one.
+The React + Vite starter uses this setup out of the box.
+
+</Callout>
+
 The backend starts up right along with the dev server. You will see its log lines appear in the same
 terminal, prefixed with `[concile]`. Open your app at the Vite URL, and you'll find the engine's
 surfaces are there too, all on the very same origin:

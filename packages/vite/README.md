@@ -20,7 +20,7 @@ export default defineConfig({
 });
 ```
 
-Run `vite` and the plugin brings the backend up alongside the dev server. `/api` (including the `/api/sync` WebSocket), `/_dashboard`, and `/_admin` are served from the same origin as your app.
+Run `vite` and the plugin brings the backend up alongside the dev server. Under `concile dev --run vite`, the backend is already running in its own tab, so the plugin only proxies to it. `/api` (including the `/api/sync` WebSocket), `/_dashboard`, and `/_admin` are served from the same origin as your app.
 
 ## Modes
 

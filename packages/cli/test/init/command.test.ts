@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { mkdtempSync, writeFileSync, existsSync, readFileSync, readdirSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { initCommand, addCommand } from "../../src/init/command";
+import { basename, join } from "node:path";
+import { initCommand, addCommand, devStart } from "../../src/init/command";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ApplyDeps } from "../../src/init/apply";
@@ -61,7 +61,7 @@ describe("initCommand (non-interactive)", () => {
     expect(readdirSync(root)).toEqual(["notes.txt"]);
   });
 
-  it("loose folder holding a project: points at it and never suggests a taken name", async () => {
+  it("loose folder: never lists other folders, suggests a free name", async () => {
     const root = mkdtempSync(join(tmpdir(), "cmd3b-"));
     mkdirSync(join(root, "my-app"));
     writeFileSync(join(root, "my-app", "package.json"), "{}");
@@ -69,44 +69,57 @@ describe("initCommand (non-interactive)", () => {
     const out: string[] = [];
     expect(await initCommand([], deps(root, out))).toBe(1);
     const text = out.join("");
-    expect(text).toContain("To set up my-app:  npx concile init my-app");
     expect(text).toContain("To start a new app:  npx concile init my-app-2");
+    expect(text).toContain("run npx concile init inside it");
+    expect(text).not.toContain("To set up my-app");
   });
 
-  it("loose folder, interactive: picking a child project runs init inside it", async () => {
-    const root = mkdtempSync(join(tmpdir(), "cmd3c-"));
-    mkdirSync(join(root, "web"));
-    writeFileSync(join(root, "web", "package.json"), JSON.stringify({ name: "web", devDependencies: { vite: "6" } }));
-    writeFileSync(join(root, "notes.txt"), "hi");
-    let asked: { projects: string[]; suggested: string } | null = null;
-    const ui = {
-      ...plainPrompter(() => {}),
-      askLoose: async (projects: string[], suggested: string) => { asked = { projects, suggested }; return "web"; },
-      askRecommended: async () => true,
-      askStartDev: async () => false,
-    };
-    const d = { ...deps(root, []), stdinTTY: true, stdoutTTY: true, prompter: ui };
-    expect(await initCommand(["--no-install"], d)).toBe(0);
-    expect(asked).toEqual({ projects: ["web"], suggested: "my-app" });
-    expect(existsSync(join(root, "web", "concile.config.ts"))).toBe(true);
-    expect(existsSync(join(root, "concile.config.ts"))).toBe(false);
+  const answers = (where: string, seen: { suggested: string; here: boolean }[] = []) => ({
+    ...plainPrompter(() => {}),
+    askWhere: async (_folder: string, suggested: string, here: boolean) => { seen.push({ suggested, here }); return where; },
+    askRecommended: async () => false,
+    askStarter: async () => "none" as const,
+    askComponents: async () => [],
+    askDb: async () => ({ db: "sqlite" as const, url: null }),
+    askStartDev: async () => false,
   });
 
-  it("loose folder, interactive: a new name creates the app in that folder", async () => {
+  it("loose folder, interactive: the app goes into a new folder", async () => {
     const root = mkdtempSync(join(tmpdir(), "cmd3d-"));
     writeFileSync(join(root, "notes.txt"), "hi");
-    const ui = {
-      ...plainPrompter(() => {}),
-      askLoose: async () => "fresh",
-      askRecommended: async () => false,
-      askStarter: async () => "none" as const,
-      askComponents: async () => [],
-      askDb: async () => ({ db: "sqlite" as const, url: null }),
-      askStartDev: async () => false,
-    };
-    const d = { ...deps(root, []), stdinTTY: true, stdoutTTY: true, prompter: ui };
+    const seen: { suggested: string; here: boolean }[] = [];
+    const d = { ...deps(root, []), stdinTTY: true, stdoutTTY: true, prompter: answers("fresh", seen) };
     expect(await initCommand(["--no-install"], d)).toBe(0);
+    expect(seen).toEqual([{ suggested: "my-app", here: false }]);
     expect(existsSync(join(root, "fresh", "concile", "schema.ts"))).toBe(true);
+  });
+
+  it("empty folder, interactive: asks once, and '.' sets up right here", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cmd3e-"));
+    const seen: { suggested: string; here: boolean }[] = [];
+    const d = { ...deps(root, []), stdinTTY: true, stdoutTTY: true, prompter: answers(".", seen) };
+    expect(await initCommand(["--no-install"], d)).toBe(0);
+    expect(seen).toEqual([{ suggested: "my-app", here: true }]);
+    expect(existsSync(join(root, "concile", "schema.ts"))).toBe(true);
+  });
+
+  it("empty folder, interactive: a name creates that folder and does not ask again", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cmd3f-"));
+    const seen: { suggested: string; here: boolean }[] = [];
+    const d = { ...deps(root, []), stdinTTY: true, stdoutTTY: true, prompter: answers("shop", seen) };
+    expect(await initCommand(["--no-install"], d)).toBe(0);
+    expect(seen).toHaveLength(1);
+    expect(existsSync(join(root, "shop", "concile", "schema.ts"))).toBe(true);
+    expect(existsSync(join(root, "concile"))).toBe(false);
+  });
+
+  it("a folder named on the command line is not asked about", async () => {
+    const root = mkdtempSync(join(tmpdir(), "cmd3g-"));
+    const seen: { suggested: string; here: boolean }[] = [];
+    const d = { ...deps(root, []), stdinTTY: true, stdoutTTY: true, prompter: answers("x", seen) };
+    expect(await initCommand(["named", "--no-install"], d)).toBe(0);
+    expect(seen).toHaveLength(0);
+    expect(existsSync(join(root, "named", "concile", "schema.ts"))).toBe(true);
   });
 
   it("Convex project points to concile migrate and changes nothing", async () => {
@@ -330,8 +343,8 @@ describe("final fix wave", () => {
     const tpl = mkdtempSync(join(tmpdir(), "fw-tpl-"));
     for (const t of ["vite", "next"]) { mkdirSync(join(tpl, t)); writeFileSync(join(tpl, t, "package.json"), "{}"); }
     for (const [starter, pm, line] of [
-      ["vite", "npm", "npm run dev starts the app and the backend together. Open http://localhost:5173 in two tabs."],
-      ["next", "pnpm", "pnpm dev starts the app and the backend together. Open http://localhost:3001 in two tabs."],
+      ["vite", "npm", "npm run dev starts the app and the backend together. Open http://localhost:5173 in two browser windows to see live updates."],
+      ["next", "pnpm", "pnpm dev starts the app and the backend together. Open http://localhost:3001 in two browser windows to see live updates."],
     ] as const) {
       const root = mkdtempSync(join(tmpdir(), "fw-start-"));
       const out: string[] = [];
@@ -397,5 +410,25 @@ describe("final fix wave", () => {
     const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "src", "cli.ts"), "utf8");
     expect(src).not.toMatch(/^import .* from "\.\/init\/command";?$/m);
     expect(src).toContain('await import("./init/command")');
+  });
+});
+
+describe("devStart", () => {
+  const app = (pkg: object) => {
+    const root = mkdtempSync(join(tmpdir(), "devstart-"));
+    writeFileSync(join(root, "package.json"), JSON.stringify(pkg));
+    return root;
+  };
+  it("a starter runs its own dev script, which starts both", () => {
+    expect(devStart(app({}), "pnpm", true)).toEqual({ command: "pnpm dev", how: { script: "pnpm" } });
+  });
+  it("an existing app keeps its dev script and gets the backend next to it", () => {
+    expect(devStart(app({ scripts: { dev: "next dev" } }), "npm", false)).toEqual({ command: 'npx concile dev --run "npm run dev"', how: { run: "npm run dev" } });
+  });
+  it("a dev script that already runs concile is used as it is", () => {
+    expect(devStart(app({ scripts: { dev: 'concile dev --run "vite"' } }), "bun", false)).toEqual({ command: "bun run dev", how: { script: "bun" } });
+  });
+  it("no dev script: the backend alone", () => {
+    expect(devStart(app({}), "npm", false)).toEqual({ command: "npx concile dev" });
   });
 });

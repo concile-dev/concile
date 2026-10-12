@@ -38,6 +38,7 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
+    "@clack/core": "^1.5.1",
     "@clack/prompts": "^1.8.1",
     "@concile/admin": "workspace:*",
     "@concile/blobstore": "workspace:*",
@@ -45,6 +46,7 @@
     "@concile/blobstore-s3": "workspace:*",
     "@concile/codegen": "workspace:*",
     "@concile/component": "workspace:*",
+    "@concile/dashboard": "workspace:*",
     "@concile/deploy": "workspace:*",
     "@concile/docstore": "workspace:*",
     "@concile/docstore-postgres": "workspace:*",
@@ -63,8 +65,8 @@
     "@concile/values": "workspace:*",
     "esbuild": "^0.27.0",
     "magicast": "^0.5.5",
-    "ws": "^8.18.0",
-    "@concile/dashboard": "workspace:*"
+    "mprocs": "0.9.6",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.2.17",
