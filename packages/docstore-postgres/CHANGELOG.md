@@ -1,5 +1,15 @@
 # @concile/docstore-postgres
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/docstore@0.2.2
+  - @concile/id-codec@0.2.2
+  - @concile/index-key-codec@0.2.2
+  - @concile/values@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes

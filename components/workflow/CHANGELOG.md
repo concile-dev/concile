@@ -1,5 +1,15 @@
 # @concile/workflow
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/component@0.2.2
+  - @concile/executor@0.2.2
+  - @concile/values@0.2.2
+  - @concile/scheduler@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes
