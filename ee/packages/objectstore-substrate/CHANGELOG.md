@@ -1,5 +1,18 @@
 # @concile/objectstore-substrate
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/component@0.2.2
+  - @concile/docstore@0.2.2
+  - @concile/docstore-sqlite@0.2.2
+  - @concile/id-codec@0.2.2
+  - @concile/index-key-codec@0.2.2
+  - @concile/objectstore@0.2.2
+  - @concile/values@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes

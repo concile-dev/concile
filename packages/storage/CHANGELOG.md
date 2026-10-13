@@ -1,5 +1,17 @@
 # @concile/storage
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/blobstore@0.2.2
+  - @concile/component@0.2.2
+  - @concile/errors@0.2.2
+  - @concile/executor@0.2.2
+  - @concile/id-codec@0.2.2
+  - @concile/values@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes

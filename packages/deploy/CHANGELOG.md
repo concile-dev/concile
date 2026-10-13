@@ -1,5 +1,12 @@
 # @concile/deploy
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/component@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes
