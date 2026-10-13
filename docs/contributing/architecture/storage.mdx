@@ -99,6 +99,28 @@ marker. Since a document's row and its index entries are always written in the v
 the exact same `ts`, an index scan and a direct document read taken at the same snapshot can never
 disagree with one another.
 
+## History retention
+
+<Callout type="warn" title="Old revisions are kept indefinitely today">
+  Concile does not currently delete old document or index revisions. There is no retention setting
+  and no background cleanup job, so a frequently updated database can grow even when the amount of
+  live data stays small.
+</Callout>
+
+Because the log is append-only, every update and delete preserves the previous revision. Storage
+use therefore reflects your total write history as well as your current data.
+
+Two things are easy to mistake for history retention, but are not:
+
+- The transactor's `prune()` only discards in-memory commit metadata that can no longer conflict
+  with an active or future transaction. It never deletes rows from the document or index history.
+- Client outbox retention (see [Offline sync](/docs/client/offline-sync)) controls how long the
+  server remembers each offline client's queued mutations. It is unrelated to document revisions.
+
+Until configurable retention becomes available, plan capacity for your full write history and
+monitor database growth, especially for write-heavy tables. Environment variables for document or
+index retention are reserved for a future retention configuration and are not active yet.
+
 ## The DocStore seam: one interface, several backends
 
 Everything we've talked about so far (the log, the tombstones, and the versioned indexes) is
