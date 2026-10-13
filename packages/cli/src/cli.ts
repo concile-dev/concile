@@ -25,6 +25,7 @@ import { fleetCommand } from "./fleet";
 import { objectstoreCommand } from "./objectstore";
 import { loadEnvFiles } from "./env-files";
 import { runAlongside } from "./run-alongside";
+import { isPortFree, portInUseMessage, PortInUseError } from "./port-in-use";
 import { afterBackend, backendUrl, BACKEND_ENV, mprocsBinary, runInTabs, wantTabs } from "./dev-tabs";
 
 function parseFlags(args: string[]): DevOptions {
@@ -52,6 +53,12 @@ export async function devCommand(args: string[]): Promise<number> {
     const binary = mprocsBinary();
     if (binary) {
       const { port, ip } = resolveDevOptions(flags);
+      // Checked before the tabs open: the app tab waits for this port, so a server someone else
+      // left running here would look like our backend.
+      if (!(await isPortFree(ip, port))) {
+        process.stderr.write(`${portInUseMessage(port)}\n`);
+        return 1;
+      }
       const devArgs = args.filter((a, i) => a !== "--run" && args[i - 1] !== "--run");
       return runInTabs(binary, { devArgs, run: flags.run, cwd: process.cwd(), url: backendUrl(ip, port) });
     }
@@ -91,10 +98,17 @@ export async function devCommand(args: string[]): Promise<number> {
   const dashboard = loadDashboard(ephemeralKey && loopback ? adminKey : undefined);
   // Reach serving through the RuntimeHost seam (Slice 1) — the CLI never touches Bun.serve/node:http.
   const host = new ProcessRuntimeHost();
-  const server = await host.serve(
-    runtime,
-    { port: opts.port, ip: opts.ip, webDir: opts.webDir, admin: { api: adminApi, key: adminKey }, dashboard, routes: project.routes, storageRoutes },
-  );
+  let server: Awaited<ReturnType<typeof host.serve>>;
+  try {
+    server = await host.serve(
+      runtime,
+      { port: opts.port, ip: opts.ip, webDir: opts.webDir, admin: { api: adminApi, key: adminKey }, dashboard, routes: project.routes, storageRoutes },
+    );
+  } catch (e) {
+    if (!(e instanceof PortInUseError)) throw e;
+    process.stderr.write(`${e.message}\n`);
+    return 1;
+  }
   if (ui.styled) {
     const fnCount = Object.keys(project.moduleMap).length;
     const tableCount = Object.keys(project.tableNumbers).length;

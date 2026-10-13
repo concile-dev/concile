@@ -14,6 +14,8 @@ process.emitWarning = ((warning: string | Error, ...rest: unknown[]) => {
 runCli(process.argv.slice(2))
   .then((code) => process.exit(code))
   .catch((e) => {
-    process.stderr.write(`${e instanceof Error ? e.stack ?? e.message : String(e)}\n`);
+    // A busy port is the user's situation, not a crash: say what to do, without a stack trace.
+    const busy = e instanceof Error && e.name === "PortInUseError";
+    process.stderr.write(`${e instanceof Error ? (busy ? e.message : e.stack ?? e.message) : String(e)}\n`);
     process.exit(1);
   });

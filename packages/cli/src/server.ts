@@ -16,6 +16,7 @@ import { handleHttpRequest, type ServerInfo, type FleetHandles } from "./http-ha
 import type { ResolvedRoute } from "./project";
 import type { DeployWireResult } from "./deploy-apply";
 import { detectRuntime } from "./dev-options";
+import { PortInUseError } from "./port-in-use";
 
 const SYNC_PATH = "/api/sync";
 const STORAGE_PREFIX = "/api/storage/";
@@ -297,7 +298,10 @@ async function startNodeServer(runtime: EmbeddedRuntime, options: DevServerOptio
     });
   });
 
-  await new Promise<void>((res) => server.listen(options.port, options.ip, res));
+  await new Promise<void>((res, rej) => {
+    server.once("error", (e: NodeJS.ErrnoException) => rej(e.code === "EADDRINUSE" ? new PortInUseError(options.port) : e));
+    server.listen(options.port, options.ip, res);
+  });
   const address = server.address();
   const port = typeof address === "object" && address ? address.port : options.port;
   return {
