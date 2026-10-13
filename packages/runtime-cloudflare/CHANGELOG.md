@@ -1,5 +1,23 @@
 # @concile/runtime-cloudflare
 
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies [[`68fc98d`](https://github.com/concile-dev/concile/commit/68fc98d032ac626832e3a63ef83ab86d74509800)]:
+  - @concile/cli@0.2.3
+  - @concile/admin@0.2.3
+  - @concile/blobstore@0.2.3
+  - @concile/component@0.2.3
+  - @concile/docstore@0.2.3
+  - @concile/docstore-d1@0.2.3
+  - @concile/docstore-do-sqlite@0.2.3
+  - @concile/docstore-sqlite@0.2.3
+  - @concile/executor@0.2.3
+  - @concile/runtime-embedded@0.2.3
+  - @concile/storage@0.2.3
+  - @concile/sync@0.2.3
+
 ## 0.2.2
 
 ### Patch Changes

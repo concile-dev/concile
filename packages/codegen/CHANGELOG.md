@@ -1,5 +1,12 @@
 # @concile/codegen
 
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/values@0.2.3
+
 ## 0.2.2
 
 ### Patch Changes
