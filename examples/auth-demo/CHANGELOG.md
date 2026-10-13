@@ -1,5 +1,17 @@
 # @concile/example-auth-demo
 
+## 0.0.8
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/component@0.2.3
+  - @concile/executor@0.2.3
+  - @concile/values@0.2.3
+  - @concile/auth@0.2.3
+  - @concile/scheduler@0.2.3
+  - @concile/workflow@0.2.3
+
 ## 0.0.7
 
 ### Patch Changes

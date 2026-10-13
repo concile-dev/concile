@@ -1,5 +1,19 @@
 # @concile/executor
 
+## 0.2.3
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @concile/docstore@0.2.3
+  - @concile/docstore-d1@0.2.3
+  - @concile/errors@0.2.3
+  - @concile/id-codec@0.2.3
+  - @concile/index-key-codec@0.2.3
+  - @concile/query-engine@0.2.3
+  - @concile/transactor@0.2.3
+  - @concile/values@0.2.3
+
 ## 0.2.2
 
 ### Patch Changes

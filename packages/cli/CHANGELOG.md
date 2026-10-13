@@ -1,5 +1,36 @@
 # @concile/cli
 
+## 0.2.3
+
+### Patch Changes
+
+- [#60](https://github.com/concile-dev/concile/pull/60) [`68fc98d`](https://github.com/concile-dev/concile/commit/68fc98d032ac626832e3a63ef83ab86d74509800) Thanks [@dbjpanda](https://github.com/dbjpanda)! - `concile dev` and `concile serve` on a busy port print one clear line (what to stop, or which `--port` to use) instead of a Node stack trace. `concile dev --run` checks the port before opening the tabs, so the app never attaches to a server someone else left running there.
+
+- Updated dependencies []:
+  - @concile/dashboard@0.2.3
+  - @concile/admin@0.2.3
+  - @concile/blobstore@0.2.3
+  - @concile/blobstore-fs@0.2.3
+  - @concile/blobstore-s3@0.2.3
+  - @concile/codegen@0.2.3
+  - @concile/component@0.2.3
+  - @concile/deploy@0.2.3
+  - @concile/docstore@0.2.3
+  - @concile/docstore-postgres@0.2.3
+  - @concile/docstore-sqlite@0.2.3
+  - @concile/errors@0.2.3
+  - @concile/executor@0.2.3
+  - @concile/id-codec@0.2.3
+  - @concile/objectstore@0.2.3
+  - @concile/objectstore-fs@0.2.3
+  - @concile/objectstore-s3@0.2.3
+  - @concile/query-engine@0.2.3
+  - @concile/receipts@0.2.3
+  - @concile/runtime-embedded@0.2.3
+  - @concile/storage@0.2.3
+  - @concile/sync@0.2.3
+  - @concile/values@0.2.3
+
 ## 0.2.2
 
 ### Patch Changes
