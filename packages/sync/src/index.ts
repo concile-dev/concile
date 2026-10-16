@@ -20,6 +20,7 @@ export {
   compareStateVersion,
   isContiguous,
   parseClientMessage,
+  ProtocolError,
   encodeServerMessage,
 } from "./protocol";
 

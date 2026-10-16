@@ -475,6 +475,52 @@ describe("GET /api/storage/:id — serve", () => {
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(bytes);
   });
 
+  describe("uploaded bytes can't become active content on the app's origin", () => {
+    async function serveAs(contentType: string | undefined, range?: string): Promise<Response> {
+      const blobStore = new FakeBlobStore();
+      const runtime = await makeRuntime(blobStore);
+      const routes = storageRoutes(blobStore, routeDeps(runtime));
+      const id = await uploadReadyFile(runtime, routes, new TextEncoder().encode("<script>alert(1)</script>"), contentType, "public");
+      return findRoute(routes, "GET", `/api/storage/${id}`).handler(
+        new Request(`http://localhost/api/storage/${id}`, range !== undefined ? { headers: { range } } : {}),
+      );
+    }
+
+    it.each(["text/html", "text/html; charset=utf-8", "image/svg+xml", "application/xhtml+xml", "TEXT/HTML"])(
+      "%s is served nosniff as an attachment, never inline",
+      async (contentType) => {
+        const response = await serveAs(contentType);
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+        expect(response.headers.get("content-disposition")).toBe("attachment");
+      },
+    );
+
+    it("a file with no content-type is an attachment too (nothing for the browser to sniff into HTML)", async () => {
+      const response = await serveAs(undefined);
+      expect(response.headers.get("content-type")).toBeNull();
+      expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+      expect(response.headers.get("content-disposition")).toBe("attachment");
+    });
+
+    it.each(["image/png", "image/jpeg", "video/mp4", "audio/mpeg", "text/plain; charset=utf-8", "application/pdf"])(
+      "%s stays inline (still nosniff)",
+      async (contentType) => {
+        const response = await serveAs(contentType);
+        expect(response.headers.get("content-type")).toBe(contentType);
+        expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+        expect(response.headers.get("content-disposition")).toBeNull();
+      },
+    );
+
+    it("a Range response carries the same protections", async () => {
+      const response = await serveAs("text/html", "bytes=0-3");
+      expect(response.status).toBe(206);
+      expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+      expect(response.headers.get("content-disposition")).toBe("attachment");
+    });
+  });
+
   it("a Range request returns 206 with the correct partial bytes and Content-Range", async () => {
     const blobStore = new FakeBlobStore();
     const runtime = await makeRuntime(blobStore);

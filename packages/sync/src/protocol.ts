@@ -204,8 +204,97 @@ export type ServerMessage =
   | { type: "FatalError"; message: string }
   | { type: "Ping" };
 
+/**
+ * A client frame that isn't valid JSON or doesn't match a {@link ClientMessage} shape. The raw frame
+ * comes straight off an unauthenticated socket, so the handler treats this as a protocol violation
+ * by that one peer (FatalError + close), never as an engine failure.
+ */
+export class ProtocolError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ProtocolError";
+  }
+}
+
+type Fields = Record<string, unknown>;
+
+const isRecord = (v: unknown): v is Fields => typeof v === "object" && v !== null && !Array.isArray(v);
+const isFiniteNumber = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+
+function assertShape(ok: boolean, what: string): void {
+  if (!ok) throw new ProtocolError(`malformed client message: ${what}`);
+}
+
+function assertOptional(m: Fields, key: string, check: (v: unknown) => boolean, what: string): void {
+  if (m[key] !== undefined) assertShape(check(m[key]), what);
+}
+
+const isMutationRef = (v: unknown): boolean =>
+  isRecord(v) && typeof v.clientId === "string" && isFiniteNumber(v.seq);
+
+const isMutationRefs = (v: unknown): boolean => Array.isArray(v) && v.every(isMutationRef);
+
+const isQueryRequest = (v: unknown): boolean =>
+  isRecord(v) &&
+  isFiniteNumber(v.queryId) &&
+  typeof v.udfPath === "string" &&
+  (v.resultHash === undefined || typeof v.resultHash === "string") &&
+  (v.sinceTs === undefined || isFiniteNumber(v.sinceTs));
+
+const isMutationEntry = (v: unknown): boolean =>
+  isRecord(v) &&
+  typeof v.requestId === "string" &&
+  typeof v.udfPath === "string" &&
+  (v.clientId === undefined || typeof v.clientId === "string") &&
+  (v.seq === undefined || isFiniteNumber(v.seq));
+
+/**
+ * Parse and shape-check one inbound client frame. Only the fields a handler dereferences
+ * unconditionally are checked; `args`/`event` payloads stay opaque `JSONValue`s, validated later by
+ * the function's own validators. Throws {@link ProtocolError} on anything else.
+ */
 export function parseClientMessage(raw: string): ClientMessage {
-  return JSON.parse(raw) as ClientMessage;
+  let m: unknown;
+  try {
+    m = JSON.parse(raw);
+  } catch {
+    throw new ProtocolError("malformed client message: invalid JSON");
+  }
+  assertShape(isRecord(m), "expected an object");
+  const msg = m as Fields;
+  switch (msg.type) {
+    case "Connect":
+      assertOptional(msg, "sessionId", (v) => typeof v === "string", "Connect.sessionId");
+      assertOptional(msg, "clientId", (v) => typeof v === "string", "Connect.clientId");
+      assertOptional(msg, "held", isMutationRefs, "Connect.held");
+      assertOptional(msg, "ackedThrough", isMutationRefs, "Connect.ackedThrough");
+      break;
+    case "ModifyQuerySet":
+      assertShape(Array.isArray(msg.add) && msg.add.every(isQueryRequest), "ModifyQuerySet.add");
+      assertShape(Array.isArray(msg.remove) && msg.remove.every(isFiniteNumber), "ModifyQuerySet.remove");
+      break;
+    case "Mutation":
+      assertShape(isMutationEntry(msg), "Mutation");
+      break;
+    case "MutationBatch":
+      assertShape(Array.isArray(msg.entries) && msg.entries.every(isMutationEntry), "MutationBatch.entries");
+      break;
+    case "Action":
+      assertShape(typeof msg.requestId === "string" && typeof msg.udfPath === "string", "Action");
+      break;
+    case "EphemeralPublish":
+      assertShape(typeof msg.topic === "string", "EphemeralPublish");
+      break;
+    case "SetAuth":
+      assertShape(typeof msg.token === "string" || msg.token === null, "SetAuth.token");
+      break;
+    case "SetAdminAuth":
+      assertShape(typeof msg.key === "string", "SetAdminAuth.key");
+      break;
+    default:
+      throw new ProtocolError("malformed client message: unknown type");
+  }
+  return msg as unknown as ClientMessage;
 }
 
 export function encodeServerMessage(msg: ServerMessage): string {
